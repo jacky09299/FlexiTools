@@ -1,0 +1,42 @@
+{
+  "modules": [
+    {
+      "module_name": "gui_cmd",
+      "instance_id": "gui_cmd#1",
+      "relative_width": 0.5029239766081871,
+      "relative_height": 0.5054302422723476
+    },
+    {
+      "module_name": "gui_cmd",
+      "instance_id": "gui_cmd#2",
+      "relative_width": 0.3141186299081036,
+      "relative_height": 0.49624060150375937
+    },
+    {
+      "module_name": "browser",
+      "instance_id": "browser#1",
+      "relative_width": 0.1695906432748538,
+      "relative_height": 0.5012531328320802
+    },
+    {
+      "module_name": "notepad",
+      "instance_id": "notepad#1",
+      "relative_width": 0.504594820384294,
+      "relative_height": 0.4152046783625731
+    },
+    {
+      "module_name": "notepad",
+      "instance_id": "notepad#2",
+      "relative_width": 0.48454469507101083,
+      "relative_height": 0.42105263157894735
+    }
+  ],
+  "maximized_module_name": null,
+  "module_order": [
+    "gui_cmd#1",
+    "gui_cmd#2",
+    "browser#1",
+    "notepad#1",
+    "notepad#2"
+  ]
+}

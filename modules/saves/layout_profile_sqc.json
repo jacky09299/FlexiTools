@@ -1,0 +1,56 @@
+{
+  "modules": [
+    {
+      "module_name": "Fitter",
+      "instance_id": "Fitter#1",
+      "relative_width": 0.24199743918053776,
+      "relative_height": 0.40717029449423814
+    },
+    {
+      "module_name": "Fitter",
+      "instance_id": "Fitter#2",
+      "relative_width": 0.2919334186939821,
+      "relative_height": 0.41357234314980795
+    },
+    {
+      "module_name": "Fitter",
+      "instance_id": "Fitter#3",
+      "relative_width": 0.2791293213828425,
+      "relative_height": 0.4174135723431498
+    },
+    {
+      "module_name": "Fitter",
+      "instance_id": "Fitter#4",
+      "relative_width": 0.21510883482714468,
+      "relative_height": 0.4263764404609475
+    },
+    {
+      "module_name": "Fitter",
+      "instance_id": "Fitter#5",
+      "relative_width": 0.24455825864276567,
+      "relative_height": 0.43021766965428937
+    },
+    {
+      "module_name": "split_para",
+      "instance_id": "split_para#1",
+      "relative_width": 0.2471190781049936,
+      "relative_height": 0.4622279129321383
+    },
+    {
+      "module_name": "plot_gui",
+      "instance_id": "plot_gui#1",
+      "relative_width": 0.2701664532650448,
+      "relative_height": 0.5032010243277849
+    }
+  ],
+  "maximized_module_name": null,
+  "module_order": [
+    "Fitter#1",
+    "Fitter#2",
+    "Fitter#3",
+    "Fitter#4",
+    "Fitter#5",
+    "split_para#1",
+    "plot_gui#1"
+  ]
+}
