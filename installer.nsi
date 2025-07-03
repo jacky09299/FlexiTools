@@ -15,7 +15,7 @@
 
 ; 設定安裝檔案屬性
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "小工具組安裝程式.exe"
+OutFile "ToolsInstaller.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT_NAME}"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
@@ -58,7 +58,7 @@ RequestExecutionLevel admin
 ; 版本資訊
 VIProductVersion "1.0.0.0"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "ProductName" "${PRODUCT_NAME}"
-VIAddVersionKey /LANG=${LANG_TRADCHINESE} "Comments" "ToolsInstaller"
+VIAddVersionKey /LANG=${LANG_TRADCHINESE} "Comments" "小工具組安裝程式"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "CompanyName" "${PRODUCT_PUBLISHER}"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "LegalTrademarks" ""
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "LegalCopyright" "c ${PRODUCT_PUBLISHER}"
