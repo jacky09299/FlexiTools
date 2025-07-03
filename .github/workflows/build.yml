@@ -2,12 +2,16 @@ name: Build EXE and NSIS Installer
 
 on:
   push:
-    branches:
-      - develop
-      - release/**
+#    branches:
+#      - develop
+#      - release/**
     tags:
       - 'v*'
   workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
 
 jobs:
   build:
@@ -50,20 +54,31 @@ jobs:
         shell: powershell
         run: '& "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi'
 
-      - name: Rename installer to Chinese
+      - name: Verify installer was created
         shell: powershell
-        run: Rename-Item -Path ToolsInstaller.exe -NewName "小工具組安裝程式.exe"
+        run: |
+          if (Test-Path "ToolsInstaller.exe") {
+            Write-Host "ToolsInstaller.exe found, file size: $((Get-Item ToolsInstaller.exe).Length) bytes"
+          } else {
+            Write-Host "ERROR: ToolsInstaller.exe not found!"
+            Get-ChildItem -Path . -Filter "*.exe" | ForEach-Object { Write-Host "Found: $($_.Name)" }
+            exit 1
+          }
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: ToolsInstaller
-          path: "小工具組安裝程式.exe"
+          path: 'ToolsInstaller.exe'
 
       - name: Publish release asset
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: "小工具組安裝程式.exe"
+          files: 'ToolsInstaller.exe'
+          # You can add a custom name in the release notes
+          body: |
+            ## 下載 Download
+            - [小工具組安裝程式 (ToolsInstaller.exe)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/ToolsInstaller.exe)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
