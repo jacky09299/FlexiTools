@@ -51,18 +51,18 @@ jobs:
 
       - name: Rename installer to Chinese
         shell: powershell
-        run: Rename-Item -Path ToolsInstaller.exe -NewName 小工具組安裝程式.exe
+        run: Rename-Item -Path ToolsInstaller.exe -NewName '小工具組安裝程式.exe'
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: 小工具組安裝程式
-          path: 小工具組安裝程式.exe
+          name: ToolsInstaller
+          path: '小工具組安裝程式.exe'
 
       - name: Publish release asset
         if: startsWith(github.ref, 'refs/heads/release/')
         uses: softprops/action-gh-release@v2
         with:
-          files: 小工具組安裝程式.exe
+          files: '小工具組安裝程式.exe'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
