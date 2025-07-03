@@ -3,6 +3,7 @@ import os
 import sys # Ensure sys is imported for path detection
 import time
 import logging
+from typing import Optional
 
 # Configure logging for the update manager
 logger = logging.getLogger(__name__) # Changed from __name__ to a fixed name for consistency
@@ -16,7 +17,7 @@ if not logger.handlers:
 # --- Configuration ---
 APP_NAME = "FlexiTools"
 
-def get_user_writable_data_path(app_name: str = APP_NAME) -> str | None:
+def get_user_writable_data_path(app_name: str = APP_NAME) -> Optional[str]:
     """
     Returns a user-specific writable directory path for application data.
     Creates the directory (app_name) and a 'saves' subdirectory within it if they don't exist.
@@ -357,7 +358,7 @@ if __name__ == "__main__":
 GITHUB_API_URL = "https://api.github.com/repos/jacky09299/FlexiTools/releases/latest"
 INSTALLER_ASSET_NAME = "FlexiToolsInstaller.exe"
 
-def fetch_latest_release_info(api_url: str = GITHUB_API_URL) -> dict | None:
+def fetch_latest_release_info(api_url: str = GITHUB_API_URL) -> Optional[dict]:
     """
     Fetches the latest release information from the GitHub API.
 
@@ -580,5 +581,3 @@ def check_for_updates(force_check: bool = False) -> str:
         # Clear any previously stored available_update if current is up-to-date or newer
         save_update_info(last_check_timestamp=timestamp_now, available_update_data=None)
         return NO_UPDATE_FOUND
-
-```

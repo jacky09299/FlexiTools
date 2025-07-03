@@ -14,6 +14,7 @@
 ; 包含現代 UI
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
+!include "FileFunc.nsh"
 
 ; 設定安裝檔案屬性
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -93,6 +94,11 @@ Section "Main Program" SEC01
   ; 複製主程式檔案
   File "dist\FlexiTools\FlexiTools.exe"
   
+  ; 建立版本檔案
+  FileOpen $0 "$INSTDIR\version.txt" w
+  FileWrite $0 "v${PRODUCT_VERSION}"
+  FileClose $0
+  
   ; 複製 _internal 目錄及其所有內容
   File /r "dist\FlexiTools\_internal"
   
@@ -163,6 +169,7 @@ Section Uninstall
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
   Delete "$INSTDIR\uninst.exe"
   Delete "$INSTDIR\FlexiTools.exe"
+  Delete "$INSTDIR\version.txt"
   
   ; 刪除 _internal 目錄
   RMDir /r "$INSTDIR\_internal"
@@ -234,17 +241,6 @@ first_install:
   StrCpy $IsFirstInstall "1"
   
 done:
-FunctionEnd
-
-; 根據安裝模式調整介面
-Function .onGUIInit
-  ${If} $IsUpdateMode == "1"
-    ; 更新模式：隱藏所有可選元件
-    !insertmacro UnselectSection ${SEC02}
-    !insertmacro UnselectSection ${SEC03}
-    SectionSetFlags ${SEC02} ${SF_RO}
-    SectionSetFlags ${SEC03} ${SF_RO}
-  ${EndIf}
 FunctionEnd
 
 ; 卸載前確認

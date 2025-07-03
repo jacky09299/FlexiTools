@@ -413,6 +413,8 @@ class ModularGUI:
         self.root.title("Modular GUI Framework") # Will be updated to FlexiTools by user, or we can set it here.
         self.root.geometry("800x600")
 
+        self.shared_state = SharedState()  # <-- Move this to the top
+
         # Use user-writable directory for saves (layouts, profiles, update_info)
         # The get_user_writable_data_path in update_manager returns the 'saves' subdirectory directly.
         self.saves_dir = update_manager.SAVES_DIR
@@ -458,7 +460,6 @@ class ModularGUI:
         s = ttk.Style()
         s.configure("DragHandle.TFrame", background="lightgrey")
 
-        self.shared_state = SharedState()
         self.shared_state.log("ModularGUI initialized.")
 
         self.modules_dir = "modules"
@@ -546,57 +547,26 @@ class ModularGUI:
     def _download_installer_and_launch_update(self, version_to_download, download_url):
         """Downloads the installer and then launches the update helper script."""
         try:
-            self.shared_state.log(f"Starting download of version {version_to_download} from {download_url}", "INFO")
-            # Simple progress indication (can be improved with a proper progress bar)
-            self.root.after(0, lambda: messagebox.showinfo("Downloading Update",
-                                                           f"Downloading version {version_to_download}...\nPlease wait.",
-                                                           parent=self.root))
-
-            import requests # Local import for thread safety and clarity
-            response = requests.get(download_url, stream=True, timeout=300) # 5 min timeout for download
+            import requests
+            import tempfile
+            self.shared_state.log(f"Downloading installer from {download_url}...", "INFO")
+            response = requests.get(download_url, stream=True, timeout=60)
             response.raise_for_status()
-
-            # Save to a temporary file
             temp_dir = tempfile.gettempdir()
-            installer_filename = f"FlexiToolsInstaller_{version_to_download.lstrip('v')}.exe"
-            temp_installer_path = os.path.join(temp_dir, installer_filename)
-
-            total_size = int(response.headers.get('content-length', 0))
-            bytes_downloaded = 0
-
-            with open(temp_installer_path, 'wb') as f:
+            installer_path = os.path.join(temp_dir, f"FlexiToolsInstaller_{version_to_download}.exe")
+            with open(installer_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-                    bytes_downloaded += len(chunk)
-                    # Basic progress logging, could update a GUI element here
-                    if total_size > 0:
-                        progress = (bytes_downloaded / total_size) * 100
-                        self.shared_state.log(f"Download progress: {progress:.2f}%", "DEBUG")
-
-
-            self.shared_state.log(f"Installer downloaded to: {temp_installer_path}", "INFO")
-
-            # Proceed to launch the update helper
-            self.root.after(0, self._launch_update_helper, temp_installer_path)
-
+                    if chunk:
+                        f.write(chunk)
+            self.shared_state.log(f"Installer downloaded to {installer_path}", "INFO")
+            messagebox.showinfo("下載完成", f"安裝檔已下載到：\n{installer_path}")
+            self.root.after(0, self._launch_update_helper, installer_path)
         except requests.exceptions.RequestException as e:
             self.shared_state.log(f"Download failed: {e}", "ERROR")
-            self.root.after(0, lambda: messagebox.showerror("Download Failed",
-                                                           f"Failed to download the update: {e}",
-                                                           parent=self.root))
+            messagebox.showerror("Update Error", f"下載更新失敗：{e}")
         except Exception as e:
-            self.shared_state.log(f"An error occurred during download: {e}", "ERROR")
-            self.root.after(0, lambda: messagebox.showerror("Download Error",
-                                                           f"An unexpected error occurred during download: {e}",
-                                                           parent=self.root))
-        finally:
-            # Re-enable UI elements if they were disabled
-            if hasattr(self, 'help_menu'):
-                try:
-                    self.help_menu.entryconfig("Check for Updates...", state=tk.NORMAL)
-                except tk.TclError:
-                    pass
-
+            self.shared_state.log(f"Unexpected error: {e}", "ERROR")
+            messagebox.showerror("Update Error", f"下載更新時發生錯誤：{e}")
 
     def _launch_update_helper(self, installer_path):
         """Creates and runs a helper batch script to perform the update."""
@@ -625,34 +595,28 @@ class ModularGUI:
         # sys.executable should be this path when the bundled app is running.
 
         app_executable_path = sys.executable
-        if not getattr(sys, 'frozen', False): # Development mode
-            self.shared_state.log("Development mode: Update restart might not work as expected. Simulating.", "WARNING")
-            # In dev, sys.executable is python.exe. We'd need to restart main.py.
-            # For now, just show a message and don't create a real batch file for dev.
-            messagebox.showinfo("Dev Mode Update", "In development mode, pretend update is happening. Please restart manually.", parent=self.root)
-            self.root.destroy() # Close app
-            return
+        # 移除開發模式下跳過更新的判斷，讓 dev mode 也會執行 batch script
 
         # Create batch script content
         batch_script_content = f"""@echo off
-echo Closing FlexiTools (PID: {current_pid})...
-TASKKILL /F /PID {current_pid}
-echo Waiting for application to close...
-timeout /t 3 /nobreak > NUL
+        echo Closing FlexiTools (PID: {current_pid})...
+        TASKKILL /F /PID {current_pid}
+        echo Waiting for application to close...
+        timeout /t 3 /nobreak > NUL
 
-echo Running installer in silent mode...
-start /wait "" "{installer_path}" /S
+        echo Running installer in silent mode...
+        start /wait "" "{installer_path}" /S
 
-echo Installer finished.
-timeout /t 2 /nobreak > NUL
+        echo Installer finished.
+        timeout /t 2 /nobreak > NUL
 
-echo Restarting FlexiTools...
-start "" "{app_executable_path}"
+        echo Restarting FlexiTools...
+        start "" "{app_executable_path}"
 
-echo Cleaning up...
-del "{installer_path}"
-(goto) 2>nul & del "%~f0"
-"""
+        echo Cleaning up...
+        del "{installer_path}"
+        (goto) 2>nul & del "%~f0"
+        """
         temp_dir = tempfile.gettempdir()
         batch_file_path = os.path.join(temp_dir, "flexitools_update_runner.bat")
 
@@ -1643,6 +1607,7 @@ del "{installer_path}"
         self.maximized_module_name = None
         self._pre_maximize_layout = None
         self.save_layout_config()
+
 if __name__ == "__main__":
     import sys
     if '__main__' in sys.modules:
