@@ -1,5 +1,6 @@
 ; ¤p¤u¨ã²Õ NSIS ¦w¸Ë¸}¥»
 ; ½s½X: UTF-8
+; ¤ä´©: ­º¦¸¦w¸Ë¡BÀRÀq§ó·s¡B¤â°Ê­«½Æ¦w¸Ë
 
 ; °ò¥»³]©w
 !define PRODUCT_NAME "FlexiTools"
@@ -12,6 +13,7 @@
 
 ; ¥]§t²{¥N UI
 !include "MUI2.nsh"
+!include "LogicLib.nsh"
 
 ; ³]©w¦w¸ËÀÉ®×ÄÝ©Ê
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -23,6 +25,9 @@ ShowUnInstDetails show
 
 ; ­n¨DºÞ²z­ûÅv­­
 RequestExecutionLevel admin
+
+; ÀRÀq¦w¸Ë¤ä´©
+SilentInstall normal
 
 ; ¤¶­±³]©w
 !define MUI_ABORTWARNING
@@ -66,10 +71,24 @@ VIAddVersionKey /LANG=${LANG_TRADCHINESE} "FileDescription" "${PRODUCT_NAME} ¦w¸
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "FileVersion" "${PRODUCT_VERSION}"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "ProductVersion" "${PRODUCT_VERSION}"
 
+; ¥þ°ìÅÜ¼Æ
+Var IsUpdateMode
+Var IsFirstInstall
+Var SavesBackupPath
+
 ; ¥D­n¦w¸Ë°Ï¬q
 Section "Main Program" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
+  
+  ; ÀË¬d¬O§_¬°§ó·s¼Ò¦¡¡A¦pªG¬O«h³Æ¥÷ saves ¸ê®Æ§¨
+  ${If} $IsUpdateMode == "1"
+    DetailPrint "Update mode detected, backing up user data..."
+    IfFileExists "$INSTDIR\_internal\modules\saves\*.*" 0 +3
+      CreateDirectory "$TEMP\FlexiTools_Backup"
+      CopyFiles /SILENT "$INSTDIR\_internal\modules\saves\*.*" "$TEMP\FlexiTools_Backup"
+      StrCpy $SavesBackupPath "$TEMP\FlexiTools_Backup"
+  ${EndIf}
   
   ; ½Æ»s¥Dµ{¦¡ÀÉ®×
   File "dist\FlexiTools\FlexiTools.exe"
@@ -77,20 +96,38 @@ Section "Main Program" SEC01
   ; ½Æ»s _internal ¥Ø¿ý¤Î¨ä©Ò¦³¤º®e
   File /r "dist\FlexiTools\_internal"
   
-  ; «Ø¥ß¶}©l¥\¯àªí±¶®|
-  CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\¨ø¸ü ${PRODUCT_NAME}.lnk" "$INSTDIR\uninst.exe"
+  ; ¦pªG¬O§ó·s¼Ò¦¡¡A«ì´_ saves ¸ê®Æ§¨
+  ${If} $IsUpdateMode == "1"
+    ${AndIf} $SavesBackupPath != ""
+      DetailPrint "Restoring user data..."
+      CreateDirectory "$INSTDIR\_internal\modules\saves"
+      CopyFiles /SILENT "$SavesBackupPath\*.*" "$INSTDIR\_internal\modules\saves"
+      RMDir /r "$SavesBackupPath"
+  ${EndIf}
+  
+  ; ¥u¦b­º¦¸¦w¸Ë©Î¤â°Ê¦w¸Ë®É«Ø¥ß±¶®|
+  ${If} $IsUpdateMode != "1"
+    ; «Ø¥ß¶}©l¥\¯àªí±¶®|
+    CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
+    CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
+    CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\¨ø¸ü ${PRODUCT_NAME}.lnk" "$INSTDIR\uninst.exe"
+  ${EndIf}
 SectionEnd
 
 ; ®à­±±¶®|°Ï¬q¡]¥i¿ï¡^
 Section "Desktop Shortcut" SEC02
-  CreateShortCut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
+  ; ¥u¦b«D§ó·s¼Ò¦¡®É«Ø¥ß®à­±±¶®|
+  ${If} $IsUpdateMode != "1"
+    CreateShortCut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
+  ${EndIf}
 SectionEnd
 
 ; §Ö³t±Ò°Ê±¶®|°Ï¬q¡]¥i¿ï¡^
 Section "Quick Launch Shortcut" SEC03
-  CreateShortCut "$QUICKLAUNCH\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
+  ; ¥u¦b«D§ó·s¼Ò¦¡®É«Ø¥ß§Ö³t±Ò°Ê±¶®|
+  ${If} $IsUpdateMode != "1"
+    CreateShortCut "$QUICKLAUNCH\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
+  ${EndIf}
 SectionEnd
 
 ; °Ï¬q´y­z
@@ -102,8 +139,11 @@ SectionEnd
 
 ; ¦w¸Ë«á³B²z
 Section -AdditionalIcons
-  WriteIniStr "$INSTDIR\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\©x¤èºô¯¸.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
+  ; ¥u¦b«D§ó·s¼Ò¦¡®É«Ø¥ßºô¯¸³sµ²
+  ${If} $IsUpdateMode != "1"
+    WriteIniStr "$INSTDIR\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
+    CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\©x¤èºô¯¸.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
+  ${EndIf}
 SectionEnd
 
 Section -Post
@@ -116,8 +156,6 @@ Section -Post
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
 SectionEnd
-
-
 
 ; ¨ø¸ü°Ï¬q
 Section Uninstall
@@ -153,12 +191,32 @@ SectionEnd
 
 ; ¦w¸Ë«eÀË¬d
 Function .onInit
+  ; ªì©l¤ÆÅÜ¼Æ
+  StrCpy $IsUpdateMode "0"
+  StrCpy $IsFirstInstall "1"
+  StrCpy $SavesBackupPath ""
+  
+  ; ÀË¬d©R¥O¦C°Ñ¼Æ¬O§_¥]§t /UPDATE
+  ${GetOptions} $CMDLINE "/UPDATE" $R0
+  IfErrors +3 0
+    StrCpy $IsUpdateMode "1"
+    SetSilent silent
+  
   ; ÀË¬d¬O§_¤w¦w¸Ë
   ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"
-  StrCmp $R0 "" done
+  StrCmp $R0 "" first_install
   
+  ; ¤w¦w¸Ë¡A³]©w¬°«D­º¦¸¦w¸Ë
+  StrCpy $IsFirstInstall "0"
+  
+  ; ¦pªG¬O§ó·s¼Ò¦¡¡Aª½±µÄ~Äò¦w¸Ë
+  ${If} $IsUpdateMode == "1"
+    Goto done
+  ${EndIf}
+  
+  ; ¤â°Ê¦w¸Ë¼Ò¦¡¡G¸ß°Ý¬O§_¨ø¸üÂÂª©
   MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
-  "${PRODUCT_NAME} ¤w¸g¦w¸Ë¡C$\n$\nÂIÀ»¡u½T©w¡v²¾°£¥ý«eª©¥»¡A©ÎÂIÀ»¡u¨ú®ø¡v¨ú®ø¦w¸Ë¡C" \
+  "${PRODUCT_NAME} is already installed.$\n$\nClick OK to remove the previous version or Cancel to cancel this installation." \
   /SD IDOK IDOK uninst
   Abort
   
@@ -169,16 +227,33 @@ uninst:
   IfErrors no_remove_uninstaller done
     no_remove_uninstaller:
     
+  Goto done
+  
+first_install:
+  ; ­º¦¸¦w¸Ë
+  StrCpy $IsFirstInstall "1"
+  
 done:
+FunctionEnd
+
+; ®Ú¾Ú¦w¸Ë¼Ò¦¡½Õ¾ã¤¶­±
+Function .onGUIInit
+  ${If} $IsUpdateMode == "1"
+    ; §ó·s¼Ò¦¡¡GÁôÂÃ©Ò¦³¥i¿ï¤¸¥ó
+    !insertmacro UnselectSection ${SEC02}
+    !insertmacro UnselectSection ${SEC03}
+    SectionSetFlags ${SEC02} ${SF_RO}
+    SectionSetFlags ${SEC03} ${SF_RO}
+  ${EndIf}
 FunctionEnd
 
 ; ¨ø¸ü«e½T»{
 Function un.onInit
-  MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "±z½T©w­n§¹¥þ²¾°£ ${PRODUCT_NAME} ¤Î¨ä©Ò¦³¤¸¥ó¶Ü¡H" /SD IDYES IDYES +2
+  MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "Are you sure you want to completely remove ${PRODUCT_NAME} and all of its components?" /SD IDYES IDYES +2
   Abort
 FunctionEnd
 
 Function un.onUninstSuccess
   HideWindow
-  MessageBox MB_ICONINFORMATION|MB_OK "${PRODUCT_NAME} ¤w¦¨¥\±q±zªº¹q¸£²¾°£¡C" /SD IDOK
+  MessageBox MB_ICONINFORMATION|MB_OK "${PRODUCT_NAME} has been successfully removed from your computer." /SD IDOK
 FunctionEnd
