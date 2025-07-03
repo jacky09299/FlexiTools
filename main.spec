@@ -110,7 +110,7 @@ a = Analysis(
         'ezdxf',
         'scipy','scipy.io', 'scipy.io.matlab','scipy.signal',
         'yt_dlp',
-        'wave','threading','concurrent.futures','multiprocessing','queue','shutil','tempfile','io',
+        'wave','threading','concurrent.futures','multiprocessing','queue','shutil','tempfile','io', 'pygame',
     ],
     hookspath=[],
     hooksconfig={},

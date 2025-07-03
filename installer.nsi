@@ -95,9 +95,9 @@ SectionEnd
 
 ; 區段描述
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC01} "安裝 ${PRODUCT_NAME} 主程式檔案"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC02} "在桌面建立 ${PRODUCT_NAME} 捷徑"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC03} "在快速啟動列建立 ${PRODUCT_NAME} 捷徑"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC01} "Install the main program files of ${PRODUCT_NAME}"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC02} "Create a ${PRODUCT_NAME} shortcut on the desktop"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC03} "Create a ${PRODUCT_NAME} shortcut in the Quick Launch bar"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ; 安裝後處理
