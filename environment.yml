@@ -164,4 +164,3 @@ dependencies:
       - tkvideoplayer==2.8
       - ttkwidgets==0.13.0
       - yt-dlp==2025.6.30
-prefix: C:\Users\Jacky\anaconda3\envs\tools
