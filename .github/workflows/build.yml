@@ -1,0 +1,66 @@
+name: Build EXE and NSIS Installer
+
+on:
+  push:
+    branches:
+      - develop
+      - feature/**
+      - release/**
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set NSIS version number
+        if: startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/tags/')
+        shell: powershell
+        run: |
+          $version = "${{ github.ref }}" -replace 'refs/heads/release/v', '' -replace 'refs/tags/v', ''
+          Write-Host "Setting NSIS version to $version"
+          (Get-Content installer.nsi) -replace '(!define PRODUCT_VERSION\s+)"[^"]+"', "`$1 `"$version`"" | Set-Content installer.nsi
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          environment-file: environment.yml
+          activate-environment: tools
+          python-version: 3.9
+          auto-activate-base: false
+
+      - name: Install NSIS
+        run: choco install nsis -y
+
+      - name: Verify environment
+        shell: bash
+        run: |
+          conda info --envs
+          conda list
+
+      - name: Build with PyInstaller
+        shell: bash
+        run: |
+          conda run -n tools pyinstaller main.spec
+
+      - name: Build NSIS installer
+        shell: bash
+        run: |
+          "C:\\Program Files (x86)\\NSIS\\makensis.exe" installer.nsi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 小工具組安裝程式
+          path: 小工具組安裝程式.exe
+
+      - name: Publish release asset
+        if: startsWith(github.ref, 'refs/heads/release/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: 小工具組安裝程式.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
