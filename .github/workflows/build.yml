@@ -49,6 +49,9 @@ jobs:
         shell: powershell
         run: '& "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi'
 
+      - name: Rename installer to Chinese
+        shell: powershell
+        run: Rename-Item -Path ToolsInstaller.exe -NewName 小工具組安裝程式.exe
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

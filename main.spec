@@ -129,7 +129,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='小工具組',
+    name='Tools',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -150,12 +150,12 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='小工具組',
+    name='Tools',
 )
 
 
 def remove_cef_dlls():
-    target_dir = os.path.join("dist", "小工具組", "_internal", "cefpython3")
+    target_dir = os.path.join("dist", "Tools", "_internal", "cefpython3")
     if not os.path.exists(target_dir):
         return
     dlls_to_delete = [

@@ -58,7 +58,7 @@ RequestExecutionLevel admin
 ; 版本資訊
 VIProductVersion "1.0.0.0"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "ProductName" "${PRODUCT_NAME}"
-VIAddVersionKey /LANG=${LANG_TRADCHINESE} "Comments" "小工具組安裝程式"
+VIAddVersionKey /LANG=${LANG_TRADCHINESE} "Comments" "ToolsInstaller"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "CompanyName" "${PRODUCT_PUBLISHER}"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "LegalTrademarks" ""
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "LegalCopyright" "c ${PRODUCT_PUBLISHER}"
@@ -72,7 +72,7 @@ Section "主程式" SEC01
   SetOverwrite ifnewer
   
   ; 複製主程式檔案
-  File "dist\小工具組\小工具組.exe"
+  File "dist\Tools\Tools.exe"
   
   ; 複製 _internal 目錄及其所有內容
   File /r "dist\小工具組\_internal"
