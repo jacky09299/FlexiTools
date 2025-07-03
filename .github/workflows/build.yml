@@ -45,11 +45,6 @@ jobs:
         run: |
           conda info --envs
           conda list
-          
-      - name: Install pip requirements.txt
-        shell: powershell
-        run: |
-          conda run -n tools pip install -r requirements.txt
 
       - name: Build with PyInstaller
         shell: powershell
