@@ -36,20 +36,18 @@ jobs:
         run: choco install nsis -y
 
       - name: Verify environment
-        shell: bash
+        shell: powershell
         run: |
           conda info --envs
           conda list
 
       - name: Build with PyInstaller
-        shell: bash
-        run: |
-          conda run -n tools pyinstaller main.spec
+        shell: powershell
+        run: conda run -n tools pyinstaller main.spec
 
       - name: Build NSIS installer
-        shell: bash
-        run: |
-          "C:\\Program Files (x86)\\NSIS\\makensis.exe" installer.nsi
+        shell: powershell
+        run: '"C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi'
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
