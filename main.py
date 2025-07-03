@@ -13,6 +13,37 @@ import importlib.util
 from shared_state import SharedState
 import logging
 import json
+import threading # For running update checks in background
+import tempfile # For temporary installer download
+import subprocess # For running installer and helper script
+import os # For PID and path manipulation (os.getpid, os.path.join etc.)
+# sys is already imported
+
+# Attempt to import update_manager and its components
+try:
+    import update_manager
+except ImportError:
+    # This fallback is for environments where update_manager.py might not be discoverable
+    # during certain development phases or if the file structure is temporarily changed.
+    # A more robust solution would ensure PYTHONPATH is correctly set or use relative imports if structured as a package.
+    print("ERROR: update_manager.py not found. Update functionality will be disabled.")
+    print(f"Current sys.path: {sys.path}")
+    # Define dummy functions/constants if update_manager is critical for other parts of main.py to load
+    class update_manager: # type: ignore
+        UPDATE_AVAILABLE = "UPDATE_AVAILABLE"
+        NO_UPDATE_FOUND = "NO_UPDATE_FOUND"
+        ERROR_FETCHING = "ERROR_FETCHING"
+        ERROR_CONFIG = "ERROR_CONFIG"
+        CHECK_SKIPPED_RATE_LIMIT = "CHECK_SKIPPED_RATE_LIMIT"
+        CHECK_SKIPPED_ALREADY_PENDING = "CHECK_SKIPPED_ALREADY_PENDING"
+
+        @staticmethod
+        def get_current_version(): return "N/A"
+        @staticmethod
+        def get_update_info(): return {}
+        @staticmethod
+        def check_for_updates(force_check=False): return update_manager.ERROR_CONFIG
+
 
 class Module:
     def __init__(self, master, shared_state, module_name="UnknownModule", gui_manager=None):
@@ -379,13 +410,30 @@ class ModularGUI:
 
     def __init__(self, root):
         self.root = root
-        self.root.title("Modular GUI Framework")
+        self.root.title("Modular GUI Framework") # Will be updated to FlexiTools by user, or we can set it here.
         self.root.geometry("800x600")
 
-        # 新增儲存檔資料夾
-        self.saves_dir = os.path.join("modules", "saves")
-        if not os.path.exists(self.saves_dir):
-            os.makedirs(self.saves_dir)
+        # Use user-writable directory for saves (layouts, profiles, update_info)
+        # The get_user_writable_data_path in update_manager returns the 'saves' subdirectory directly.
+        self.saves_dir = update_manager.SAVES_DIR
+        if self.saves_dir is None:
+            # This is a critical failure. update_manager.py logs this.
+            # main.py should probably show an error and potentially exit or run in a degraded mode.
+            messagebox.showerror("Fatal Error",
+                                 "Could not determine or create a writable directory for application data. "
+                                 "Settings and session data will not be saved.")
+            # Fallback to a local 'modules/saves' for dev or if all else fails,
+            # but this won't work well for an installed application.
+            self.shared_state.log("CRITICAL: Using fallback self.saves_dir due to earlier errors.", "ERROR")
+            self.saves_dir = os.path.join("modules", "saves") # Original problematic path
+            try:
+                if not os.path.exists(self.saves_dir):
+                    os.makedirs(self.saves_dir)
+            except Exception as e_mkdir:
+                 self.shared_state.log(f"Failed to create even fallback saves_dir: {e_mkdir}", "ERROR")
+                 self.saves_dir = "." # Last ditch
+
+        self.shared_state.log(f"Application saves directory set to: {self.saves_dir}", "INFO")
 
         self.menubar = tk.Menu(self.root)
         self.root.config(menu=self.menubar)
@@ -400,6 +448,12 @@ class ModularGUI:
         self.profile_menu.add_command(label="載入設定檔...", command=self.load_profile_dialog)
         self.profile_menu.add_separator()
         self.profile_menu.add_command(label="管理設定檔...", command=self.manage_profiles_dialog)
+
+        # Help Menu & Update Check
+        self.help_menu = tk.Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="Help", menu=self.help_menu)
+        self.help_menu.add_command(label="Check for Updates...", command=self.ui_check_for_updates_manual)
+        # We can add an "About" item here later if desired
 
         s = ttk.Style()
         s.configure("DragHandle.TFrame", background="lightgrey")
@@ -475,7 +529,242 @@ class ModularGUI:
 
         self.setup_default_layout()
 
+        # Initial update check on startup (non-blocking)
+        self.root.after(1000, self.ui_check_for_updates_startup) # Delay slightly to let UI load
+
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def _start_download_in_thread(self, version_to_download, download_url):
+        """Starts the download process in a separate thread."""
+        download_thread = threading.Thread(
+            target=self._download_installer_and_launch_update,
+            args=(version_to_download, download_url),
+            daemon=True
+        )
+        download_thread.start()
+
+    def _download_installer_and_launch_update(self, version_to_download, download_url):
+        """Downloads the installer and then launches the update helper script."""
+        try:
+            self.shared_state.log(f"Starting download of version {version_to_download} from {download_url}", "INFO")
+            # Simple progress indication (can be improved with a proper progress bar)
+            self.root.after(0, lambda: messagebox.showinfo("Downloading Update",
+                                                           f"Downloading version {version_to_download}...\nPlease wait.",
+                                                           parent=self.root))
+
+            import requests # Local import for thread safety and clarity
+            response = requests.get(download_url, stream=True, timeout=300) # 5 min timeout for download
+            response.raise_for_status()
+
+            # Save to a temporary file
+            temp_dir = tempfile.gettempdir()
+            installer_filename = f"FlexiToolsInstaller_{version_to_download.lstrip('v')}.exe"
+            temp_installer_path = os.path.join(temp_dir, installer_filename)
+
+            total_size = int(response.headers.get('content-length', 0))
+            bytes_downloaded = 0
+
+            with open(temp_installer_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+                    bytes_downloaded += len(chunk)
+                    # Basic progress logging, could update a GUI element here
+                    if total_size > 0:
+                        progress = (bytes_downloaded / total_size) * 100
+                        self.shared_state.log(f"Download progress: {progress:.2f}%", "DEBUG")
+
+
+            self.shared_state.log(f"Installer downloaded to: {temp_installer_path}", "INFO")
+
+            # Proceed to launch the update helper
+            self.root.after(0, self._launch_update_helper, temp_installer_path)
+
+        except requests.exceptions.RequestException as e:
+            self.shared_state.log(f"Download failed: {e}", "ERROR")
+            self.root.after(0, lambda: messagebox.showerror("Download Failed",
+                                                           f"Failed to download the update: {e}",
+                                                           parent=self.root))
+        except Exception as e:
+            self.shared_state.log(f"An error occurred during download: {e}", "ERROR")
+            self.root.after(0, lambda: messagebox.showerror("Download Error",
+                                                           f"An unexpected error occurred during download: {e}",
+                                                           parent=self.root))
+        finally:
+            # Re-enable UI elements if they were disabled
+            if hasattr(self, 'help_menu'):
+                try:
+                    self.help_menu.entryconfig("Check for Updates...", state=tk.NORMAL)
+                except tk.TclError:
+                    pass
+
+
+    def _launch_update_helper(self, installer_path):
+        """Creates and runs a helper batch script to perform the update."""
+        self.shared_state.log("Preparing to launch update helper script.", "INFO")
+
+        confirm_update = messagebox.askyesno("Ready to Update",
+                                             "The update has been downloaded.\n\n"
+                                             "FlexiTools will now close to install the update and then restart automatically.\n\n"
+                                             "Do you want to proceed?", parent=self.root)
+        if not confirm_update:
+            self.shared_state.log("User cancelled update before applying.", "INFO")
+            try: # Clean up downloaded installer
+                if os.path.exists(installer_path):
+                    os.remove(installer_path)
+                    self.shared_state.log(f"Cleaned up downloaded installer: {installer_path}", "INFO")
+            except Exception as e:
+                self.shared_state.log(f"Error cleaning up installer {installer_path}: {e}", "WARNING")
+            return
+
+        current_pid = os.getpid()
+        # sys.executable is the path to FlexiTools.exe when bundled
+        # For development, it's python.exe, so we need to be careful.
+        # The restart path should point to the installed FlexiTools.exe.
+        # We assume the installer puts FlexiTools.exe in a known location relative to its install dir.
+        # The NSI script uses $INSTDIR\FlexiTools.exe
+        # sys.executable should be this path when the bundled app is running.
+
+        app_executable_path = sys.executable
+        if not getattr(sys, 'frozen', False): # Development mode
+            self.shared_state.log("Development mode: Update restart might not work as expected. Simulating.", "WARNING")
+            # In dev, sys.executable is python.exe. We'd need to restart main.py.
+            # For now, just show a message and don't create a real batch file for dev.
+            messagebox.showinfo("Dev Mode Update", "In development mode, pretend update is happening. Please restart manually.", parent=self.root)
+            self.root.destroy() # Close app
+            return
+
+        # Create batch script content
+        batch_script_content = f"""@echo off
+echo Closing FlexiTools (PID: {current_pid})...
+TASKKILL /F /PID {current_pid}
+echo Waiting for application to close...
+timeout /t 3 /nobreak > NUL
+
+echo Running installer in silent mode...
+start /wait "" "{installer_path}" /S
+
+echo Installer finished.
+timeout /t 2 /nobreak > NUL
+
+echo Restarting FlexiTools...
+start "" "{app_executable_path}"
+
+echo Cleaning up...
+del "{installer_path}"
+(goto) 2>nul & del "%~f0"
+"""
+        temp_dir = tempfile.gettempdir()
+        batch_file_path = os.path.join(temp_dir, "flexitools_update_runner.bat")
+
+        try:
+            with open(batch_file_path, "w") as bf:
+                bf.write(batch_script_content)
+            self.shared_state.log(f"Update helper script created at: {batch_file_path}", "INFO")
+
+            # Launch the batch script in a new process, detached if possible
+            # CREATE_NEW_CONSOLE or DETACHED_PROCESS can be used.
+            # DETACHED_PROCESS is better as it won't show a console window briefly.
+            # However, DETACHED_PROCESS might not work with TASKKILL on itself if not careful.
+            # For simplicity, allowing a brief console window for the updater is acceptable.
+            subprocess.Popen([batch_file_path], creationflags=subprocess.CREATE_NEW_CONSOLE)
+
+            self.shared_state.log("Update helper script launched. Closing application.", "INFO")
+            self.root.destroy() # Close the current application
+
+        except Exception as e:
+            self.shared_state.log(f"Failed to create or launch update helper script: {e}", "ERROR")
+            messagebox.showerror("Update Error", f"Failed to start the update process: {e}", parent=self.root)
+
+
+    def _initiate_update_download_and_install(self, version, url):
+        self.shared_state.log(f"User agreed to update to version {version} from {url}. Starting download process...", "INFO")
+        # Start the download in a new thread
+        self._start_download_in_thread(version, url)
+
+
+    def _handle_update_check_result(self, status_code, manual_check=False):
+        """Handles the result from check_for_updates and interacts with the user."""
+        if status_code == update_manager.UPDATE_AVAILABLE:
+            update_details = update_manager.get_update_info().get("available_update")
+            if update_details:
+                version = update_details["version"]
+                url = update_details["url"]
+                current_version_str = update_manager.get_current_version()
+                msg = (f"A new version ({version}) of {update_manager.APP_NAME} is available!\n"
+                       f"You are currently running version {current_version_str}.\n\n"
+                       "Would you like to download and install it now?")
+                if messagebox.askyesno("Update Available", msg):
+                    self._initiate_update_download_and_install(version, url)
+                else:
+                    self.shared_state.log("User declined automatic update.", "INFO")
+            else: # Should not happen if status is UPDATE_AVAILABLE
+                 if manual_check:
+                    messagebox.showerror("Update Error", "Update information is inconsistent. Please try again.")
+                 self.shared_state.log("Update status was AVAILABLE but no details found in update_info.json.", "ERROR")
+
+        elif status_code == update_manager.NO_UPDATE_FOUND:
+            if manual_check: # Only show "up to date" if user manually checked
+                messagebox.showinfo("No Updates", f"{update_manager.APP_NAME} is up to date.")
+            self.shared_state.log("No new update found.", "INFO")
+
+        elif status_code == update_manager.ERROR_FETCHING:
+            if manual_check:
+                messagebox.showerror("Update Check Failed",
+                                     "Could not connect to the update server. Please check your internet connection and try again.")
+            self.shared_state.log("Error fetching update information.", "WARNING")
+
+        elif status_code == update_manager.ERROR_CONFIG:
+            if manual_check:
+                 messagebox.showerror("Update Error",
+                                     "There was an error with the update configuration. Please contact support or try reinstalling the application.")
+            self.shared_state.log("Update configuration error.", "ERROR")
+
+        elif status_code in [update_manager.CHECK_SKIPPED_RATE_LIMIT, update_manager.CHECK_SKIPPED_ALREADY_PENDING]:
+            if manual_check: # Should not happen if force_check=True was used for manual check
+                 self.shared_state.log(f"Manual check resulted in unexpected status: {status_code}", "WARNING")
+            else: # Startup check
+                 self.shared_state.log(f"Update check skipped: {status_code}", "INFO")
+
+        # Re-enable menu item if it was disabled during check
+        if manual_check and hasattr(self, 'help_menu'):
+            try:
+                self.help_menu.entryconfig("Check for Updates...", state=tk.NORMAL)
+            except tk.TclError:
+                pass # Menu might not exist or item removed
+
+    def _perform_update_check_threaded(self, force_check=False, is_manual_check=False):
+        """Worker function for threaded update check."""
+        self.shared_state.log(f"Threaded update check started. Force: {force_check}, Manual: {is_manual_check}", "INFO")
+        if is_manual_check and hasattr(self, 'help_menu'): # Disable menu item during check
+            try:
+                self.help_menu.entryconfig("Check for Updates...", state=tk.DISABLED)
+            except tk.TclError:
+                pass # Menu might not exist or item removed
+
+        status = update_manager.check_for_updates(force_check=force_check)
+        # Schedule GUI updates back on the main thread
+        self.root.after(0, self._handle_update_check_result, status, is_manual_check)
+
+    def ui_check_for_updates_startup(self):
+        """Initiates the non-blocking update check on startup."""
+        self.shared_state.log("Initiating startup update check.", "INFO")
+        # Run in a separate thread to not block GUI
+        thread = threading.Thread(target=self._perform_update_check_threaded, args=(False, False), daemon=True)
+        thread.start()
+
+    def ui_check_for_updates_manual(self):
+        """Handles the 'Check for Updates...' menu command."""
+        self.shared_state.log("Manual update check initiated by user.", "INFO")
+        if hasattr(self, 'help_menu'): # Show some immediate feedback
+            try:
+                # Potentially show a "checking..." message or disable button temporarily
+                # For now, just log. Disabling is handled in the thread.
+                messagebox.showinfo("Checking for Updates", "Checking for updates in the background...", parent=self.root)
+            except tk.TclError:
+                pass # Menu might not exist or item removed
+
+        thread = threading.Thread(target=self._perform_update_check_threaded, args=(True, True), daemon=True)
+        thread.start()
 
     def _finalize_initial_window_state(self):
         self.root.update_idletasks()
