@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - develop
-      - feature/**
       - release/**
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -60,7 +61,7 @@ jobs:
           path: '小工具組安裝程式.exe'
 
       - name: Publish release asset
-        if: startsWith(github.ref, 'refs/heads/release/')
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: '小工具組安裝程式.exe'
