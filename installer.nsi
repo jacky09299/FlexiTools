@@ -67,7 +67,7 @@ VIAddVersionKey /LANG=${LANG_TRADCHINESE} "FileVersion" "${PRODUCT_VERSION}"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "ProductVersion" "${PRODUCT_VERSION}"
 
 ; 主要安裝區段
-Section "主程式" SEC01
+Section "Main Program" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
   
@@ -84,12 +84,12 @@ Section "主程式" SEC01
 SectionEnd
 
 ; 桌面捷徑區段（可選）
-Section "桌面捷徑" SEC02
+Section "Desktop Shortcut" SEC02
   CreateShortCut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
 SectionEnd
 
 ; 快速啟動捷徑區段（可選）
-Section "快速啟動捷徑" SEC03
+Section "Quick Launch Shortcut" SEC03
   CreateShortCut "$QUICKLAUNCH\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
 SectionEnd
 
