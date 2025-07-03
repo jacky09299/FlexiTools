@@ -4,7 +4,7 @@
 ; 基本設定
 !define PRODUCT_NAME "小工具組"
 !define PRODUCT_VERSION "1.0.0"
-!define PRODUCT_PUBLISHER "您的公司名稱"
+!define PRODUCT_PUBLISHER "李紘宇"
 !define PRODUCT_WEB_SITE "https://your-website.com"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\小工具組.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
@@ -75,7 +75,7 @@ Section "主程式" SEC01
   File "dist\Tools\Tools.exe"
   
   ; 複製 _internal 目錄及其所有內容
-  File /r "dist\小工具組\_internal"
+  File /r "dist\Tools\_internal"
   
   ; 建立開始功能表捷徑
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
