@@ -2,11 +2,11 @@
 ; 編碼: UTF-8
 
 ; 基本設定
-!define PRODUCT_NAME "小工具組"
+!define PRODUCT_NAME "FlexiTools"
 !define PRODUCT_VERSION "1.0.0"
 !define PRODUCT_PUBLISHER "李紘宇"
-!define PRODUCT_WEB_SITE "https://your-website.com"
-!define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\小工具組.exe"
+!define PRODUCT_WEB_SITE "https://github.com/jacky09299/FlexiTools"
+!define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\FlexiTools.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
@@ -15,7 +15,7 @@
 
 ; 設定安裝檔案屬性
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "ToolsInstaller.exe"
+OutFile "FlexiToolsInstaller.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT_NAME}"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
@@ -45,7 +45,7 @@ RequestExecutionLevel admin
 !insertmacro MUI_PAGE_INSTFILES
 
 ; 完成頁面
-!define MUI_FINISHPAGE_RUN "$INSTDIR\小工具組.exe"
+!define MUI_FINISHPAGE_RUN "$INSTDIR\FlexiTools.exe"
 !insertmacro MUI_PAGE_FINISH
 
 ; 卸載頁面
@@ -58,7 +58,7 @@ RequestExecutionLevel admin
 ; 版本資訊
 VIProductVersion "1.0.0.0"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "ProductName" "${PRODUCT_NAME}"
-VIAddVersionKey /LANG=${LANG_TRADCHINESE} "Comments" "小工具組安裝程式"
+VIAddVersionKey /LANG=${LANG_TRADCHINESE} "Comments" "FlexiToolsInstaller"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "CompanyName" "${PRODUCT_PUBLISHER}"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "LegalTrademarks" ""
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "LegalCopyright" "c ${PRODUCT_PUBLISHER}"
@@ -72,25 +72,25 @@ Section "主程式" SEC01
   SetOverwrite ifnewer
   
   ; 複製主程式檔案
-  File "dist\Tools\Tools.exe"
+  File "dist\FlexiTools\FlexiTools.exe"
   
   ; 複製 _internal 目錄及其所有內容
-  File /r "dist\Tools\_internal"
+  File /r "dist\FlexiTools\_internal"
   
   ; 建立開始功能表捷徑
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk" "$INSTDIR\小工具組.exe"
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\卸載 ${PRODUCT_NAME}.lnk" "$INSTDIR\uninst.exe"
 SectionEnd
 
 ; 桌面捷徑區段（可選）
 Section "桌面捷徑" SEC02
-  CreateShortCut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\小工具組.exe"
+  CreateShortCut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
 SectionEnd
 
 ; 快速啟動捷徑區段（可選）
 Section "快速啟動捷徑" SEC03
-  CreateShortCut "$QUICKLAUNCH\${PRODUCT_NAME}.lnk" "$INSTDIR\小工具組.exe"
+  CreateShortCut "$QUICKLAUNCH\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
 SectionEnd
 
 ; 區段描述
@@ -108,10 +108,10 @@ SectionEnd
 
 Section -Post
   WriteUninstaller "$INSTDIR\uninst.exe"
-  WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\小工具組.exe"
+  WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\FlexiTools.exe"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString" "$INSTDIR\uninst.exe"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\小工具組.exe"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\FlexiTools.exe"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
@@ -124,7 +124,7 @@ Section Uninstall
   ; 刪除檔案和目錄
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
   Delete "$INSTDIR\uninst.exe"
-  Delete "$INSTDIR\小工具組.exe"
+  Delete "$INSTDIR\FlexiTools.exe"
   
   ; 刪除 _internal 目錄
   RMDir /r "$INSTDIR\_internal"

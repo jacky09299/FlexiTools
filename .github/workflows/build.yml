@@ -57,10 +57,10 @@ jobs:
       - name: Verify installer was created
         shell: powershell
         run: |
-          if (Test-Path "ToolsInstaller.exe") {
-            Write-Host "ToolsInstaller.exe found, file size: $((Get-Item ToolsInstaller.exe).Length) bytes"
+          if (Test-Path "FlexiToolsInstaller.exe") {
+            Write-Host "FlexiToolsInstaller.exe found, file size: $((Get-Item FlexiToolsInstaller.exe).Length) bytes"
           } else {
-            Write-Host "ERROR: ToolsInstaller.exe not found!"
+            Write-Host "ERROR: FlexiToolsInstaller.exe not found!"
             Get-ChildItem -Path . -Filter "*.exe" | ForEach-Object { Write-Host "Found: $($_.Name)" }
             exit 1
           }
@@ -68,17 +68,17 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ToolsInstaller
-          path: 'ToolsInstaller.exe'
+          name: FlexiToolsInstaller
+          path: 'FlexiToolsInstaller.exe'
 
       - name: Publish release asset
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: 'ToolsInstaller.exe'
+          files: 'FlexiToolsInstaller.exe'
           # You can add a custom name in the release notes
           body: |
             ## 下載 Download
-            - [小工具組安裝程式 (ToolsInstaller.exe)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/ToolsInstaller.exe)
+            - [小工具組安裝程式 (FlexiToolsInstaller.exe)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/FlexiToolsInstaller.exe)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

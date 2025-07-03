@@ -129,7 +129,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='Tools',
+    name='FlexiTools',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -150,12 +150,12 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='Tools',
+    name='FlexiTools',
 )
 
 
 def remove_cef_dlls():
-    target_dir = os.path.join("dist", "Tools", "_internal", "cefpython3")
+    target_dir = os.path.join("dist", "FlexiTools", "_internal", "cefpython3")
     if not os.path.exists(target_dir):
         return
     dlls_to_delete = [
