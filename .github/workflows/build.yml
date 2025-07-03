@@ -47,7 +47,8 @@ jobs:
 
       - name: Build NSIS installer
         shell: powershell
-        run: '"C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi'
+        run: '& "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi'
+
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
