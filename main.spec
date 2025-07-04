@@ -25,6 +25,7 @@ a = Analysis(
         *cv2_binaries,
     ],
     datas=[
+        ('LICENSE', '.'),
         # 模組資料與 CEF 資料
         ('modules', 'modules'),
         ('dependencies/cef_dependencies/locales', 'locales'),
