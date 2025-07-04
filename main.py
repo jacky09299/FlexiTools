@@ -10,8 +10,12 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import simpledialog, messagebox
 import importlib.util
+import random
 from shared_state import SharedState
-from style_manager import configure_styles, apply_post_creation_styles
+from style_manager import (
+    configure_styles, apply_post_creation_styles,
+    COLOR_GRADIENT_START, COLOR_GRADIENT_END, COLOR_STARS, COLOR_PRIMARY_BG
+)
 import logging
 import json
 import threading # For running update checks in background
@@ -36,7 +40,7 @@ except ImportError:
         ERROR_FETCHING = "ERROR_FETCHING"
         ERROR_CONFIG = "ERROR_CONFIG"
         CHECK_SKIPPED_RATE_LIMIT = "CHECK_SKIPPED_RATE_LIMIT"
-        CHECK_SKIPPED_ALREADY_PENDING = "CHECK_SKIPPED_ALREADY_PENDEDING"
+        CHECK_SKIPPED_ALREADY_PENDING = "CHECK_SKIPPED_ALREADY_PENDING"
 
         @staticmethod
         def get_current_version(): return "N/A"
@@ -45,6 +49,72 @@ except ImportError:
         @staticmethod
         def check_for_updates(force_check=False): return update_manager.ERROR_CONFIG
 
+class AnimatedCanvas(tk.Canvas):
+    """一個具有動態漸變背景和閃爍星星的畫布。"""
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs, highlightthickness=0)
+        self.stars = []
+        self.bind("<Configure>", self._on_resize)
+        self._draw_gradient()
+        self._create_stars(100)
+        self._animate_stars()
+
+    def _hex_to_rgb(self, hex_color):
+        hex_color = hex_color.lstrip('#')
+        return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
+    def _rgb_to_hex(self, rgb):
+        return f'#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}'
+
+    def _draw_gradient(self):
+        self.delete("gradient")
+        width = self.winfo_width()
+        height = self.winfo_height()
+        if width < 2 or height < 2: # Avoid drawing on a 1x1 canvas
+            return
+
+        start_rgb = self._hex_to_rgb(COLOR_GRADIENT_START)
+        end_rgb = self._hex_to_rgb(COLOR_GRADIENT_END)
+
+        for i in range(height):
+            # Calculate color for this line
+            new_rgb = [
+                int(start_rgb[j] + (end_rgb[j] - start_rgb[j]) * (i / height))
+                for j in range(3)
+            ]
+            color = self._rgb_to_hex(new_rgb)
+            self.create_line(0, i, width, i, fill=color, tags="gradient")
+        self.lower("gradient") # Ensure gradient is behind everything else
+
+    def _create_stars(self, number_of_stars):
+        self.delete("star")
+        width = self.winfo_width()
+        height = self.winfo_height()
+        if width < 2 or height < 2:
+            return
+        self.stars = []
+        for _ in range(number_of_stars):
+            x = random.randint(0, width)
+            y = random.randint(0, height)
+            size = random.uniform(0.5, 1.5)
+            color = random.choice(COLOR_STARS)
+            star_id = self.create_oval(x, y, x + size, y + size, fill=color, outline="", tags="star")
+            self.stars.append(star_id)
+
+    def _animate_stars(self):
+        for star_id in self.stars:
+            if random.random() < 0.01: # 1% chance to twinkle
+                new_color = random.choice(COLOR_STARS)
+                try:
+                    self.itemconfig(star_id, fill=new_color)
+                except tk.TclError:
+                    # This can happen if the star was deleted during a resize
+                    pass
+        self.after(50, self._animate_stars) # Repeat every 50ms
+
+    def _on_resize(self, event=None):
+        self._draw_gradient()
+        self._create_stars(100)
 
 class Module:
     def __init__(self, master, shared_state, module_name="UnknownModule", gui_manager=None):
@@ -233,7 +303,7 @@ class Module:
     def on_destroy(self):
         self.shared_state.log(f"Module '{self.module_name}' is being destroyed.")
 
-class CustomLayoutManager(ttk.Frame):
+class CustomLayoutManager(AnimatedCanvas):
     def __init__(self, master, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.modules = {}
@@ -491,7 +561,7 @@ class ModularGUI:
         self.canvas_container = ttk.Frame(self.root, style='Main.TFrame')
         self.canvas_container.pack(fill=tk.BOTH, expand=True)
 
-        self.canvas = tk.Canvas(self.canvas_container, bg='#212121', highlightthickness=0)
+        self.canvas = tk.Canvas(self.canvas_container, bg=COLOR_PRIMARY_BG, highlightthickness=0)
 
         self.v_scrollbar = ttk.Scrollbar(self.canvas_container, orient=tk.VERTICAL, command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=self.v_scrollbar.set)
@@ -500,7 +570,7 @@ class ModularGUI:
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.canvas_container.pack_propagate(False)
 
-        self.main_layout_manager = CustomLayoutManager(self.canvas, style='Main.TFrame')
+        self.main_layout_manager = CustomLayoutManager(self.canvas)
 
         self.main_layout_manager_window_id = self.canvas.create_window(
             (0, 0), window=self.main_layout_manager, anchor='nw'
@@ -1617,3 +1687,4 @@ if __name__ == "__main__":
     apply_post_creation_styles(root)
     app = ModularGUI(root)
     root.mainloop()
+
