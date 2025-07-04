@@ -1,0 +1,208 @@
+
+:root {
+    --primary-color: #00bfff; /* DeepSkyBlue */
+    --background-color: #121212;
+    --surface-color: #1e1e1e;
+    --text-color: #e0e0e0;
+    --muted-text-color: #d1d1d1;
+    --border-color: #333;
+}
+
+.text-muted {
+    color: #9ca3af !important; /* 這裡用你想要的顏色代碼 */
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    padding-top: 56px;
+}
+
+.navbar {
+    background-color: rgba(30, 30, 30, 0.85) !important;
+    backdrop-filter: blur(10px);
+}
+
+.navbar-brand img {
+    transition: transform 0.3s ease-in-out;
+}
+
+.navbar-brand:hover img {
+    transform: rotate(360deg);
+}
+
+.nav-link {
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--primary-color) !important;
+}
+
+/* Hero Section */
+.hero-section {
+    padding: 120px 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.hero-section h1 {
+    font-size: 4.5rem; /* Increased font size */
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 0 0 15px rgba(0, 191, 255, 0.5);
+}
+
+.hero-section .lead {
+    font-size: 1.3rem;
+    color: var(--muted-text-color);
+    max-width: 700px;
+    margin: 20px auto 30px auto;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #000;
+    font-weight: 600;
+    padding: 12px 30px;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 191, 255, 0.4);
+}
+
+.btn-primary:hover {
+    background-color: #00a6d9;
+    border-color: #00a6d9;
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(0, 191, 255, 0.6);
+}
+
+.btn-secondary {
+    background-color: transparent;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 600;
+    padding: 12px 30px;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background-color: var(--primary-color);
+    color: #000;
+    transform: translateY(-2px);
+}
+
+/* Features Section */
+.feature-icon {
+    display: inline-block;
+    width: 70px;
+    height: 70px;
+    line-height: 70px;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--surface-color);
+    color: var(--primary-color);
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.feature-item:hover .feature-icon {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px var(--primary-color);
+}
+
+/* General Content */
+.page-title {
+    font-size: 3rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 50px;
+    color: var(--primary-color);
+    text-shadow: 0 0 10px rgba(0, 191, 255, 0.3);
+}
+
+/* Card Styles */
+.card {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.card-body {
+    color: var(--text-color);
+}
+
+/* Accordion */
+.accordion-item {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+}
+
+.accordion-header .accordion-button {
+    background-color: var(--surface-color);
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.accordion-button:not(.collapsed) {
+    color: var(--primary-color);
+    background-color: #2a2a2a;
+    box-shadow: inset 0 -1px 0 var(--border-color);
+}
+
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.25rem rgba(0, 191, 255, 0.25);
+}
+
+.accordion-body {
+    background-color: #9ca3af;
+}
+
+/* List Group (Download Page) */
+.list-group-item {
+    background-color: var(--surface-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+    padding: 1.5rem;
+    transition: background-color 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: #2a2a2a;
+}
+
+.list-group-item-success {
+    background-color: rgba(0, 191, 255, 0.1);
+    border-left: 5px solid var(--primary-color);
+}
+
+.btn-success {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #000;
+}
+
+.btn-success:hover {
+    background-color: #00a6d9;
+    border-color: #00a6d9;
+}
+
+/* Footer */
+footer {
+    background-color: var(--surface-color) !important;
+    border-top: 1px solid var(--border-color);
+    color: var(--muted-text-color);
+}
