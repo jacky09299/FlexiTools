@@ -63,7 +63,7 @@ FlexiTools 內建了多種實用工具模組，涵蓋了從開發、數據分析
 
 1.  **複製專案**:
     ```bash
-    git clone https://github.com/your-username/FlexiTools.git
+    git clone https://github.com/jacky09299/FlexiTools.git
     cd FlexiTools
     ```
 
