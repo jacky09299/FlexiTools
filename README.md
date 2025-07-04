@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="tools.ico" alt="FlexiLab Logo" width="128">
+  <img src="assets/logo.png" alt="FlexiLab Logo" width="128">
   <h1 align="center">FlexiLab</h1>
   <p align="center">
     一個基於 Python Tkinter 的模組化桌面應用程式，提供可自由組合、拖曳、縮放的工具介面。
