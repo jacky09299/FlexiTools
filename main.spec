@@ -25,6 +25,7 @@ a = Analysis(
         *cv2_binaries,
     ],
     datas=[
+        ('LICENSE', '.'),
         # 模組資料與 CEF 資料
         ('modules', 'modules'),
         ('dependencies/cef_dependencies/locales', 'locales'),
@@ -78,7 +79,6 @@ a = Analysis(
         'reportlab.graphics.shapes',
         'reportlab.graphics.charts',
         'reportlab.graphics.widgets.markers',
-        'pymupdf',
 
         # 影片與音訊
         'moviepy',
@@ -105,9 +105,7 @@ a = Analysis(
 
         # 其他潛在隱藏模組
         'pkg_resources.py2_warn',
-        'gdstk',
         'fitz',
-        'ezdxf',
         'scipy','scipy.io', 'scipy.io.matlab','scipy.signal',
         'yt_dlp',
         'wave','threading','concurrent.futures','multiprocessing','queue','shutil','tempfile','io', 'pygame',
