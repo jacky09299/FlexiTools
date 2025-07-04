@@ -4,8 +4,12 @@
     --background-color: #121212;
     --surface-color: #1e1e1e;
     --text-color: #e0e0e0;
-    --muted-text-color: #a0a0a0;
+    --muted-text-color: #d1d1d1;
     --border-color: #333;
+}
+
+.text-muted {
+    color: #9ca3af !important; /* 這裡用你想要的顏色代碼 */
 }
 
 body {
@@ -164,7 +168,7 @@ body {
 }
 
 .accordion-body {
-    background-color: #1a1a1a;
+    background-color: #9ca3af;
 }
 
 /* List Group (Download Page) */

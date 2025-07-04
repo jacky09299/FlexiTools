@@ -7,6 +7,35 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        /* Hero logo and title hover effect */
+        .hero-logo-title {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            justify-content: center;
+        }
+        .hero-logo,
+        .hero-title {
+            transition: transform 0.2s cubic-bezier(.4,2,.6,1), box-shadow 0.2s, color 0.2s;
+            cursor: pointer;
+        }
+        .hero-subtitle {
+            transition: transform 0.2s cubic-bezier(.4,2,.6,1), box-shadow 0.2s, color 0.2s;
+            cursor: pointer;
+        }
+        .hero-logo:hover,
+        .hero-title:hover {
+            transform: scale(1.08) rotate(-2deg);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+            color: #0d6efd;
+        }
+        .hero-subtitle:hover {
+            transform: scale(1.03) rotate(-0.5deg);
+            box-shadow: 0 2px 8px rgba(13,110,253,0.08);
+            color: #0d6efd;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
@@ -31,9 +60,14 @@
     </nav>
 
     <header class="hero-section">
-        <div class="container">
-            <h1>FlexiTools</h1>
-            <p class="lead">一個為現代工作流程設計的、模組化的桌面工具箱。</p>
+        <div class="container text-center">
+            <div class="hero-logo-title mb-3">
+                <img src="logo.png" alt="FlexiTools Logo" class="hero-logo" style="width:120px;height:120px;">
+                <div class="text-start">
+                    <h1 class="mb-1 hero-title">FlexiTools</h1>
+                    <p class="lead mb-0 hero-subtitle">一個為現代工作流程設計的、模組化的桌面工具箱。</p>
+                </div>
+            </div>
             <a href="download.html" class="btn btn-primary btn-lg">立即下載</a>
             <a href="tutorials.html" class="btn btn-secondary btn-lg">查看教學</a>
         </div>
