@@ -11,6 +11,7 @@ from tkinter import ttk
 from tkinter import simpledialog, messagebox
 import importlib.util
 from shared_state import SharedState
+from style_manager import configure_styles, apply_post_creation_styles
 import logging
 import json
 import threading # For running update checks in background
@@ -35,7 +36,7 @@ except ImportError:
         ERROR_FETCHING = "ERROR_FETCHING"
         ERROR_CONFIG = "ERROR_CONFIG"
         CHECK_SKIPPED_RATE_LIMIT = "CHECK_SKIPPED_RATE_LIMIT"
-        CHECK_SKIPPED_ALREADY_PENDING = "CHECK_SKIPPED_ALREADY_PENDING"
+        CHECK_SKIPPED_ALREADY_PENDING = "CHECK_SKIPPED_ALREADY_PENDEDING"
 
         @staticmethod
         def get_current_version(): return "N/A"
@@ -232,7 +233,7 @@ class Module:
     def on_destroy(self):
         self.shared_state.log(f"Module '{self.module_name}' is being destroyed.")
 
-class CustomLayoutManager(tk.Frame):
+class CustomLayoutManager(ttk.Frame):
     def __init__(self, master, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.modules = {}
@@ -458,9 +459,6 @@ class ModularGUI:
         self.help_menu.add_command(label="Check for Updates...", command=self.ui_check_for_updates_manual)
         # We can add an "About" item here later if desired
 
-        s = ttk.Style()
-        s.configure("DragHandle.TFrame", background="lightgrey")
-
         self.shared_state.log("ModularGUI initialized.")
 
         self.modules_dir = "modules"
@@ -490,10 +488,10 @@ class ModularGUI:
         self.resize_debounce_timer = None
         self.resize_debounce_delay = 250
 
-        self.canvas_container = ttk.Frame(self.root)
+        self.canvas_container = ttk.Frame(self.root, style='Main.TFrame')
         self.canvas_container.pack(fill=tk.BOTH, expand=True)
 
-        self.canvas = tk.Canvas(self.canvas_container)
+        self.canvas = tk.Canvas(self.canvas_container, bg='#212121', highlightthickness=0)
 
         self.v_scrollbar = ttk.Scrollbar(self.canvas_container, orient=tk.VERTICAL, command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=self.v_scrollbar.set)
@@ -502,7 +500,7 @@ class ModularGUI:
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.canvas_container.pack_propagate(False)
 
-        self.main_layout_manager = CustomLayoutManager(self.canvas, background="lightgrey")
+        self.main_layout_manager = CustomLayoutManager(self.canvas, style='Main.TFrame')
 
         self.main_layout_manager_window_id = self.canvas.create_window(
             (0, 0), window=self.main_layout_manager, anchor='nw'
@@ -592,7 +590,7 @@ class ModularGUI:
         # For development, it's python.exe, so we need to be careful.
         # The restart path should point to the installed FlexiTools.exe.
         # We assume the installer puts FlexiTools.exe in a known location relative to its install dir.
-        # The NSI script uses $INSTDIR\FlexiTools.exe
+        # The NSI script uses $INSTDIR\\FlexiTools.exe
         # sys.executable should be this path when the bundled app is running.
 
         app_executable_path = sys.executable
@@ -1615,5 +1613,7 @@ if __name__ == "__main__":
         sys.modules['main'] = sys.modules['__main__']
 
     root = tk.Tk()
+    configure_styles()
+    apply_post_creation_styles(root)
     app = ModularGUI(root)
     root.mainloop()
