@@ -184,6 +184,10 @@ EQ_BANDS = [
 ]
 EQ_PRESETS = {
     "無": [0]*10,
+    "家庭式立體聲": [6, 6, 4.1, 4, 1.7, 2, 1.7, 4, 4.1, 6],
+    "可攜式喇叭": [8, 8, 5.4, 5, 2.7, 3, 2.3, 4, 3.6, 5],
+    "汽車": [8, 8, 4.8, 3, 0.1, 0, 0.7, 4, 4.8, 7],
+    "電視": [3, 3, 4.5, 8, 2.8, 0, 1.3, 6, 6.1, 8],
     "音質": [2, 3, 2, -1, 0, 0, 1, 2, 1, 2],
     "低音增強": [6, 6, 6, 3, 0, 0, 0, 0, 0, 0],
     "低音減弱": [-6, -6, -3, 0, 0, 0, 0, 0, 0, 0],
@@ -285,7 +289,7 @@ class VideoPlayerModule(Module):
         self.stop_processing = threading.Event()
 
         self.total_frames = 0
-        self.fps = 30
+        self.fps = 25
         self.current_frame_idx = -1
         self.frames_processed_count = 0
         self.video_duration = 0
@@ -504,6 +508,7 @@ class VideoPlayerModule(Module):
                 self.shared_state.log(f"Error cleaning up temp cache directory: {e}", level=logging.ERROR)
         self.temp_cache_dir = None
         self.temp_audio_path = None
+        self.temp_video_path = None # 新增: 清理暫存影片路徑
     
     def start_playlist(self, files_list):
         self.stop_video()
@@ -1021,16 +1026,47 @@ class VideoPlayerModule(Module):
 
             self.audio_path = self.extract_audio(filepath) # Use the passed filepath
 
-            cap = cv2.VideoCapture(filepath) # Use the passed filepath for VideoCapture
+            # --- 新增: 若 FPS > 25，產生 FPS=25 的暫存影片 ---
+            cap = cv2.VideoCapture(filepath)
             if not cap.isOpened():
                 raise Exception(f"Cannot open video file: {filepath}")
 
-            self.fps = cap.get(cv2.CAP_PROP_FPS) or 30
+            orig_fps = cap.get(cv2.CAP_PROP_FPS) or 25
+            self.fps = orig_fps
             self.total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             self.video_duration = self.total_frames / self.fps if self.fps > 0 else 0
             self.video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             self.video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             cap.release()
+
+            # 新增: 若 FPS > 25，轉檔
+            self.temp_video_path = None
+            if orig_fps > 25:
+                if not self.temp_cache_dir:
+                    # 若 extract_audio 尚未建立暫存資料夾，則建立
+                    video_dir = os.path.dirname(filepath)
+                    self.temp_cache_dir = tempfile.mkdtemp(prefix='.vidplayer_cache_', dir=video_dir)
+                self.temp_video_path = os.path.join(self.temp_cache_dir, "temp_fps25.mp4")
+                # ffmpeg 指令：-r 25 -vsync 2 保持時長
+                cmd = f'ffmpeg -y -loglevel error -i "{filepath}" -r 25 -vsync 2 -c:v libx264 -preset ultrafast -crf 18 -c:a copy "{self.temp_video_path}"'
+                os.system(cmd)
+                # 檢查檔案是否產生
+                if not os.path.exists(self.temp_video_path) or os.path.getsize(self.temp_video_path) == 0:
+                    raise Exception("FFmpeg failed to create FPS=25 temp video.")
+                # 以暫存影片為主
+                video_path_for_play = self.temp_video_path
+                # 重新取得 FPS/frames/duration
+                cap2 = cv2.VideoCapture(video_path_for_play)
+                self.fps = cap2.get(cv2.CAP_PROP_FPS) or 25
+                self.total_frames = int(cap2.get(cv2.CAP_PROP_FRAME_COUNT))
+                self.video_duration = self.total_frames / self.fps if self.fps > 0 else 0
+                self.video_width = int(cap2.get(cv2.CAP_PROP_FRAME_WIDTH))
+                self.video_height = int(cap2.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                cap2.release()
+            else:
+                video_path_for_play = filepath
+
+            self.video_path = video_path_for_play # 之後所有 frame 讀取都用這個
 
             if self.video_width == 0 or self.video_height == 0:
                 raise Exception("Failed to read video dimensions.")

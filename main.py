@@ -417,7 +417,7 @@ class ModularGUI:
 
         # Use user-writable directory for saves (layouts, profiles, update_info)
         # The get_user_writable_data_path in update_manager returns the 'saves' subdirectory directly.
-        self.saves_dir = update_manager.SAVES_DIR
+        self.saves_dir = os.path.join("modules", "saves") 
         if self.saves_dir is None:
             # This is a critical failure. update_manager.py logs this.
             # main.py should probably show an error and potentially exit or run in a degraded mode.
@@ -605,7 +605,7 @@ class ModularGUI:
         timeout /t 3 /nobreak > NUL
 
         echo Running installer in silent mode...
-        start /wait "" "{installer_path}" /S
+        start /wait "" "{installer_path}" /UPDATE /S
 
         echo Installer finished.
         timeout /t 2 /nobreak > NUL
