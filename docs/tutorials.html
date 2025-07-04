@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexiTools - 教學</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">
+                <img src="logo.png" alt="FlexiTools Logo" width="36" height="36" class="d-inline-block align-text-top">
+                FlexiTools
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="index.html">首頁</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="tutorials.html">教學</a></li>
+                    <li class="nav-item"><a class="nav-link" href="download.html">下載</a></li>
+                    <li class="nav-item"><a class="nav-link" href="support.html">支援</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">關於我們</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5 py-5">
+        <h1 class="page-title">軟體教學</h1>
+
+        <section id="general-usage" class="mb-5">
+            <h2 class="text-center mb-4">基本操作</h2>
+            <p class="text-center col-lg-8 mx-auto text-muted">FlexiTools 的設計旨在直觀易用。主介面包含一個工具列表，您可以點擊任何工具來啟動它。每個工具都在其自己的視窗中運行，讓您可以同時使用多個工具。您可以通過拖放來重新排列工具佈局，並將您喜歡的佈局保存為配置文件。下次啟動時，FlexiTools 將自動加載您上次的佈局。</p>
+        </section>
+
+        <hr style="border-color: var(--border-color); margin: 3rem 0;">
+
+        <section id="module-tutorials">
+            <h2 class="text-center mb-4">模組介紹</h2>
+            <p class="text-center col-lg-8 mx-auto text-muted">點擊下方的模組按鈕來查看詳細介紹和使用教學。</p>
+            <div class="accordion col-lg-10 mx-auto" id="modulesAccordion">
+                <!-- Accordion items will be injected here by script -->
+            </div>
+        </section>
+    </div>
+
+    <footer class="py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">Copyright &copy; 2025 FlexiTools</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const modulesData = {
+            "Browser": {
+                "description": "內嵌式網頁瀏覽器，支援多分頁、書籤和歷史紀錄。",
+                "tutorial": "在上方網址列輸入網址後按 Enter 即可瀏覽網頁。點擊 “+” 新增分頁，“☆” 可將目前網頁加入書籤。右方的選單按鈕提供更多功能，如查看歷史紀錄與開發者工具。"
+            },
+            "CADFileConverter": {
+                "description": "在 GDS, DXF, DWG 等 CAD 檔案格式之間進行轉換。",
+                "tutorial": "1. 點擊 “選檔” 或 “選資料夾” 選擇來源檔案或批次轉換的資料夾。<br>2. 選擇輸出的資料夾與格式。<br>3. 若轉換為 DXF，可選擇 DXF 版本。<br>4. 點擊 “執行轉換”。單檔模式下可點擊 “預覽” 查看檔案基本資訊。"
+            },
+            "Clock": {
+                "description": "顯示目前系統時間。",
+                "tutorial": "此模組會自動更新並顯示現在的時間 (HH:MM:SS)。"
+            },
+            "Color Palette": {
+                "description": "產生並管理調色盤。",
+                "tutorial": "點擊 “Regenerate All Palettes” 可隨機產生一組顏色。點擊任一色塊，下方會顯示其 HEX 和 RGB 值，並可透過滑桿調整顏色。點擊 “Copy” 可複製 HEX 色碼。"
+            },
+            "Draw": {
+                "description": "簡單的繪圖板。",
+                "tutorial": "在白色畫布上按住滑鼠左鍵即可開始繪圖。點擊 “Pen Color” 選擇畫筆顏色，拖動 “Pen Width” 滑桿調整畫筆粗細。“Clear Canvas” 可清空畫布。"
+            },
+            "Fitter": {
+                "description": "分析諧振器數據，提供數據擬合與可視化功能。",
+                "tutorial": "1. 點擊 “瀏覽...” 選擇 CSV 數據檔案。<br>2. 可選填左右頻率邊界 (GHz) 進行局部擬合，或留空自動尋峰。<br>3. 點擊 “執行分析”。<br>4. 在不同分頁中查看全頻譜、振幅擬合與相位擬合的圖表及詳細報告。在圖表上點擊滑鼠左/右鍵可快速設定左右邊界。"
+            },
+            "GUI CMD": {
+                "description": "圖形化介面的命令提示字元模擬器，特別支援 Conda 環境。",
+                "tutorial": "在下方輸入框中輸入標準 CMD 指令後按 Enter 執行。可使用按鈕快速切換 Conda 環境、變更目錄或執行 Python 腳本。點擊 “強制結束指令” 可中斷目前執行的程式。"
+            },
+            "Image Editor": {
+                "description": "基礎的圖片編輯工具，支援開啟、旋轉、裁剪與繪圖。",
+                "tutorial": "1. 點擊 “開啟圖片” 載入圖片。<br>2. 使用 “旋轉”、“裁剪” 按鈕進行操作。<br>3. 點擊 “編輯模式” 進入繪圖模式，可選擇線條、矩形等工具在圖片上繪圖。<br>4. 完成後點擊 “儲存” 將變更儲存為新檔案。按住 Shift 並拖曳滑鼠可平移圖片，滾動滑鼠滾輪可縮放。"
+            },
+            "MP4 Processor": {
+                "description": "處理 MP4 影片檔案，提供轉為圖片序列、音訊提取、影片去背、影片分割等功能。",
+                "tutorial": "1. 選擇輸入的影片檔案或資料夾。<br>2. 選擇輸出資料夾。<br>3. 在 “Mode” 下拉選單中選擇要執行的功能 (如 “Convert to Frames”)。<br>4. 根據所選功能，設定下方出現的選項 (如目標 FPS)。<br>5. 點擊 “Start Processing” 開始處理。"
+            },
+            "Notepad": {
+                "description": "簡單的純文字編輯器。",
+                "tutorial": "可直接在文字區域輸入內容。使用 “Open”, “Save”, “Save As...” 按鈕進行檔案的開啟與儲存。"
+            },
+            "PDF Processor": {
+                "description": "提供多種 PDF 處理功能，如分割、合併、壓縮、加水印與文字提取。",
+                "tutorial": "在上方選擇功能分頁 (如 “Split PDF”)。根據提示選擇輸入檔案、設定選項 (如分割頁碼範圍)，然後點擊執行按鈕。處理狀態會顯示在下方。"
+            },
+            "Plot GUI": {
+                "description": "從 Excel 檔案讀取數據並繪製二維圖表。",
+                "tutorial": "1. 點擊 “Load Excel” 載入檔案。<br>2. 在右側列表中選擇要繪製的曲線 (Y軸數據)。X軸預設為第一欄。<br>3. 在下方與左側設定 X/Y 軸的標籤與單位。<br>4. 點擊 “Plot (Scatter)” 產生圖表。"
+            },
+            "Recipe Wheel": {
+                "description": "隨機選擇一道食譜，並顯示其所需食材與製作步驟。",
+                "tutorial": "點擊 “Spin the Wheel!” 按鈕，上方的食譜輪盤會開始轉動。停止後，下方會顯示被選中的食譜名稱、食材與做法。"
+            },
+            "Report": {
+                "description": "載入並顯示 Excel (.xlsx, .xls) 檔案的內容。",
+                "tutorial": "點擊 “Load Excel File” 選擇檔案。如果檔案包含多個工作表 (Sheet)，可從下拉選單中選擇要檢視的工作表。"
+            },
+            "Split Para": {
+                "description": "根據指定的參數欄位，將一個 CSV 檔案分割成多個獨立的 CSV 檔案。",
+                "tutorial": "1. 選擇輸入的 CSV 檔案與輸出目錄。<br>2. 在 “Filename Parameters” 中設定檔名的前綴、後綴，以及用來分割的參數欄位名稱 (Split Param) 和顯示在檔名中的標籤 (Param Label)。<br>3. 在下方勾選要處理的參數值。<br>4. 點擊 “Process Data”。"
+            },
+            "Sudoku Studio": {
+                "description": "數獨遊戲。",
+                "tutorial": "點擊 “New Game” 開始新的一局。在空格中填入數字，完成後點擊 “Check Solution” 檢查答案是否正確。綠色表示正確，粉色表示錯誤。“Reset Puzzle” 可清空您填寫的數字。"
+            },
+            "System Info": {
+                "description": "顯示目前的 CPU 與記憶體使用率。",
+                "tutorial": "此模組會自動更新並顯示系統的即時資源使用狀況。"
+            },
+            "Todo List": {
+                "description": "待辦事項清單。",
+                "tutorial": "在輸入框中輸入任務後按 Enter 或點擊 “Add Task” 新增任務。在列表中選擇一個任務，然後點擊 “Remove Selected” 將其刪除。"
+            },
+            "Unit Converter": {
+                "description": "在不同物理量單位之間進行換算。",
+                "tutorial": "1. 從 “Category” 下拉選單選擇要轉換的物理量類型 (如 Length)。<br>2. 從 “Conversion” 下拉選單選擇要進行的轉換 (如 Meters to Feet)。<br>3. 在 “Input” 欄位輸入數值，結果會即時顯示在 “Output” 欄位。"
+            },
+            "Video Player": {
+                "description": "播放本地影片檔案，支援多種格式、播放清單、隨機播放與音訊等化器。",
+                "tutorial": "點擊 “選擇檔案” 或 “選擇資料夾” 來載入影片。使用下方的控制按鈕進行播放、暫停、切換影片與調整音量。在 “播放模式” 中可選擇循序、隨機或依照 `playlist.json` 檔案順序播放。點擊 “等化器” 下拉選單可套用不同的音效設定。"
+            },
+            "Youtube Downloader": {
+                "description": "從 YouTube 下載影片或音訊。",
+                "tutorial": "1. 選擇下載後要儲存的資料夾。<br>2. 在文字框中輸入一個或多個 YouTube 影片或播放清單的 URL (一行一個)。<br>3. 選擇所需的格式 (mp4/mp3) 與畫質。<br>4. 點擊 “Download All” 開始下載。可使用 “Skip” 或 “Stop” 按鈕控制下載進程。"
+            }
+        };
+
+        const accordionContainer = document.getElementById('modulesAccordion');
+        const moduleOrder = [
+            "Browser", "CADFileConverter", "Clock", "Color Palette", "Draw", "Fitter", 
+            "GUI CMD", "Image Editor", "MP4 Processor", "Notepad", "PDF Processor", 
+            "Plot GUI", "Recipe Wheel", "Report", "Split Para", "Sudoku Studio", 
+            "System Info", "Todo List", "Unit Converter", "Video Player", "Youtube Downloader"
+        ];
+
+        moduleOrder.forEach(moduleName => {
+            const moduleInfo = modulesData[moduleName];
+            if (!moduleInfo) return;
+
+            // Format name for display, handling special cases like "GUI CMD"
+            let formattedName = moduleName;
+            if (formattedName === "GUI CMD") {
+                 // Keep as is
+            } else {
+                formattedName = formattedName.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim();
+                formattedName = formattedName.replace(/\b\w/g, c => c.toUpperCase());
+            }
+            
+            const accordionItemHTML = `
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading${moduleName.replace(/\s+/g, '')}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${moduleName.replace(/\s+/g, '')}" aria-expanded="false" aria-controls="collapse${moduleName.replace(/\s+/g, '')}">
+                            ${formattedName}
+                        </button>
+                    </h2>
+                    <div id="collapse${moduleName.replace(/\s+/g, '')}" class="accordion-collapse collapse" aria-labelledby="heading${moduleName.replace(/\s+/g, '')}" data-bs-parent="#modulesAccordion">
+                        <div class="accordion-body">
+                            <p><strong>功能:</strong> ${moduleInfo.description}</p>
+                            <p><strong>教學:</strong><br>${moduleInfo.tutorial}</p>
+                        </div>
+                    </div>
+                </div>`;
+            accordionContainer.innerHTML += accordionItemHTML;
+        });
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="assets/logo.png" alt="FlexiLab Logo" width="128">
-  <h1 align="center">FlexiLab</h1>
+  <img src="assets/logo.png" alt="FlexiTools Logo" width="128">
+  <h1 align="center">FlexiTools</h1>
   <p align="center">
     一個基於 Python Tkinter 的模組化桌面應用程式，提供可自由組合、拖曳、縮放的工具介面。
     <br>
@@ -15,7 +15,7 @@
 
 ## 📝 專案簡介
 
-**FlexiLab** 是一個高度可自訂的桌面工具套件。它的核心理念是將不同的功能「模組化」，讓使用者可以像組合積木一樣，自由地在主視窗中新增、排列、縮放各種工具，並能儲存與載入個人化的版面配置。無論您是需要一個多功能的開發儀表板、一個數據分析工作區，或只是一個整合了常用小工具的桌面，FlexiLab 都能滿足您的需求。
+**FlexiTools** 是一個高度可自訂的桌面工具套件。它的核心理念是將不同的功能「模組化」，讓使用者可以像組合積木一樣，自由地在主視窗中新增、排列、縮放各種工具，並能儲存與載入個人化的版面配置。無論您是需要一個多功能的開發儀表板、一個數據分析工作區，或只是一個整合了常用小工具的桌面，FlexiTools 都能滿足您的需求。
 
 ## ✨ 核心功能
 
@@ -31,7 +31,7 @@
 
 ## 🛠️ 模組介紹
 
-FlexiLab 內建了多種實用工具模組，涵蓋了從開發、數據分析到日常應用的各種場景。
+FlexiTools 內建了多種實用工具模組，涵蓋了從開發、數據分析到日常應用的各種場景。
 
 | 模組名稱 | 功能說明 |
 | :--- | :--- |
@@ -63,8 +63,8 @@ FlexiLab 內建了多種實用工具模組，涵蓋了從開發、數據分析�
 
 1.  **複製專案**:
     ```bash
-    git clone https://github.com/your-username/FlexiLab.git
-    cd FlexiLab
+    git clone https://github.com/jacky09299/FlexiTools.git
+    cd FlexiTools
     ```
 
 2.  **建立 Conda 環境**:
@@ -116,5 +116,5 @@ FlexiLab 內建了多種實用工具模組，涵蓋了從開發、數據分析�
 
 ---
 <div align="center">
-  <em>FlexiLab - 您的模組化桌面工作站</em>
+  <em>FlexiTools - 您的模組化桌面工作站</em>
 </div>

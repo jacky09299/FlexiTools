@@ -3,527 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlexiTools - 靈活的工具集</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>FlexiTools - 首頁</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            padding: 1rem 0;
-        }
-
-        .nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
+        /* Hero logo and title hover effect */
+        .hero-logo-title {
             display: flex;
             align-items: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .logo img {
-            width: 40px;
-            height: 40px;
-            margin-right: 10px;
-            border-radius: 8px;
-        }
-
-        .nav-links {
-            display: flex;
-            list-style: none;
-            gap: 2rem;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #333;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .nav-links a:hover {
-            color: #667eea;
-        }
-
-        .hero {
-            text-align: center;
-            padding: 4rem 0;
-            color: white;
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-            animation: fadeInUp 1s ease-out;
-        }
-
-        .hero p {
-            font-size: 1.3rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-            animation: fadeInUp 1s ease-out 0.3s both;
-        }
-
-        .download-section {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            margin: 2rem auto;
-            padding: 3rem 2rem;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 800px;
-            width: 100%;
-        }
-
-        .download-title {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            color: #333;
-            position: relative;
-        }
-
-        .download-title::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            border-radius: 2px;
-        }
-
-        .download-subtitle {
-            text-align: center;
-            margin-bottom: 3rem;
-            color: #666;
-            font-size: 1.1rem;
-        }
-
-        .version-selector {
-            display: flex;
+            gap: 32px;
             justify-content: center;
-            margin-bottom: 2rem;
-            gap: 1rem;
-            flex-wrap: wrap;
         }
-
-        .version-btn {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            padding: 0.8rem 1.5rem;
-            border-radius: 25px;
+        .hero-logo,
+        .hero-title {
+            transition: transform 0.2s cubic-bezier(.4,2,.6,1), box-shadow 0.2s, color 0.2s;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            color: #495057;
         }
-
-        .version-btn:hover {
-            background: #e9ecef;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .version-btn.active {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border-color: #667eea;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-
-        .download-info {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            margin: 2rem auto;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e9ecef;
-            max-width: 600px;
-        }
-
-        .download-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            gap: 1.5rem;
-        }
-
-        .download-details h3 {
-            color: #333;
-            margin-bottom: 0.5rem;
-            font-size: 1.3rem;
-        }
-
-        .download-details p {
-            color: #666;
-            margin-bottom: 1rem;
-        }
-
-        .download-meta {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            font-size: 0.9rem;
-            color: #888;
-            flex-wrap: wrap;
-        }
-
-        .download-meta span {
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-
-        .download-btn {
-            background: linear-gradient(45deg, #28a745, #20c997);
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 25px;
-            font-size: 1.1rem;
-            font-weight: 600;
+        .hero-subtitle {
+            transition: transform 0.2s cubic-bezier(.4,2,.6,1), box-shadow 0.2s, color 0.2s;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
         }
-
-        .download-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        .hero-logo:hover,
+        .hero-title:hover {
+            transform: scale(1.08) rotate(-2deg);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+            color: #0d6efd;
         }
-
-        .features {
-            padding: 4rem 0;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-        }
-
-        .features h2 {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 3rem;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 2rem;
-            border-radius: 15px;
-            text-align: center;
-            transition: transform 0.3s ease;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .feature-icon {
-            font-size: 3rem;
-            color: #667eea;
-            margin-bottom: 1rem;
-        }
-
-        .feature-card h3 {
-            margin-bottom: 1rem;
-            color: #333;
-        }
-
-        .footer {
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            text-align: center;
-            padding: 2rem 0;
-            margin-top: 2rem;
-        }
-
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .footer-links a {
-            color: #ccc;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .footer-links a:hover {
-            color: white;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-            
-            .nav-links {
-                display: none;
-            }
-            
-            .download-section {
-                margin: 1rem;
-                padding: 2rem 1rem;
-            }
-            
-            .download-card {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .version-selector {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .download-meta {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
+        .hero-subtitle:hover {
+            transform: scale(1.03) rotate(-0.5deg);
+            box-shadow: 0 2px 8px rgba(13,110,253,0.08);
+            color: #0d6efd;
         }
     </style>
 </head>
 <body>
-    <header class="header">
-        <nav class="nav container">
-            <div class="logo">
-                <img src="logo.png" alt="FlexiTools Logo">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">
+                <img src="logo.png" alt="FlexiTools Logo" width="36" height="36" class="d-inline-block align-text-top">
                 FlexiTools
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active" href="index.html">首頁</a></li>
+                    <li class="nav-item"><a class="nav-link" href="tutorials.html">教學</a></li>
+                    <li class="nav-item"><a class="nav-link" href="download.html">下載</a></li>
+                    <li class="nav-item"><a class="nav-link" href="support.html">支援</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">關於我們</a></li>
+                </ul>
             </div>
-            <ul class="nav-links">
-                <li><a href="#home">首頁</a></li>
-                <li><a href="#download">下載</a></li>
-                <li><a href="#features">功能</a></li>
-                <li><a href="#about">關於</a></li>
-            </ul>
-        </nav>
+        </div>
+    </nav>
+
+    <header class="hero-section">
+        <div class="container text-center">
+            <div class="hero-logo-title mb-3">
+                <img src="logo.png" alt="FlexiTools Logo" class="hero-logo" style="width:120px;height:120px;">
+                <div class="text-start">
+                    <h1 class="mb-1 hero-title">FlexiTools</h1>
+                    <p class="lead mb-0 hero-subtitle">一個為現代工作流程設計的、模組化的桌面工具箱。</p>
+                </div>
+            </div>
+            <a href="download.html" class="btn btn-primary btn-lg">立即下載</a>
+            <a href="tutorials.html" class="btn btn-secondary btn-lg">查看教學</a>
+        </div>
     </header>
 
-    <main>
-        <section class="hero container" id="home">
-            <h1>FlexiTools</h1>
-            <p>靈活強大的工具集，讓您的工作更加高效</p>
-        </section>
-
-        <section class="download-section" id="download">
-            <h2 class="download-title">立即下載</h2>
-            <p class="download-subtitle">選擇適合您的版本，開始使用 FlexiTools</p>
-            
-            <div class="version-selector">
-                <button class="version-btn active" onclick="showVersion('v1.1.0')">
-                    <i class="fas fa-star"></i> v1.1.0 (最新)
-                </button>
-                <button class="version-btn" onclick="showVersion('v1.0.0')">
-                    <i class="fas fa-history"></i> v1.0.0
-                </button>
+    <div class="container mt-5 py-5">
+        <div class="row text-center">
+            <div class="col-md-4 feature-item">
+                <div class="feature-icon"><i class="bi bi-boxes"></i></div>
+                <h3>多合一解決方案</h3>
+                <p class="text-muted">從圖片編輯到檔案轉換，一個應用程式滿足您的所有需求。</p>
             </div>
-
-            <div class="download-info" id="v1.1.0-version">
-                <div class="download-card">
-                    <div class="download-details">
-                        <h3>FlexiTools v1.1.0</h3>
-                        <p>最新功能和修復，推薦一般用戶使用</p>
-                        <div class="download-meta">
-                            <span><i class="fas fa-calendar"></i> 2024-12-15</span>
-                            <span><i class="fas fa-download"></i> 15.2 MB</span>
-                            <span><i class="fas fa-cog"></i> Windows 10/11</span>
-                        </div>
-                    </div>
-                    <a href="https://github.com/jacky09299/FlexiTools/releases/download/v1.1.0/FlexiToolsInstaller.exe" 
-                       class="download-btn pulse">
-                        <i class="fas fa-download"></i>
-                        立即下載
-                    </a>
-                </div>
+            <div class="col-md-4 feature-item">
+                <div class="feature-icon"><i class="bi bi-lightbulb"></i></div>
+                <h3>直觀易用</h3>
+                <p class="text-muted">我們專注於簡潔的用戶界面，讓您無需學習即可快速上手。</p>
             </div>
-
-            <div class="download-info" id="v1.0.0-version" style="display: none;">
-                <div class="download-card">
-                    <div class="download-details">
-                        <h3>FlexiTools v1.0.0</h3>
-                        <p>初始版本，包含核心功能</p>
-                        <div class="download-meta">
-                            <span><i class="fas fa-calendar"></i> 2024-11-01</span>
-                            <span><i class="fas fa-download"></i> 12.8 MB</span>
-                            <span><i class="fas fa-cog"></i> Windows 10/11</span>
-                        </div>
-                    </div>
-                    <a href="https://github.com/jacky09299/FlexiTools/releases/download/v1.0.0/FlexiToolsInstaller.exe" 
-                       class="download-btn">
-                        <i class="fas fa-download"></i>
-                        下載 v1.0.0
-                    </a>
-                </div>
+            <div class="col-md-4 feature-item">
+                <div class="feature-icon"><i class="bi bi-grid-3x3-gap"></i></div>
+                <h3>模組化設計</h3>
+                <p class="text-muted">只選擇您需要的工具，保持工作區的整潔與高效。</p>
             </div>
-        </section>
+        </div>
+    </div>
 
-        <section class="features container" id="features">
-            <h2>核心功能</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-lightning-bolt"></i>
-                    </div>
-                    <h3>高效能</h3>
-                    <p>優化的算法和多線程處理，讓您的工作更加快速高效</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-puzzle-piece"></i>
-                    </div>
-                    <h3>模組化設計</h3>
-                    <p>靈活的模組系統，可根據需求自由組合不同的工具</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
-                    <h3>安全可靠</h3>
-                    <p>嚴格的安全措施和穩定的運行環境，保護您的數據安全</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-code"></i>
-                    </div>
-                    <h3>開源免費</h3>
-                    <p>完全開源的代碼，免費使用且可自由修改</p>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="footer" id="about">
-        <div class="container">
-            <div class="footer-links">
-                <a href="https://github.com/jacky09299/FlexiTools">GitHub</a>
-                <a href="https://github.com/jacky09299/FlexiTools/issues">問題回報</a>
-                <a href="https://github.com/jacky09299/FlexiTools/wiki">文檔</a>
-                <a href="mailto:contact@flexitools.com">聯絡我們</a>
-            </div>
-            <p>&copy; 2024 FlexiTools. 採用 MIT 授權條款開源發布。</p>
+    <footer class="py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">Copyright &copy; 2025 FlexiTools</p>
         </div>
     </footer>
 
-    <script>
-        function showVersion(version) {
-            // 隱藏所有版本資訊
-            document.querySelectorAll('.download-info').forEach(info => {
-                info.style.display = 'none';
-            });
-            
-            // 移除所有按鈕的 active 狀態
-            document.querySelectorAll('.version-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // 顯示選中的版本
-            document.getElementById(version + '-version').style.display = 'block';
-            
-            // 設置按鈕為 active 狀態
-            event.target.classList.add('active');
-        }
-
-        // 平滑滾動
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // 添加滾動動畫
-        window.addEventListener('scroll', () => {
-            const cards = document.querySelectorAll('.feature-card');
-            cards.forEach(card => {
-                const cardTop = card.getBoundingClientRect().top;
-                const cardVisible = 150;
-                
-                if (cardTop < window.innerHeight - cardVisible) {
-                    card.style.animation = 'fadeInUp 0.6s ease-out forwards';
-                }
-            });
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
