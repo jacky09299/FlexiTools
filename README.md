@@ -70,12 +70,12 @@ FlexiLab 內建了多種實用工具模組，涵蓋了從開發、數據分析�
 2.  **建立 Conda 環境**:
     `environment.yml` 檔案中包含了所有必要的依賴項。執行以下指令來建立環境：
     ```bash
-    conda env create -f environment.yml
+    conda env create -f environment.yml -n <your-environment-name>
     ```
 
 3.  **啟動環境**:
     ```bash
-    conda activate flexilab-env
+    conda activate <your-environment-name>
     ```
 
 4.  **執行應用程式**:
