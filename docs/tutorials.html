@@ -5,15 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FlexiTools - 教學</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { padding-top: 56px; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="index.html">
-                <img src="logo.png" alt="FlexiTools Logo" width="30" height="30" class="d-inline-block align-text-top">
+                <img src="logo.png" alt="FlexiTools Logo" width="36" height="36" class="d-inline-block align-text-top">
                 FlexiTools
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,304 +29,60 @@
         </div>
     </nav>
 
-    <div class="container mt-5">
-        <h1 class="mb-4">軟體教學</h1>
+    <div class="container mt-5 py-5">
+        <h1 class="page-title">軟體教學</h1>
 
-        <section id="general-usage">
-            <h2>基本操作</h2>
-            <p>FlexiTools 的設計旨在直觀易用。主介面包含一個工具列表，您可以點擊任何工具來啟動它。每個工具都在其自己的視窗中運行，讓您可以同時使用多個工具。</p>
-            <p>您可以通過拖放來重新排列工具佈局，並將您喜歡的佈局保存為配置文件。下次啟動時，FlexiTools 將自動加載您上次的佈局。</p>
+        <section id="general-usage" class="mb-5">
+            <h2 class="text-center mb-4">基本操作</h2>
+            <p class="text-center col-lg-8 mx-auto text-muted">FlexiTools 的設計旨在直觀易用。主介面包含一個工具列表，您可以點擊任何工具來啟動它。每個工具都在其自己的視窗中運行，讓您可以同時使用多個工具。您可以通過拖放來重新排列工具佈局，並將您喜歡的佈局保存為配置文件。下次啟動時，FlexiTools 將自動加載您上次的佈局。</p>
         </section>
 
-        <hr class="my-5">
+        <hr style="border-color: var(--border-color); margin: 3rem 0;">
 
         <section id="module-tutorials">
-            <h2>模組介紹</h2>
-            <p>點擊下方的模組按鈕來查看詳細介紹和使用教學。</p>
-            <div class="accordion" id="modulesAccordion">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingbrowser">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsebrowser" aria-expanded="false" aria-controls="collapsebrowser">
-                            browser
-                        </button>
-                    </h2>
-                    <div id="collapsebrowser" class="accordion-collapse collapse" aria-labelledby="headingbrowser" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingCADFileConverter">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCADFileConverter" aria-expanded="false" aria-controls="collapseCADFileConverter">
-                            CADFileConverter
-                        </button>
-                    </h2>
-                    <div id="collapseCADFileConverter" class="accordion-collapse collapse" aria-labelledby="headingCADFileConverter" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingclock">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseclock" aria-expanded="false" aria-controls="collapseclock">
-                            clock
-                        </button>
-                    </h2>
-                    <div id="collapseclock" class="accordion-collapse collapse" aria-labelledby="headingclock" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingcolor_palette">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsecolor_palette" aria-expanded="false" aria-controls="collapsecolor_palette">
-                            color_palette
-                        </button>
-                    </h2>
-                    <div id="collapsecolor_palette" class="accordion-collapse collapse" aria-labelledby="headingcolor_palette" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingdraw">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsedraw" aria-expanded="false" aria-controls="collapsedraw">
-                            draw
-                        </button>
-                    </h2>
-                    <div id="collapsedraw" class="accordion-collapse collapse" aria-labelledby="headingdraw" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingFitter">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFitter" aria-expanded="false" aria-controls="collapseFitter">
-                            Fitter
-                        </button>
-                    </h2>
-                    <div id="collapseFitter" class="accordion-collapse collapse" aria-labelledby="headingFitter" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headinggui_cmd">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsegui_cmd" aria-expanded="false" aria-controls="collapsegui_cmd">
-                            gui_cmd
-                        </button>
-                    </h2>
-                    <div id="collapsegui_cmd" class="accordion-collapse collapse" aria-labelledby="headinggui_cmd" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingimage_editor">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseimage_editor" aria-expanded="false" aria-controls="collapseimage_editor">
-                            image_editor
-                        </button>
-                    </h2>
-                    <div id="collapseimage_editor" class="accordion-collapse collapse" aria-labelledby="headingimage_editor" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingmp4_processor">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsemp4_processor" aria-expanded="false" aria-controls="collapsemp4_processor">
-                            mp4_processor
-                        </button>
-                    </h2>
-                    <div id="collapsemp4_processor" class="accordion-collapse collapse" aria-labelledby="headingmp4_processor" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingnotepad">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsenotepad" aria-expanded="false" aria-controls="collapsenotepad">
-                            notepad
-                        </button>
-                    </h2>
-                    <div id="collapsenotepad" class="accordion-collapse collapse" aria-labelledby="headingnotepad" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingpdf_processor">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsepdf_processor" aria-expanded="false" aria-controls="collapsepdf_processor">
-                            pdf_processor
-                        </button>
-                    </h2>
-                    <div id="collapsepdf_processor" class="accordion-collapse collapse" aria-labelledby="headingpdf_processor" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingplot_gui">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseplot_gui" aria-expanded="false" aria-controls="collapseplot_gui">
-                            plot_gui
-                        </button>
-                    </h2>
-                    <div id="collapseplot_gui" class="accordion-collapse collapse" aria-labelledby="headingplot_gui" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingrecipe_wheel">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapserecipe_wheel" aria-expanded="false" aria-controls="collapserecipe_wheel">
-                            recipe_wheel
-                        </button>
-                    </h2>
-                    <div id="collapserecipe_wheel" class="accordion-collapse collapse" aria-labelledby="headingrecipe_wheel" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingreport">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsereport" aria-expanded="false" aria-controls="collapsereport">
-                            report
-                        </button>
-                    </h2>
-                    <div id="collapsereport" class="accordion-collapse collapse" aria-labelledby="headingreport" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingsplit_para">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsesplit_para" aria-expanded="false" aria-controls="collapsesplit_para">
-                            split_para
-                        </button>
-                    </h2>
-                    <div id="collapsesplit_para" class="accordion-collapse collapse" aria-labelledby="headingsplit_para" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingsudoku_studio">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsesudoku_studio" aria-expanded="false" aria-controls="collapsesudoku_studio">
-                            sudoku_studio
-                        </button>
-                    </h2>
-                    <div id="collapsesudoku_studio" class="accordion-collapse collapse" aria-labelledby="headingsudoku_studio" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingsystem_info">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsesystem_info" aria-expanded="false" aria-controls="collapsesystem_info">
-                            system_info
-                        </button>
-                    </h2>
-                    <div id="collapsesystem_info" class="accordion-collapse collapse" aria-labelledby="headingsystem_info" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingtodo_list">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsetodo_list" aria-expanded="false" aria-controls="collapsetodo_list">
-                            todo_list
-                        </button>
-                    </h2>
-                    <div id="collapsetodo_list" class="accordion-collapse collapse" aria-labelledby="headingtodo_list" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingunit_converter">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseunit_converter" aria-expanded="false" aria-controls="collapseunit_converter">
-                            unit_converter
-                        </button>
-                    </h2>
-                    <div id="collapseunit_converter" class="accordion-collapse collapse" aria-labelledby="headingunit_converter" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingvideo">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsevideo" aria-expanded="false" aria-controls="collapsevideo">
-                            video
-                        </button>
-                    </h2>
-                    <div id="collapsevideo" class="accordion-collapse collapse" aria-labelledby="headingvideo" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingyoutube_downloader">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseyoutube_downloader" aria-expanded="false" aria-controls="collapseyoutube_downloader">
-                            youtube_downloader
-                        </button>
-                    </h2>
-                    <div id="collapseyoutube_downloader" class="accordion-collapse collapse" aria-labelledby="headingyoutube_downloader" data-bs-parent="#modulesAccordion">
-                        <div class="accordion-body">
-                            <strong>功能:</strong> 这是一个模组的描述。 <br>
-                            <strong>教學:</strong> 这是该模组的使用教学。
-                        </div>
-                    </div>
-                </div>
+            <h2 class="text-center mb-4">模組介紹</h2>
+            <p class="text-center col-lg-8 mx-auto text-muted">點擊下方的模組按鈕來查看詳細介紹和使用教學。</p>
+            <div class="accordion col-lg-10 mx-auto" id="modulesAccordion">
+                <!-- Accordion items will be injected here -->
             </div>
         </section>
     </div>
 
-    <footer class="py-4 bg-light mt-5">
+    <footer class="py-4 mt-5">
         <div class="container text-center">
             <p class="mb-0">Copyright &copy; 2025 FlexiTools</p>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const modules = [
+            "browser", "CADFileConverter", "clock", "color_palette", "draw", "Fitter", 
+            "gui_cmd", "image_editor", "mp4_processor", "notepad", "pdf_processor", 
+            "plot_gui", "recipe_wheel", "report", "split_para", "sudoku_studio", 
+            "system_info", "todo_list", "unit_converter", "video", "youtube_downloader"
+        ];
+
+        const accordionContainer = document.getElementById('modulesAccordion');
+
+        modules.forEach(module => {
+            const formattedName = module.replace(/_/g, ' ').replace(/\b(\w)/g, c => c.toUpperCase());
+            const accordionItemHTML = `
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading${module}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${module}" aria-expanded="false" aria-controls="collapse${module}">
+                            ${formattedName}
+                        </button>
+                    </h2>
+                    <div id="collapse${module}" class="accordion-collapse collapse" aria-labelledby="heading${module}" data-bs-parent="#modulesAccordion">
+                        <div class="accordion-body">
+                            <strong>功能:</strong> 這裡是 ${formattedName} 模組的功能描述。<br>
+                            <strong>教學:</strong> 這裡是 ${formattedName} 模組的詳細使用教學。
+                        </div>
+                    </div>
+                </div>`;
+            accordionContainer.innerHTML += accordionItemHTML;
+        });
+    </script>
 </body>
 </html>
