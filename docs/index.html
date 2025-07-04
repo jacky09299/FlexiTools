@@ -96,14 +96,16 @@
         .download-section {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            margin: 2rem 0;
-            padding: 3rem 0;
+            margin: 2rem auto;
+            padding: 3rem 2rem;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
         }
 
         .download-title {
-            text-align: center;
             font-size: 2.5rem;
             margin-bottom: 1rem;
             color: #333;
@@ -165,9 +167,10 @@
             background: white;
             border-radius: 15px;
             padding: 2rem;
-            margin: 2rem 0;
+            margin: 2rem auto;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             border: 1px solid #e9ecef;
+            max-width: 600px;
         }
 
         .download-card {
@@ -176,8 +179,7 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            flex-wrap: wrap;
-            gap: 1rem;
+            gap: 1.5rem;
         }
 
         .download-details h3 {
@@ -188,14 +190,16 @@
 
         .download-details p {
             color: #666;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1rem;
         }
 
         .download-meta {
             display: flex;
+            justify-content: center;
             gap: 1rem;
             font-size: 0.9rem;
             color: #888;
+            flex-wrap: wrap;
         }
 
         .download-meta span {
@@ -331,6 +335,11 @@
                 display: none;
             }
             
+            .download-section {
+                margin: 1rem;
+                padding: 2rem 1rem;
+            }
+            
             .download-card {
                 flex-direction: column;
                 text-align: center;
@@ -339,6 +348,11 @@
             .version-selector {
                 flex-direction: column;
                 align-items: center;
+            }
+            
+            .download-meta {
+                flex-direction: column;
+                gap: 0.5rem;
             }
         }
     </style>
@@ -365,7 +379,7 @@
             <p>靈活強大的工具集，讓您的工作更加高效</p>
         </section>
 
-        <section class="download-section container" id="download">
+        <section class="download-section" id="download">
             <h2 class="download-title">立即下載</h2>
             <p class="download-subtitle">選擇適合您的版本，開始使用 FlexiTools</p>
             
