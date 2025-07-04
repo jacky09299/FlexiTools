@@ -10,6 +10,11 @@ COLOR_ACCENT_HOVER = "#20e2b7"     # 強調色 (懸停時)
 COLOR_ENTRY_BG = "#34495e"         # 輸入框背景 (較淺的藍灰)
 COLOR_BORDER = "#464646"           # 邊框顏色
 
+# --- 夢幻科技感漸變背景 ---
+COLOR_GRADIENT_START = "#000428"   # 漸變起始色 (深藍)
+COLOR_GRADIENT_END = "#004e92"     # 漸變結束色 (亮藍)
+COLOR_STARS = ["#FFFFFF", "#EAEAEA", "#D0D0D0"] # 星星顏色
+
 # --- 字體定義 ---
 FONT_FAMILY = "Segoe UI"
 FONT_NORMAL = (FONT_FAMILY, 10)
