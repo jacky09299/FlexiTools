@@ -26,6 +26,7 @@ a = Analysis(
     ],
     datas=[
         # 模組資料與 CEF 資料
+        ('LICENSE', '.'),
         ('modules', 'modules'),
         ('dependencies/cef_dependencies/locales', 'locales'),
         ('dependencies/cef_dependencies/cef.pak', '.'),
