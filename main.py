@@ -410,7 +410,8 @@ class ModularGUI:
 
     def __init__(self, root):
         self.root = root
-        self.root.title("Modular GUI Framework") # Will be updated to FlexiTools by user, or we can set it here.
+        self.root.title("FlexiTools")
+        root.iconbitmap("tools.ico")
         self.root.geometry("800x600")
 
         self.shared_state = SharedState()  # <-- Move this to the top
