@@ -1,19 +1,31 @@
 
+import tkinter as tk
 from tkinter import ttk
 
 # --- 定義顏色方案 ---
-COLOR_PRIMARY_BG = "#212121"       # 主視窗背景 (深灰)
+COLOR_PRIMARY_BG = "#1a1a2e"       # 主視窗背景 (深藍紫)
 COLOR_MODULE_BG = "#2c3e50"        # 模組背景 (深藍灰)
-COLOR_MODULE_FG = "#ecf0f1"        # 模組前景/文字 (淺灰)
-COLOR_ACCENT = "#1abc9c"           # 強調色 (青色)
-COLOR_ACCENT_HOVER = "#20e2b7"     # 強調色 (懸停時)
+COLOR_MODULE_FG = "#e0e0e0"        # 模組前景/文字 (淺灰)
+COLOR_ACCENT = "#0f4c75"           # 強調色 (深藍)
+COLOR_ACCENT_HOVER = "#3282b8"     # 強調色 (亮藍)
 COLOR_ENTRY_BG = "#34495e"         # 輸入框背景 (較淺的藍灰)
-COLOR_BORDER = "#464646"           # 邊框顏色
+COLOR_BORDER = "#333333"           # 邊框顏色 (深灰)
 
-# --- 夢幻科技感漸變背景 ---
-COLOR_GRADIENT_START = "#000428"   # 漸變起始色 (深藍)
-COLOR_GRADIENT_END = "#004e92"     # 漸變結束色 (亮藍)
-COLOR_STARS = ["#FFFFFF", "#EAEAEA", "#D0D0D0"] # 星星顏色
+# --- 專業藝術感漸變背景 ---
+COLOR_GRADIENT_START = "#1a1a2e"   # 漸變起始色 (深藍紫)
+COLOR_GRADIENT_END = "#16213e"     # 漸變結束色 (更深的藍紫)
+
+# New colors for custom window elements
+COLOR_WINDOW_BORDER = "#0f0f0f"    # 最外層視窗邊框
+COLOR_TITLE_BAR_BG = "#0f0f0f"     # 標題欄背景
+COLOR_MENU_BAR_BG = "#222222"      # 選單欄背景
+COLOR_MENU_BUTTON_FG = "#e0e0e0"   # 選單按鈕文字顏色
+COLOR_MENU_BUTTON_ACTIVE_BG = "#0f4c75" # 選單按鈕懸停背景
+
+# Scrollbar colors
+COLOR_SCROLLBAR_TROUGH = "#2a2a2a" # 滾動條軌道
+COLOR_SCROLLBAR_THUMB = "#555555"  # 滾動條滑塊
+COLOR_SCROLLBAR_ACTIVE_THUMB = "#777777" # 滾動條滑塊懸停
 
 # --- 字體定義 ---
 FONT_FAMILY = "Segoe UI"
@@ -86,6 +98,15 @@ def configure_styles():
                     selectforeground=COLOR_MODULE_FG,
                     borderwidth=0,
                     relief='flat')
+
+    # --- 滾動條樣式 ---
+    style.configure('TScrollbar',
+                    troughcolor=COLOR_SCROLLBAR_TROUGH,
+                    background=COLOR_SCROLLBAR_THUMB,
+                    bordercolor=COLOR_SCROLLBAR_TROUGH,
+                    arrowcolor=COLOR_MODULE_FG)
+    style.map('TScrollbar',
+              background=[('active', COLOR_SCROLLBAR_ACTIVE_THUMB)])
 
 def apply_post_creation_styles(root):
     """套用需要在 root 視窗建立後才能設定的樣式。"""
