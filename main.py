@@ -587,7 +587,7 @@ class ModularGUI:
                                                 bg="#34495e", fg="white", activebackground="#3498db", activeforeground="white",
                                                 relief="flat", padx=10, pady=5)
         self.modules_menubutton.pack(side="left")
-        self.modules_menubutton.bind("<Button-1>", lambda e: self.modules_menu.post(e.x_root, e.y_root))
+        self.modules_menubutton.bind("<Button-1>", lambda e: self.modules_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
 
         # 設定檔選單
         self.profile_menu = tk.Menu(self.root, tearoff=0)
@@ -595,7 +595,7 @@ class ModularGUI:
                                                  bg="#34495e", fg="white", activebackground="#3498db", activeforeground="white",
                                                  relief="flat", padx=10, pady=5)
         self.profile_menubutton.pack(side="left")
-        self.profile_menubutton.bind("<Button-1>", lambda e: self.profile_menu.post(e.x_root, e.y_root))
+        self.profile_menubutton.bind("<Button-1>", lambda e: self.profile_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
         self.profile_menu.add_command(label="儲存目前佈局為設定檔...", command=self.save_profile_dialog)
         self.profile_menu.add_command(label="載入設定檔...", command=self.load_profile_dialog)
         self.profile_menu.add_separator()
@@ -607,7 +607,7 @@ class ModularGUI:
                                              bg="#34495e", fg="white", activebackground="#3498db", activeforeground="white",
                                              relief="flat", padx=10, pady=5)
         self.help_menubutton.pack(side="left")
-        self.help_menubutton.bind("<Button-1>", lambda e: self.help_menu.post(e.x_root, e.y_root))
+        self.help_menubutton.bind("<Button-1>", lambda e: self.help_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
         self.help_menu.add_command(label="Check for Updates...", command=self.ui_check_for_updates_manual)
         # We can add an "About" item here later if desired
 
