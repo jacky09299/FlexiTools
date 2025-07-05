@@ -213,36 +213,51 @@ def apply_equalizer(wav_path, out_path, gains):
             data = data.reshape(-1, 2)
         else:
             data = data.reshape(-1, 1)
-        data = data.astype(np.float32)
-        eq_data = np.zeros_like(data)
-        for i, (low, high) in enumerate(EQ_BANDS):
-            gain = db_to_gain(gains[i])
-            if gain == 1: # No change
-                if i == 0: eq_data = data.copy() # Copy original on first band if no gain
-                continue
-            
-            # Create filter for each band
-            b, a = scipy.signal.butter(2, [low/(framerate/2), high/(framerate/2)], btype='band')
-            for ch in range(n_channels):
-                filtered = scipy.signal.lfilter(b, a, data[:, ch])
-                if i == 0 and gain != 1: # Initialize with first filtered band
-                     eq_data[:, ch] = filtered * gain
-                else:
-                     eq_data[:, ch] += filtered * gain
+
+        # Use float64 for processing to avoid casting errors and precision loss.
+        signal = data.astype(np.float64)
+        eq_signal = np.zeros_like(signal, dtype=np.float64)
+
+        # If all gains are 0 dB (gain is approx 1), the signal is unchanged.
+        if all(abs(g) < 0.1 for g in gains):
+            eq_signal = signal
+        else:
+            # Implement a basic graphic EQ by summing filtered bands
+            for i, (low, high) in enumerate(EQ_BANDS):
+                gain = db_to_gain(gains[i])
+                if abs(gain - 1.0) < 1e-4: # Gain is 1 (0 dB), so this band is unchanged
+                    # This is a simplification. A true graphic EQ would use parallel filters.
+                    # For this implementation, we just add the gained components.
+                    # A gain of 1 means we should add the component filtered for this band.
+                    pass # Let's just add all gained components.
+
+                nyquist = framerate / 2.0
+                if low >= nyquist: continue
+                high = min(high, nyquist - 1)
+                if low >= high: continue
+                
+                b, a = scipy.signal.butter(2, [low/nyquist, high/nyquist], btype='band')
+                
+                for ch in range(n_channels):
+                    filtered_ch = scipy.signal.lfilter(b, a, signal[:, ch])
+                    eq_signal[:, ch] += filtered_ch * gain
         
-        # If all gains were 0 (resulting in silence), just use original data
-        if np.all(eq_data == 0):
-            eq_data = data
+        # If the result is all zeros (e.g., all gains were -inf), use the original signal
+        if np.max(np.abs(eq_signal)) < 1e-6:
+             eq_signal = signal
 
         # Normalize to prevent clipping
-        max_val = np.max(np.abs(eq_data))
+        max_val = np.max(np.abs(eq_signal))
         if max_val > 0:
-            eq_data = eq_data * (32767.0 / max_val)
+            scale = 32767.0 / max_val
+            eq_signal = eq_signal * scale
         
-        eq_data = np.clip(eq_data, -32768, 32767).astype(np.int16)
+        # Clip and convert back to int16
+        final_signal = np.clip(eq_signal, -32768, 32767).astype(np.int16)
+        
         with wave.open(out_path, 'wb') as wf_out:
             wf_out.setparams(params)
-            wf_out.writeframes(eq_data.tobytes())
+            wf_out.writeframes(final_signal.tobytes())
 
 # --- [NEW] Effects Settings Window ---
 class EffectsSettingsWindow(tk.Toplevel):
@@ -522,7 +537,7 @@ class VideoPlayerModule(Module):
     def apply_audio_effects(self, input_wav, output_wav):
         """
         Applies the chain of audio effects based on self.audio_effects_settings.
-        Order: mic_sim -> aec -> denoise -> eq -> environment -> position
+        New Order: mic_sim -> aec -> denoise -> eq -> environment -> position
         """
         if not PYROOM_AVAILABLE:
             shutil.copy(input_wav, output_wav)
@@ -537,23 +552,25 @@ class VideoPlayerModule(Module):
         audio_data = wf.readframes(n_frames)
         wf.close()
         
-        # Convert to numpy array
-        signal = pra.normalize(np.frombuffer(audio_data, dtype=np.int16))
+        if sampwidth == 2:
+            signal = np.frombuffer(audio_data, dtype=np.int16).astype(np.float64)
+        else:
+            signal = np.frombuffer(audio_data, dtype=np.uint8).astype(np.float64)
+
+        if n_channels == 2:
+            signal = signal.reshape(-1, 2)
+        else:
+            signal = signal.reshape(-1, 1)
         
-        # Placeholder for effects chain
         current_signal = signal
         
-        # 1. Microphone Simulation (Placeholder - using EQ for now)
+        # 1. Microphone Simulation (Placeholder)
         mic_sim = self.audio_effects_settings.get("mic_sim", "無")
         if mic_sim != "無":
-            # This is a very simplified simulation. Real simulation is more complex.
-            # We'll use some simple filtering.
             self.shared_state.log(f"模擬麥克風: {mic_sim}", level=logging.DEBUG)
-            # In a real scenario, you'd apply a specific impulse response or filter.
-            # For now, this is a placeholder.
-            pass # No change yet
+            pass
 
-        # 2. AEC (Echo Cancellation) - Requires a reference signal, complex to apply here. Placeholder.
+        # 2. AEC (Echo Cancellation) - Placeholder
         if self.audio_effects_settings.get("aec", False):
             self.shared_state.log("AEC (回音消除) - 功能待實現", level=logging.WARNING)
             pass
@@ -561,15 +578,47 @@ class VideoPlayerModule(Module):
         # 3. Denoise
         if self.audio_effects_settings.get("denoise", False):
             self.shared_state.log("套用降噪...", level=logging.DEBUG)
-            # This is a simple spectral subtraction denoiser
             try:
-                current_signal = pra.denoise.spectral_sub(current_signal, n_fft=512, db_reduc=10, look_back=5, beta=10, alpha=2)
+                if current_signal.ndim > 1:
+                    processed_channels = []
+                    for ch in range(current_signal.shape[1]):
+                        denoiser = pra.denoise.SpectralSub(n_fft=512, db_reduc=10, look_back=5, beta=10, alpha=2)
+                        processed_channels.append(denoiser.process(current_signal[:, ch]))
+                    current_signal = np.stack(processed_channels, axis=1)
+                else:
+                    denoiser = pra.denoise.SpectralSub(n_fft=512, db_reduc=10, look_back=5, beta=10, alpha=2)
+                    current_signal = denoiser.process(current_signal.flatten()).reshape(-1, 1)
             except Exception as e:
                 self.shared_state.log(f"降噪失敗: {e}", level=logging.ERROR)
 
+        # 4. Equalizer
+        eq_mode = self.audio_effects_settings.get("eq_mode", "無")
+        if eq_mode and eq_mode != "無":
+            self.shared_state.log(f"套用等化器: {eq_mode}", level=logging.INFO)
+            gains = get_equalizer_gains(eq_mode)
+            eq_signal = np.zeros_like(current_signal, dtype=np.float64)
 
-        # 4. Equalizer (Handled separately after this function for now)
-        # The main `extract_audio` will call `apply_equalizer` on the output of this function.
+            if all(abs(g) < 0.1 for g in gains):
+                eq_signal = current_signal
+            else:
+                for i, (low, high) in enumerate(EQ_BANDS):
+                    gain = db_to_gain(gains[i])
+                    if abs(gain - 1.0) < 1e-4:
+                        continue
+                    nyquist = framerate / 2.0
+                    if low >= nyquist: continue
+                    high = min(high, nyquist - 1)
+                    if low >= high: continue
+                    
+                    b, a = scipy.signal.butter(2, [low/nyquist, high/nyquist], btype='band')
+                    
+                    for ch in range(n_channels):
+                        filtered_ch = scipy.signal.lfilter(b, a, current_signal[:, ch])
+                        eq_signal[:, ch] += filtered_ch * gain
+            
+            if np.max(np.abs(eq_signal)) < 1e-6:
+                 eq_signal = current_signal
+            current_signal = eq_signal
 
         # 5. Environment & 6. Position
         environment = self.audio_effects_settings.get("environment", "無")
@@ -578,72 +627,70 @@ class VideoPlayerModule(Module):
         if environment != "無" or position != "無":
             self.shared_state.log(f"模擬環境: {environment}, 位置: {position}", level=logging.DEBUG)
             try:
-                # Environment presets (room_dim, absorption)
-                # Dimensions in meters, absorption from 0 (reflective) to 1 (absorbent)
                 env_presets = {
                     "小房間": ([4, 5, 3], 0.2), "浴室": ([2, 3, 2.5], 0.05),
                     "教室": ([10, 15, 4], 0.3), "音樂廳": ([50, 80, 20], 0.4),
                     "廢棄廠房": ([40, 60, 15], 0.1), "錄音室": ([5, 6, 3], 0.8),
                     "會議室": ([8, 12, 3.5], 0.5), "地下道": ([3, 50, 4], 0.02),
-                    "劇場前排": ([30, 40, 15], 0.6), "戶外": (None, None), # Special case
+                    "劇場前排": ([30, 40, 15], 0.6), "戶外": (None, None),
                     "車內": ([2, 3, 1.5], 0.4), "購物中心中庭": ([50, 50, 30], 0.2)
                 }
-                
                 room_dim, absorption = env_presets.get(environment, (None, None))
 
                 if environment == "戶外":
-                    # No reverb for outdoor, just pass through
                     pass
                 elif room_dim:
-                    # Create the room
+                    signal_for_room = current_signal
+                    if current_signal.ndim > 1:
+                        self.shared_state.log("環境模擬前將音訊轉為單聲道。", level=logging.DEBUG)
+                        signal_for_room = np.mean(signal_for_room, axis=1)
+
                     room = pra.ShoeBox(room_dim, fs=framerate, materials=pra.Material(absorption), max_order=3)
+                    center = np.array(room_dim) / 2.0
+                    mic_pos = center
                     
-                    # Source and Mic positions
-                    center = np.array(room_dim) / 2
-                    mic_pos = center # Default mic position at the center
-                    
-                    # Position presets (relative to center)
                     pos_presets = {
                         "前方": center + np.array([0, -2, 0]), "後方": center + np.array([0, 2, 0]),
                         "上方": center + np.array([0, 0, 1]), "下方": center + np.array([0, 0, -1]),
                         "左方": center + np.array([-1.5, 0, 0]), "右方": center + np.array([1.5, 0, 0]),
-                        "360度環繞": "surround" # Special case
+                        "360度環繞": "surround"
                     }
-                    
-                    source_pos = pos_presets.get(position, center + np.array([0, -2, 0])) # Default to front
+                    source_pos = pos_presets.get(position, center + np.array([0, -2, 0]))
 
                     if position == "360度環繞":
-                        # This is complex. For now, we simulate one rotation.
                         self.shared_state.log("360度環繞 - 簡化模擬", level=logging.WARNING)
-                        # A true surround effect would require multi-channel output.
-                        # We simulate by moving the source.
-                        t = np.arange(len(current_signal)) / framerate
+                        t = np.arange(len(signal_for_room)) / framerate
                         radius = 2.0
-                        x = center[0] + radius * np.cos(2 * np.pi * 0.2 * t) # 0.2 Hz rotation
+                        x = center[0] + radius * np.cos(2 * np.pi * 0.2 * t)
                         y = center[1] + radius * np.sin(2 * np.pi * 0.2 * t)
                         z = np.full_like(x, center[2])
                         source_path = np.c_[x, y, z]
-                        room.add_source(source_path, signal=current_signal)
-
+                        room.add_source(source_path, signal=signal_for_room)
                     else:
-                        # Clip positions to be inside the room
                         source_pos = np.clip(source_pos, 0.1, np.array(room_dim) - 0.1)
-                        room.add_source(source_pos, signal=current_signal)
+                        room.add_source(source_pos, signal=signal_for_room)
 
-                    # Add microphone
                     room.add_microphone(mic_pos)
-                    
-                    # Run simulation
                     room.simulate()
                     
-                    # Get the simulated signal from the microphone
-                    current_signal = room.mic_array.signals[0, :len(current_signal)]
+                    simulated_mono = room.mic_array.signals[0, :len(signal_for_room)]
+                    if n_channels == 2:
+                        current_signal = np.column_stack([simulated_mono, simulated_mono])
+                    else:
+                        current_signal = simulated_mono.reshape(-1, 1)
 
             except Exception as e:
                 self.shared_state.log(f"環境模擬失敗: {e}", level=logging.ERROR)
 
-        # Convert back to int16 and write to output file
-        processed_signal_int = pra.unnormalize(current_signal, dtype=np.int16)
+        # Final normalization and conversion
+        current_signal_float = np.array(current_signal, dtype=np.float64)
+        max_abs_val = np.max(np.abs(current_signal_float))
+        
+        if max_abs_val > 0:
+            scaling_factor = 32767.0 / max_abs_val
+            current_signal_float = current_signal_float * scaling_factor
+        
+        processed_signal_int = np.clip(current_signal_float, -32768, 32767).astype(np.int16)
         
         with wave.open(output_wav, 'wb') as wf_out:
             wf_out.setparams(params)
@@ -707,30 +754,21 @@ class VideoPlayerModule(Module):
                     raise Exception("影片不包含音軌。")
                 video.audio.write_audiofile(temp_wav_path, codec='pcm_s16le', logger=None)
 
-            # --- [NEW] Apply audio effects chain ---
-            effects_active = any(self.audio_effects_settings.get(k, "無" if isinstance(self.audio_effects_settings.get(k), str) else False) not in [False, "無"] for k in self.audio_effects_settings if k != "eq_mode")
+            # Apply audio effects chain if any are active
+            effects_active = any(self.audio_effects_settings.get(k, "無" if isinstance(self.audio_effects_settings.get(k), str) else False) not in [False, "無"] for k in self.audio_effects_settings)
             
-            path_after_effects = temp_wav_path
+            path_for_ffmpeg = temp_wav_path
             if effects_active:
                 self.shared_state.log("偵測到有效音訊效果，開始處理...", level=logging.INFO)
                 effects_out_path = os.path.join(self.temp_cache_dir, "temp_effects.wav")
                 self.apply_audio_effects(temp_wav_path, effects_out_path)
-                path_after_effects = effects_out_path
+                path_for_ffmpeg = effects_out_path
             else:
                 self.shared_state.log("無有效音訊效果，跳過處理。", level=logging.DEBUG)
-
-            # --- Apply Equalizer ---
-            eq_mode = self.audio_effects_settings.get("eq_mode", "無")
-            path_after_eq = path_after_effects
-            if eq_mode and eq_mode != "無":
-                self.shared_state.log(f"套用等化器: {eq_mode}", level=logging.INFO)
-                eq_out_path = os.path.join(self.temp_cache_dir, "temp_eq.wav")
-                apply_equalizer(path_after_effects, eq_out_path, get_equalizer_gains(eq_mode))
-                path_after_eq = eq_out_path
             
             # --- Convert final WAV to MP3 for playback ---
             self.temp_audio_path = os.path.join(self.temp_cache_dir, "audio.mp3")
-            cmd = f'ffmpeg -y -loglevel error -i "{path_after_eq}" -vn -ar 44100 -ac 2 -b:a 192k "{self.temp_audio_path}"'
+            cmd = f'ffmpeg -y -loglevel error -i "{path_for_ffmpeg}" -vn -ar 44100 -ac 2 -b:a 192k "{self.temp_audio_path}"'
             
             os.system(cmd)
 
