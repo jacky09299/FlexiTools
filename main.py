@@ -577,23 +577,37 @@ class ModularGUI:
 
         self.shared_state.log(f"Application saves directory set to: {self.saves_dir}", "INFO")
 
-        self.menubar = tk.Menu(self.root)
-        self.root.config(menu=self.menubar)
+        # 自訂菜單欄容器
+        self.menu_frame = tk.Frame(self.content_frame, bg="#34495e")
+        self.menu_frame.pack(fill="x", side="top")
 
-        self.modules_menu = tk.Menu(self.menubar, tearoff=0)
-        self.menubar.add_cascade(label="Modules", menu=self.modules_menu)
+        # Modules 選單
+        self.modules_menu = tk.Menu(self.root, tearoff=0)
+        self.modules_menubutton = tk.Menubutton(self.menu_frame, text="Modules", menu=self.modules_menu, 
+                                                bg="#34495e", fg="white", activebackground="#3498db", activeforeground="white",
+                                                relief="flat", padx=10, pady=5)
+        self.modules_menubutton.pack(side="left")
+        self.modules_menubutton.bind("<Button-1>", lambda e: self.modules_menu.post(e.x_root, e.y_root))
 
-        # 新增設定檔選單
-        self.profile_menu = tk.Menu(self.menubar, tearoff=0)
-        self.menubar.add_cascade(label="設定檔", menu=self.profile_menu)
+        # 設定檔選單
+        self.profile_menu = tk.Menu(self.root, tearoff=0)
+        self.profile_menubutton = tk.Menubutton(self.menu_frame, text="設定檔", menu=self.profile_menu, 
+                                                 bg="#34495e", fg="white", activebackground="#3498db", activeforeground="white",
+                                                 relief="flat", padx=10, pady=5)
+        self.profile_menubutton.pack(side="left")
+        self.profile_menubutton.bind("<Button-1>", lambda e: self.profile_menu.post(e.x_root, e.y_root))
         self.profile_menu.add_command(label="儲存目前佈局為設定檔...", command=self.save_profile_dialog)
         self.profile_menu.add_command(label="載入設定檔...", command=self.load_profile_dialog)
         self.profile_menu.add_separator()
         self.profile_menu.add_command(label="管理設定檔...", command=self.manage_profiles_dialog)
 
-        # Help Menu & Update Check
-        self.help_menu = tk.Menu(self.menubar, tearoff=0)
-        self.menubar.add_cascade(label="Help", menu=self.help_menu)
+        # Help 選單
+        self.help_menu = tk.Menu(self.root, tearoff=0)
+        self.help_menubutton = tk.Menubutton(self.menu_frame, text="Help", menu=self.help_menu, 
+                                             bg="#34495e", fg="white", activebackground="#3498db", activeforeground="white",
+                                             relief="flat", padx=10, pady=5)
+        self.help_menubutton.pack(side="left")
+        self.help_menubutton.bind("<Button-1>", lambda e: self.help_menu.post(e.x_root, e.y_root))
         self.help_menu.add_command(label="Check for Updates...", command=self.ui_check_for_updates_manual)
         # We can add an "About" item here later if desired
 
@@ -829,18 +843,18 @@ class ModularGUI:
                  self.shared_state.log(f"Update check skipped: {status_code}", "INFO")
 
         # Re-enable menu item if it was disabled during check
-        if manual_check and hasattr(self, 'help_menu'):
+        if manual_check and hasattr(self, 'help_menubutton'):
             try:
-                self.help_menu.entryconfig("Check for Updates...", state=tk.NORMAL)
+                self.help_menubutton.config(state=tk.NORMAL)
             except tk.TclError:
                 pass # Menu might not exist or item removed
 
     def _perform_update_check_threaded(self, force_check=False, is_manual_check=False):
         """Worker function for threaded update check."""
         self.shared_state.log(f"Threaded update check started. Force: {force_check}, Manual: {is_manual_check}", "INFO")
-        if is_manual_check and hasattr(self, 'help_menu'): # Disable menu item during check
+        if is_manual_check and hasattr(self, 'help_menubutton'): # Disable menu item during check
             try:
-                self.help_menu.entryconfig("Check for Updates...", state=tk.DISABLED)
+                self.help_menubutton.config(state=tk.DISABLED)
             except tk.TclError:
                 pass # Menu might not exist or item removed
 
