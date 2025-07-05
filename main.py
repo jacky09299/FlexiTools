@@ -14,7 +14,7 @@ import random
 from shared_state import SharedState
 from style_manager import (
     configure_styles, apply_post_creation_styles,
-    COLOR_GRADIENT_START, COLOR_GRADIENT_END, COLOR_PRIMARY_BG,
+    COLOR_PRIMARY_BG,
     COLOR_WINDOW_BORDER, COLOR_TITLE_BAR_BG, COLOR_MENU_BAR_BG,
     COLOR_MENU_BUTTON_FG, COLOR_MENU_BUTTON_ACTIVE_BG, COLOR_ACCENT_HOVER
 )
@@ -57,7 +57,6 @@ class AnimatedCanvas(tk.Canvas):
         super().__init__(parent, *args, **kwargs, highlightthickness=0)
         self.stars = []
         self.bind("<Configure>", self._on_resize)
-        self._draw_gradient()
 
     def _hex_to_rgb(self, hex_color):
         hex_color = hex_color.lstrip('#')
@@ -66,54 +65,8 @@ class AnimatedCanvas(tk.Canvas):
     def _rgb_to_hex(self, rgb):
         return f'#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}'
 
-    def _draw_gradient(self):
-        self.delete("gradient")
-        width = self.winfo_width()
-        height = self.winfo_height()
-        if width < 2 or height < 2: # Avoid drawing on a 1x1 canvas
-            return
-
-        start_rgb = self._hex_to_rgb(COLOR_GRADIENT_START)
-        end_rgb = self._hex_to_rgb(COLOR_GRADIENT_END)
-
-        for i in range(height):
-            # Calculate color for this line
-            new_rgb = [
-                int(start_rgb[j] + (end_rgb[j] - start_rgb[j]) * (i / height))
-                for j in range(3)
-            ]
-            color = self._rgb_to_hex(new_rgb)
-            self.create_line(0, i, width, i, fill=color, tags="gradient")
-        self.lower("gradient") # Ensure gradient is behind everything else
-
-    def _create_stars(self, number_of_stars):
-        self.delete("star")
-        width = self.winfo_width()
-        height = self.winfo_height()
-        if width < 2 or height < 2:
-            return
-        self.stars = []
-        for _ in range(number_of_stars):
-            x = random.randint(0, width)
-            y = random.randint(0, height)
-            size = random.uniform(0.5, 1.5)
-            color = random.choice(COLOR_STARS)
-            star_id = self.create_oval(x, y, x + size, y + size, fill=color, outline="", tags="star")
-            self.stars.append(star_id)
-
-    def _animate_stars(self):
-        for star_id in self.stars:
-            if random.random() < 0.01: # 1% chance to twinkle
-                new_color = random.choice(COLOR_STARS)
-                try:
-                    self.itemconfig(star_id, fill=new_color)
-                except tk.TclError:
-                    # This can happen if the star was deleted during a resize
-                    pass
-        self.after(50, self._animate_stars) # Repeat every 50ms
-
     def _on_resize(self, event=None):
-        self._draw_gradient()
+        pass # No gradient or stars to draw
 
 class Module:
     def __init__(self, master, shared_state, module_name="UnknownModule", gui_manager=None):

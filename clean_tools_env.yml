@@ -1,0 +1,18 @@
+name: clean_tools
+channels:
+  - defaults
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/r
+  - https://repo.anaconda.com/pkgs/msys2
+dependencies:
+  - ca-certificates=2025.2.25=haa95532_0
+  - openssl=1.1.1w=h2bbff1b_0
+  - pip=25.1=pyhc872135_2
+  - python=3.9.7=h6244533_1
+  - setuptools=78.1.1=py39haa95532_0
+  - sqlite=3.45.3=h2bbff1b_0
+  - tzdata=2025b=h04d1e81_0
+  - vc=14.42=haa95532_5
+  - vs2015_runtime=14.42.34433=hbfb602d_5
+  - wheel=0.45.1=py39haa95532_0
+prefix: C:\Users\Jacky\anaconda3\envs\clean_tools
