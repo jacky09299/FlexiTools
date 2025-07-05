@@ -15,6 +15,7 @@ dependencies:
   - vs2015_runtime=14.42.34433=hbfb602d_5
   - wheel=0.45.1=py39haa95532_0
   - pip:
+      - altgraph==0.17.4
       - asteval==1.0.6
       - attrs==25.3.0
       - cefpython3==66.1
@@ -30,6 +31,7 @@ dependencies:
       - humanfriendly==10.0
       - imageio==2.37.0
       - imageio-ffmpeg==0.6.0
+      - importlib-metadata==8.7.0
       - importlib-resources==6.5.2
       - jsonschema==4.24.0
       - jsonschema-specifications==2025.4.1
@@ -50,6 +52,7 @@ dependencies:
       - packaging==25.0
       - pandas==2.0.1
       - pdfrw==0.4
+      - pefile==2023.2.7
       - pillow==11.2.1
       - platformdirs==4.3.8
       - pooch==1.8.2
@@ -57,12 +60,15 @@ dependencies:
       - protobuf==6.31.1
       - psutil==5.9.5
       - pygame==2.6.1
+      - pyinstaller==6.14.1
+      - pyinstaller-hooks-contrib==2025.5
       - pymatting==1.1.14
       - pyparsing==3.2.3
       - pypdf2==3.0.1
       - pyreadline3==3.5.4
       - python-dateutil==2.9.0.post0
       - pytz==2025.2
+      - pywin32-ctypes==0.2.3
       - referencing==0.36.2
       - rembg==2.0.61
       - reportlab==3.5.68
