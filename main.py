@@ -14,7 +14,9 @@ import random
 from shared_state import SharedState
 from style_manager import (
     configure_styles, apply_post_creation_styles,
-    COLOR_GRADIENT_START, COLOR_GRADIENT_END, COLOR_STARS, COLOR_PRIMARY_BG
+    COLOR_GRADIENT_START, COLOR_GRADIENT_END, COLOR_PRIMARY_BG,
+    COLOR_WINDOW_BORDER, COLOR_TITLE_BAR_BG, COLOR_MENU_BAR_BG,
+    COLOR_MENU_BUTTON_FG, COLOR_MENU_BUTTON_ACTIVE_BG, COLOR_ACCENT_HOVER
 )
 import logging
 import json
@@ -56,8 +58,6 @@ class AnimatedCanvas(tk.Canvas):
         self.stars = []
         self.bind("<Configure>", self._on_resize)
         self._draw_gradient()
-        self._create_stars(100)
-        self._animate_stars()
 
     def _hex_to_rgb(self, hex_color):
         hex_color = hex_color.lstrip('#')
@@ -114,7 +114,6 @@ class AnimatedCanvas(tk.Canvas):
 
     def _on_resize(self, event=None):
         self._draw_gradient()
-        self._create_stars(100)
 
 class Module:
     def __init__(self, master, shared_state, module_name="UnknownModule", gui_manager=None):
@@ -497,58 +496,58 @@ class ModularGUI:
         self.resize_mode = None
 
         # 主容器
-        self.main_frame = tk.Frame(self.root, bg="#2c3e50", bd=0)
+        self.main_frame = tk.Frame(self.root, bg=COLOR_WINDOW_BORDER, bd=1, relief="solid") # 調整邊框顏色和樣式
         self.main_frame.pack(fill="both", expand=True)
 
         # 標題欄
-        self.title_bar = tk.Frame(self.main_frame, bg="#34495e", height=35, relief="flat")
+        self.title_bar = tk.Frame(self.main_frame, bg=COLOR_TITLE_BAR_BG, height=35, relief="flat") # 調整標題欄背景
         self.title_bar.pack(fill="x")
         self.title_bar.pack_propagate(False)
 
         # 標題文字
         self.title_label = tk.Label(self.title_bar, text="FlexiTools",
-                                   bg="#34495e", fg="white", font=("Arial", 10, "bold"))
+                                   bg=COLOR_TITLE_BAR_BG, fg="white", font=("Arial", 10, "bold")) # 調整標題文字顏色
         self.title_label.pack(side="left", padx=10, pady=8)
 
         # 視窗控制按鈕容器
-        self.controls_frame = tk.Frame(self.title_bar, bg="#34495e")
+        self.controls_frame = tk.Frame(self.title_bar, bg=COLOR_TITLE_BAR_BG) # 調整按鈕容器背景
         self.controls_frame.pack(side="right", padx=5)
 
         # 最小化按鈕
         self.min_btn = tk.Button(self.controls_frame, text="🗕",
                                 command=self.minimize_window,
-                                bg="#34495e", fg="white", relief="flat",
+                                bg=COLOR_TITLE_BAR_BG, fg="white", relief="flat", # 調整按鈕顏色
                                 font=("Arial", 8), width=3, height=1,
-                                activebackground="#3498db", activeforeground="white")
+                                activebackground=COLOR_ACCENT_HOVER, activeforeground="white")
         self.min_btn.pack(side="left", padx=2)
 
         # 最大化按鈕
         self.max_btn = tk.Button(self.controls_frame, text="🗖",
                                 command=self.toggle_maximize,
-                                bg="#34495e", fg="white", relief="flat",
+                                bg=COLOR_TITLE_BAR_BG, fg="white", relief="flat", # 調整按鈕顏色
                                 font=("Arial", 8), width=3, height=1,
-                                activebackground="#3498db", activeforeground="white")
+                                activebackground=COLOR_ACCENT_HOVER, activeforeground="white")
         self.max_btn.pack(side="left", padx=2)
 
         # 關閉按鈕
         self.close_btn = tk.Button(self.controls_frame, text="🗙",
                                   command=self.close_window,
-                                  bg="#34495e", fg="white", relief="flat",
+                                  bg=COLOR_TITLE_BAR_BG, fg="white", relief="flat", # 調整按鈕顏色
                                   font=("Arial", 8), width=3, height=1,
                                   activebackground="#e74c3c", activeforeground="white")
         self.close_btn.pack(side="right", padx=2)
 
         # 內容區域
-        self.content_frame = tk.Frame(self.main_frame, bg="#ecf0f1", bd=1, relief="flat")
+        self.content_frame = tk.Frame(self.main_frame, bg=COLOR_PRIMARY_BG, bd=0, relief="flat") # 調整內容區域背景
         self.content_frame.pack(fill="both", expand=True, padx=1, pady=(0, 1))
 
         # 狀態欄 (可選，如果main.py中沒有類似的，可以新增)
-        self.status_bar = tk.Frame(self.main_frame, bg="#34495e", height=25)
+        self.status_bar = tk.Frame(self.main_frame, bg=COLOR_TITLE_BAR_BG, height=25) # 調整狀態欄背景
         self.status_bar.pack(fill="x", side="bottom")
         self.status_bar.pack_propagate(False)
 
         self.status_label = tk.Label(self.status_bar, text="就緒",
-                                    bg="#34495e", fg="white", font=("Arial", 8))
+                                    bg=COLOR_TITLE_BAR_BG, fg="white", font=("Arial", 8)) # 調整狀態欄文字顏色
         self.status_label.pack(side="left", padx=10, pady=4)
 
         self.shared_state = SharedState()  # <-- Move this to the top
@@ -578,13 +577,13 @@ class ModularGUI:
         self.shared_state.log(f"Application saves directory set to: {self.saves_dir}", "INFO")
 
         # 自訂菜單欄容器
-        self.menu_frame = tk.Frame(self.content_frame, bg="#34495e")
+        self.menu_frame = tk.Frame(self.content_frame, bg=COLOR_MENU_BAR_BG) # 調整菜單欄背景
         self.menu_frame.pack(fill="x", side="top")
 
         # Modules 選單
         self.modules_menu = tk.Menu(self.root, tearoff=0)
         self.modules_menubutton = tk.Menubutton(self.menu_frame, text="Modules", menu=self.modules_menu, 
-                                                bg="#34495e", fg="white", activebackground="#3498db", activeforeground="white",
+                                                bg=COLOR_MENU_BAR_BG, fg=COLOR_MENU_BUTTON_FG, activebackground=COLOR_MENU_BUTTON_ACTIVE_BG, activeforeground="white", # 調整菜單按鈕顏色
                                                 relief="flat", padx=10, pady=5)
         self.modules_menubutton.pack(side="left")
         self.modules_menubutton.bind("<Button-1>", lambda e: self.modules_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
@@ -592,7 +591,7 @@ class ModularGUI:
         # 設定檔選單
         self.profile_menu = tk.Menu(self.root, tearoff=0)
         self.profile_menubutton = tk.Menubutton(self.menu_frame, text="設定檔", menu=self.profile_menu, 
-                                                 bg="#34495e", fg="white", activebackground="#3498db", activeforeground="white",
+                                                 bg=COLOR_MENU_BAR_BG, fg=COLOR_MENU_BUTTON_FG, activebackground=COLOR_MENU_BUTTON_ACTIVE_BG, activeforeground="white", # 調整菜單按鈕顏色
                                                  relief="flat", padx=10, pady=5)
         self.profile_menubutton.pack(side="left")
         self.profile_menubutton.bind("<Button-1>", lambda e: self.profile_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
@@ -604,7 +603,7 @@ class ModularGUI:
         # Help 選單
         self.help_menu = tk.Menu(self.root, tearoff=0)
         self.help_menubutton = tk.Menubutton(self.menu_frame, text="Help", menu=self.help_menu, 
-                                             bg="#34495e", fg="white", activebackground="#3498db", activeforeground="white",
+                                             bg=COLOR_MENU_BAR_BG, fg=COLOR_MENU_BUTTON_FG, activebackground=COLOR_MENU_BUTTON_ACTIVE_BG, activeforeground="white", # 調整菜單按鈕顏色
                                              relief="flat", padx=10, pady=5)
         self.help_menubutton.pack(side="left")
         self.help_menubutton.bind("<Button-1>", lambda e: self.help_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
