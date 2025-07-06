@@ -1,11 +1,11 @@
 import sys
 import os
-
+from ctypes import windll
 # Check if the application is running in a bundled environment (PyInstaller)
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     # Change the current working directory to the one containing the executable
     os.chdir(sys._MEIPASS)
-
+import time
 import tkinter as tk
 from tkinter import ttk
 from tkinter import simpledialog, messagebox
@@ -572,7 +572,8 @@ class ModularGUI:
 
         self.loaded_modules = {}
         self.module_instance_counters = {}
-
+        self.map_event_handled = 0
+        self.root.after(10, lambda: self.show_on_taskbar(self.root))
         self.maximized_module_name = None
         self._pre_maximize_layout = None
 
@@ -822,7 +823,7 @@ class ModularGUI:
         self.title_label.bind("<B1-Motion>", self.do_move)
         
         # 視窗狀態監聽
-        self.root.bind('<Map>', self.on_window_state_change)
+        self.root.bind('<Map>', self.restore_window)
         
         # 整個視窗的滑鼠事件
         self.root.bind("<Motion>", self.on_mouse_motion)
@@ -1856,12 +1857,6 @@ class ModularGUI:
         y = event.y_root - self.drag_start_y
         self.root.geometry(f"+{x}+{y}")
     
-    def minimize_window(self):
-        """最小化視窗"""
-        self.root.update_idletasks()
-        self.root.overrideredirect(False)
-        self.root.iconify()
-    
     def toggle_maximize(self, event=None):
         """切換最大化狀態"""
         if self.is_maximized:
@@ -1893,11 +1888,37 @@ class ModularGUI:
     def close_window(self):
         """關閉視窗"""
         self.on_closing() # 呼叫現有的關閉邏輯
-    
-    def on_window_state_change(self, event):
-        """視窗狀態改變時的處理"""
-        if self.root.state() == 'normal':
-            self.root.overrideredirect(True)
+
+    GWL_EXSTYLE = -20
+    WS_EX_TOOLWINDOW = 0x00000080
+    WS_EX_APPWINDOW = 0x00040000
+    def show_on_taskbar(self, root):
+        hwnd = windll.user32.GetParent(root.winfo_id())
+        style = windll.user32.GetWindowLongW(hwnd, self.GWL_EXSTYLE)
+        style = style & ~self.WS_EX_TOOLWINDOW | self.WS_EX_APPWINDOW
+        windll.user32.SetWindowLongW(hwnd, self.GWL_EXSTYLE, style)
+        root.wm_withdraw()
+        root.after(10, lambda: root.wm_deiconify())
+
+    def minimize_window(self, event=None):
+        self.root.overrideredirect(False)
+        self.root.update_idletasks()
+        self.root.iconify()
+        self.root.bind('<Map>', lambda e: self.restore_window())
+
+    def restore_window(self, event=None):
+        self.map_event_handled += 1
+        if self.map_event_handled == 2:
+            self.root.unbind('<Map>')
+            self.root.withdraw()
+            self.root.after(100, self._finish_restore)
+
+    def _finish_restore(self):
+        self.root.deiconify()
+        self.root.overrideredirect(True)
+        self.show_on_taskbar(self.root)
+        self.map_event_handled = 0
+
 
 if __name__ == "__main__":
     import sys
