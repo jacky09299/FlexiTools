@@ -25,6 +25,17 @@ import tempfile # For temporary installer download
 import subprocess # For running installer and helper script
 import os # For PID and path manipulation (os.getpid, os.path.join etc.)
 # sys is already imported
+import platform
+# Conditional import for win32api
+if platform.system() == "Windows":
+    try:
+        import win32gui
+        import win32con
+    except ImportError:
+        # A fallback or logging message if pywin32 is not installed
+        win32gui = None
+        win32con = None
+        print("WARNING: pywin32 is not installed. The custom window frame will not have a taskbar icon.")
 
 # Attempt to import update_manager and its components
 try:
@@ -433,7 +444,7 @@ class ModularGUI:
 
     def __init__(self, root):
         self.root = root
-        self.root.overrideredirect(True)  # 移除系統邊框
+        # self.root.overrideredirect(True)  # 移除系統邊框 - 改用 win32api
         root.iconbitmap("tools.ico")
         self.root.geometry("800x600") # 初始尺寸，之後會被載入的佈局覆蓋
 
@@ -639,6 +650,9 @@ class ModularGUI:
         self.root.after(1000, self.ui_check_for_updates_startup) # Delay slightly to let UI load
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+        # Apply borderless style after a short delay
+        self.root.after(20, self.make_borderless_with_taskbar)
 
     def _start_download_in_thread(self, version_to_download, download_url):
         """Starts the download process in a separate thread."""
@@ -1424,6 +1438,44 @@ class ModularGUI:
 
         self.root.destroy()
 
+    def make_borderless_with_taskbar(self):
+        """
+        Uses Win32 API to remove the window border but keep the taskbar icon.
+        """
+        if platform.system() != "Windows" or not win32gui:
+            self.root.overrideredirect(True) # Fallback for non-Windows or if pywin32 is missing
+            self.shared_state.log("Using overrideredirect as fallback for non-Windows/missing pywin32.", "WARNING")
+            return
+
+        try:
+            # Get window handle (HWND)
+            # GetParent is needed to get the top-level window handle from a Tkinter frame.
+            hwnd = win32gui.GetParent(self.root.winfo_id())
+            
+            # Get current window style
+            style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
+            
+            # Remove title bar and thick frame (for resizing)
+            style &= ~(win32con.WS_CAPTION | win32con.WS_THICKFRAME)
+            
+            # Set new window style
+            win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, style)
+            
+            # Force a redraw of the window frame to apply changes
+            win32gui.SetWindowPos(hwnd, None, 0, 0, 0, 0,
+                                  win32con.SWP_FRAMECHANGED | 
+                                  win32con.SWP_NOMOVE | 
+                                  win32con.SWP_NOSIZE | 
+                                  win32con.SWP_NOZORDER |
+                                  win32con.SWP_NOOWNERZORDER)
+                                  
+            self.shared_state.log("Borderless style applied via Win32 API.", "INFO")
+
+        except Exception as e:
+            self.shared_state.log(f"Error setting borderless style: {e}", "ERROR")
+            # Fallback to old method if API call fails
+            self.root.overrideredirect(True)
+
     def show_context_menu(self, event):
         self.context_menu.delete(0, tk.END)
 
@@ -1858,8 +1910,7 @@ class ModularGUI:
     
     def minimize_window(self):
         """最小化視窗"""
-        self.root.update_idletasks()
-        self.root.overrideredirect(False)
+        # The win32api approach allows direct iconification without changing overrideredirect
         self.root.iconify()
     
     def toggle_maximize(self, event=None):
@@ -1896,8 +1947,9 @@ class ModularGUI:
     
     def on_window_state_change(self, event):
         """視窗狀態改變時的處理"""
-        if self.root.state() == 'normal':
-            self.root.overrideredirect(True)
+        # With the win32api method, we no longer need to toggle overrideredirect.
+        # The style is applied once and should persist.
+        pass
 
 if __name__ == "__main__":
     import sys
@@ -1908,5 +1960,6 @@ if __name__ == "__main__":
     configure_styles()
     apply_post_creation_styles(root)
     app = ModularGUI(root)
+    root.iconbitmap("tools.ico")
     root.mainloop()
 
