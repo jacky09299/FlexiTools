@@ -433,62 +433,9 @@ class ModularGUI:
 
     def __init__(self, root):
         self.root = root
-        # self.root.overrideredirect(True)  # REMOVED: Replaced by custom window styling for borderless with taskbar icon
+        self.root.overrideredirect(True)  # 移除系統邊框
         root.iconbitmap("tools.ico")
         self.root.geometry("800x600") # 初始尺寸，之後會被載入的佈局覆蓋
-
-        # --- Custom Window Styling (Windows specific) ---
-        try:
-            import ctypes
-            from ctypes import wintypes
-
-            # Constants
-            GWL_STYLE = -16
-            WS_CAPTION = 0x00C00000
-            WS_THICKFRAME = 0x00040000 # For resizing
-            WS_SYSMENU = 0x00080000
-            WS_MINIMIZEBOX = 0x00020000
-            WS_MAXIMIZEBOX = 0x00010000
-            WS_POPUP = 0x80000000
-
-            SWP_FRAMECHANGED = 0x0020
-            SWP_NOMOVE = 0x0002
-            SWP_NOSIZE = 0x0001
-            SWP_NOZORDER = 0x0004
-            SWP_SHOWWINDOW = 0x0040
-
-            # Functions
-            GetWindowLong = ctypes.windll.user32.GetWindowLongW
-            SetWindowLong = ctypes.windll.user32.SetWindowLongW
-            SetWindowPos = ctypes.windll.user32.SetWindowPos
-
-            self.root.update_idletasks() # Ensure HWND is available
-            hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
-            if not hwnd: # Fallback if GetParent fails (e.g. already a top-level window)
-                hwnd = self.root.winfo_id()
-
-
-            style = GetWindowLong(hwnd, GWL_STYLE)
-            
-            # Remove standard title bar and borders, keep resizability
-            style = style & ~WS_CAPTION & ~WS_SYSMENU & ~WS_MINIMIZEBOX & ~WS_MAXIMIZEBOX
-            style = style | WS_POPUP | WS_THICKFRAME # Add WS_POPUP for borderless, WS_THICKFRAME for native resize feel
-
-            SetWindowLong(hwnd, GWL_STYLE, style)
-
-            # Force window to redraw with new style
-            SetWindowPos(hwnd, None, 0, 0, 0, 0,
-                         SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW)
-            
-            # self.shared_state.log("Applied custom window styles using ctypes.", "INFO") # Requires shared_state init first
-
-        except ImportError:
-            self.shared_state.log("ctypes not available, falling back to overrideredirect for borderless window.", "WARNING")
-            self.root.overrideredirect(True) # Fallback if ctypes fails
-        except Exception as e:
-            self.shared_state.log(f"Error applying custom window styles: {e}", "ERROR")
-            self.root.overrideredirect(True) # Fallback on other errors
-        # --- End Custom Window Styling ---
 
         # 視窗狀態
         self.is_maximized = False
@@ -875,7 +822,7 @@ class ModularGUI:
         self.title_label.bind("<B1-Motion>", self.do_move)
         
         # 視窗狀態監聽
-        # self.root.bind('<Map>', self.on_window_state_change) # Disabled: No longer needed with ctypes styling.
+        self.root.bind('<Map>', self.on_window_state_change)
         
         # 整個視窗的滑鼠事件
         self.root.bind("<Motion>", self.on_mouse_motion)
@@ -1911,11 +1858,9 @@ class ModularGUI:
     
     def minimize_window(self):
         """最小化視窗"""
-        # With ctypes WS_POPUP style, overrideredirect is not used for borderless.
-        # Standard iconify should work and keep the taskbar icon.
+        self.root.update_idletasks()
+        self.root.overrideredirect(False)
         self.root.iconify()
-        # The on_window_state_change might need adjustment if it was re-applying overrideredirect.
-        # For now, this is the simplified version.
     
     def toggle_maximize(self, event=None):
         """切換最大化狀態"""
@@ -1951,17 +1896,8 @@ class ModularGUI:
     
     def on_window_state_change(self, event):
         """視窗狀態改變時的處理"""
-        # This method was used to reapply overrideredirect(True) when the window
-        # returned to a 'normal' state (e.g., after de-iconifying).
-        # With the ctypes WS_POPUP approach, this should no longer be necessary,
-        # as the POPUP style persists.
-        # If issues arise with window decorations reappearing after minimizing,
-        # this is a place to investigate. For now, it's disabled.
-        #
-        # if self.root.state() == 'normal':
-        #     if not self._ctypes_style_applied_successfully: # Or some other flag indicating fallback
-        #         self.root.overrideredirect(True)
-        pass
+        if self.root.state() == 'normal':
+            self.root.overrideredirect(True)
 
 if __name__ == "__main__":
     import sys
