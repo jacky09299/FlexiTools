@@ -259,6 +259,38 @@ def apply_equalizer(wav_path, out_path, gains):
             wf_out.setparams(params)
             wf_out.writeframes(final_signal.tobytes())
 
+# --- Microphone Simulation Helpers (from pra_convert.py) ---
+def create_large_grid_mics(origin, rows, cols, spacing, height):
+    positions = []
+    for i in range(rows):
+        for j in range(cols):
+            x = origin[0] + i * spacing
+            y = origin[1] + j * spacing
+            z = height
+            positions.append([x, y, z])
+    return positions
+
+def get_mic_positions(device_type):
+    if device_type == "phone":
+        return [[3, 3, 1.0]]
+    elif device_type == "laptop":
+        return [[2.8, 3, 1.5], [3.2, 3, 1.5]]
+    elif device_type == "recorder":
+        return [[2.7, 3, 1.5], [3.0, 3, 1.5], [3.3, 3, 1.5]]
+    elif device_type == "conference":
+        pos_2d = pra.circular_2D_array(center=[3, 2.5], M=6, phi0=0, radius=0.2)
+        z = np.ones((1, 6)) * 1.2
+        return np.vstack([pos_2d, z]).T.tolist()
+    elif device_type == "large_array":
+        origin = [1.0, 1.0]
+        rows, cols = 8, 8
+        spacing = 0.1
+        height = 1.5
+        return create_large_grid_mics(origin, rows, cols, spacing, height)
+    else:
+        # This case should ideally not be hit if UI is synced with this function
+        raise ValueError(f"Unknown device type for mic simulation: {device_type}")
+
 # --- [NEW] Effects Settings Window ---
 class EffectsSettingsWindow(tk.Toplevel):
     def __init__(self, parent_player):
@@ -290,7 +322,7 @@ class EffectsSettingsWindow(tk.Toplevel):
         mic_frame = ttk.LabelFrame(mic_env_tab, text="模擬收音裝置", padding="5")
         mic_frame.pack(fill=tk.X, pady=5)
         self.mic_var = tk.StringVar(value=self.settings.get("mic_sim", "無"))
-        mic_options = ["無", "手機", "筆電", "錄音筆", "會議麥克風"]
+        mic_options = ["無", "手機", "筆電", "錄音筆", "會議麥克風", "大型平面陣列"]
         ttk.Combobox(mic_frame, textvariable=self.mic_var, values=mic_options, state="readonly").pack(fill=tk.X, expand=True)
 
         env_frame = ttk.LabelFrame(mic_env_tab, text="播放器環境", padding="5")
@@ -564,11 +596,62 @@ class VideoPlayerModule(Module):
         
         current_signal = signal
         
-        # 1. Microphone Simulation (Placeholder)
-        mic_sim = self.audio_effects_settings.get("mic_sim", "無")
-        if mic_sim != "無":
-            self.shared_state.log(f"模擬麥克風: {mic_sim}", level=logging.DEBUG)
-            pass
+        # 1. Microphone Simulation
+        mic_sim_map = {
+            "手機": "phone",
+            "筆電": "laptop",
+            "錄音筆": "recorder",
+            "會議麥克風": "conference",
+            "大型平面陣列": "large_array"
+        }
+        mic_sim_key = self.audio_effects_settings.get("mic_sim", "無")
+        mic_sim_type = mic_sim_map.get(mic_sim_key)
+
+        if mic_sim_type:
+            self.shared_state.log(f"模擬麥克風: {mic_sim_key}", level=logging.DEBUG)
+            try:
+                # --- RESAMPLING FOR SIMULATION ---
+                SIM_RATE = 16000
+                
+                # Ensure input is mono float for resampling
+                if current_signal.ndim > 1:
+                    mono_signal = np.mean(current_signal, axis=1).astype(np.float64)
+                else:
+                    mono_signal = current_signal.flatten().astype(np.float64)
+
+                # Resample to simulation rate if necessary
+                if framerate != SIM_RATE:
+                    num_samples_sim = int(len(mono_signal) * SIM_RATE / framerate)
+                    signal_for_sim = scipy.signal.resample(mono_signal, num_samples_sim)
+                else:
+                    signal_for_sim = mono_signal
+
+                # --- PYROOMACOUSTICS SIMULATION at 16kHz ---
+                room = pra.ShoeBox([6, 5, 3], fs=SIM_RATE, absorption=0.4, max_order=10)
+                room.add_source([3, 2, 1.5], signal=signal_for_sim)
+                mic_positions = get_mic_positions(mic_sim_type)
+                mic_array = np.c_[mic_positions].T
+                room.add_microphone_array(mic_array)
+                room.simulate()
+                sim_output = np.mean(room.mic_array.signals, axis=0)
+                if mic_sim_type == "large_array":
+                    sim_output *= 10
+
+                # --- RESAMPLE BACK TO ORIGINAL RATE ---
+                if framerate != SIM_RATE:
+                    # Ensure the output length matches the original mono signal length
+                    resampled_back = scipy.signal.resample(sim_output, len(mono_signal))
+                else:
+                    resampled_back = sim_output
+
+                # Restore channel count
+                if current_signal.ndim > 1:
+                     current_signal = np.column_stack([resampled_back] * current_signal.shape[1])
+                else:
+                     current_signal = resampled_back.reshape(-1, 1)
+
+            except Exception as e:
+                self.shared_state.log(f"麥克風模擬失敗: {e}", level=logging.ERROR)
 
         # 2. AEC (Echo Cancellation) - Placeholder
         if self.audio_effects_settings.get("aec", False):
