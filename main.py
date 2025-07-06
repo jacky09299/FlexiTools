@@ -1105,6 +1105,7 @@ class ModularGUI:
         self.update_layout_scrollregion()
         self._finalize_initial_window_state()
         self.load_layout_config()
+        self.root.deiconify() # 載入完成後顯示視窗
 
     def save_layout_config(self):
         config_path = os.path.join(self.saves_dir, self.CONFIG_FILE)
@@ -1113,7 +1114,8 @@ class ModularGUI:
             empty_config = {
                 "modules": [],
                 "maximized_module_name": None,
-                "module_order": []
+                "module_order": [],
+                "window_geometry": None
             }
             try:
                 with open(config_path, "w", encoding="utf-8") as f:
@@ -1125,8 +1127,12 @@ class ModularGUI:
         config = {
             "modules": [],
             "maximized_module_name": self.maximized_module_name,
-            "module_order": []
+            "module_order": [],
+            "window_geometry": None
         }
+        if not self.is_maximized:
+            config["window_geometry"] = self.root.geometry()
+
         current_instance_ids = set(self.loaded_modules.keys()) & set(self.main_layout_manager.modules.keys())
         config["module_order"] = [iid for iid in self.main_layout_manager.modules.keys() if iid in current_instance_ids]
         for iid in config["module_order"]:
@@ -1165,6 +1171,20 @@ class ModularGUI:
         try:
             with open(config_path, "r", encoding="utf-8") as f:
                 config = json.load(f)
+
+            # Restore window geometry FIRST and determine target width
+            window_geometry = config.get("window_geometry")
+            target_canvas_width = 800  # Default width
+            if window_geometry:
+                try:
+                    self.root.geometry(window_geometry)
+                    # Parse width directly from the reliable geometry string, not from winfo_width
+                    target_canvas_width = int(window_geometry.split('x')[0].split('+')[0])
+                    self.root.update_idletasks() # Still useful to have the window ready
+                    self.shared_state.log(f"Window geometry restored to: {window_geometry}. Using target width: {target_canvas_width}", "INFO")
+                except (tk.TclError, ValueError, IndexError) as e:
+                    self.shared_state.log(f"Failed to set/parse window geometry '{window_geometry}': {e}", "ERROR")
+
             for iid in list(self.loaded_modules.keys()):
                 self.hide_module(iid)
             max_counters = {}
@@ -1193,11 +1213,9 @@ class ModularGUI:
                 module_name = mod["module_name"]
                 iid = mod["instance_id"]
                 
-                # 從相對值計算實際尺寸
-                canvas_width = self.canvas.winfo_width()
-                if canvas_width <= 1:
-                    canvas_width = 800
-                    
+                # Use the reliable target_canvas_width parsed from the geometry string
+                canvas_width = target_canvas_width
+                
                 width = int(mod.get("relative_width", 0.25) * canvas_width)
                 height = int(mod.get("relative_height", 0.187) * canvas_width)
                 
@@ -1957,6 +1975,7 @@ if __name__ == "__main__":
         sys.modules['main'] = sys.modules['__main__']
 
     root = tk.Tk()
+    root.withdraw() # 初始隱藏主視窗
     configure_styles()
     apply_post_creation_styles(root)
     app = ModularGUI(root)
