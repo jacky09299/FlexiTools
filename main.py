@@ -25,25 +25,6 @@ import tempfile # For temporary installer download
 import subprocess # For running installer and helper script
 import os # For PID and path manipulation (os.getpid, os.path.join etc.)
 # sys is already imported
-import platform
-
-try:
-    from PIL import Image, ImageTk
-    PIL_AVAILABLE = True
-except ImportError:
-    PIL_AVAILABLE = False
-    print("WARNING: Pillow library not found. Splash screen logo will not be displayed.")
-
-# Conditional import for win32api
-if platform.system() == "Windows":
-    try:
-        import win32gui
-        import win32con
-    except ImportError:
-        # A fallback or logging message if pywin32 is not installed
-        win32gui = None
-        win32con = None
-        print("WARNING: pywin32 is not installed. The custom window frame will not have a taskbar icon.")
 
 # Attempt to import update_manager and its components
 try:
@@ -445,94 +426,6 @@ class CustomLayoutManager(AnimatedCanvas):
     def get_module_info(self, module_name):
         return self.modules.get(module_name)
 
-class SplashScreen:
-    def __init__(self, root):
-        self.root = tk.Toplevel(root)
-        self.root.overrideredirect(True)
-
-        # Define colors and fonts
-        BG_COLOR = "#2c3e50"
-        TEXT_COLOR = "#ecf0f1"
-        LOG_COLOR = "#bdc3c7"
-        TITLE_FONT = ("Arial", 36, "bold")
-        LOG_FONT = ("Arial", 9)
-
-        # Window size
-        width, height = 500, 250
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        x = (screen_width // 2) - (width // 2)
-        y = (screen_height // 2) - (height // 2)
-        self.root.geometry(f'{width}x{height}+{x}+{y}')
-
-        # Main frame
-        main_frame = tk.Frame(self.root, bg=BG_COLOR)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-
-        # Top frame for logo and title
-        top_frame = tk.Frame(main_frame, bg=BG_COLOR)
-        top_frame.pack(pady=20, padx=20, fill=tk.X, expand=True)
-
-        # Logo on the left
-        if PIL_AVAILABLE:
-            try:
-                self.logo_img = Image.open("assets/logo.png")
-                self.logo_img = self.logo_img.resize((100, 100), Image.Resampling.LANCZOS)
-                self.logo_photo = ImageTk.PhotoImage(self.logo_img)
-                logo_label = tk.Label(top_frame, image=self.logo_photo, bg=BG_COLOR)
-                logo_label.pack(side=tk.LEFT, padx=(10, 20))
-            except Exception as e:
-                print(f"Error loading logo: {e}")
-                # Fallback to text if image fails to load
-                logo_label = tk.Label(top_frame, text="Logo", bg=BG_COLOR, fg=TEXT_COLOR, font=("Arial", 16))
-                logo_label.pack(side=tk.LEFT, padx=(10, 20))
-        else:
-            logo_label = tk.Label(top_frame, text="Logo", bg=BG_COLOR, fg=TEXT_COLOR, font=("Arial", 16))
-            logo_label.pack(side=tk.LEFT, padx=(10, 20))
-
-        # Title on the right
-        title_label = tk.Label(top_frame, text="FlexiTools", font=TITLE_FONT, fg=TEXT_COLOR, bg=BG_COLOR)
-        title_label.pack(side=tk.LEFT, expand=True, fill=tk.X)
-
-        # Log label at the bottom
-        self.log_label = tk.Label(main_frame, text="Initializing...", font=LOG_FONT, fg=LOG_COLOR, bg=BG_COLOR, anchor='w')
-        self.log_label.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
-
-        self.last_log_line = ""
-        self.log_file_path = "shared_state.log"
-        self.update_log()
-
-    def update_log(self):
-        try:
-            # Create log file if it doesn't exist
-            if not os.path.exists(self.log_file_path):
-                with open(self.log_file_path, "w", encoding="utf-8") as f:
-                    f.write("") # Create empty file
-            
-            with open(self.log_file_path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-                if lines:
-                    latest_line = lines[-1].strip()
-                    # Only update if the line is new
-                    if latest_line != self.last_log_line:
-                        self.last_log_line = latest_line
-                        # Extract the message part after the timestamp and level
-                        log_parts = latest_line.split(" - ", 2)
-                        if len(log_parts) > 2:
-                            self.log_label.config(text=log_parts[2])
-                        else:
-                            self.log_label.config(text=latest_line)
-        except FileNotFoundError:
-            self.log_label.config(text="Log file not found...")
-        except Exception as e:
-            self.log_label.config(text=f"Reading log error: {e}")
-
-        # Reschedule the check
-        self.root.after(100, self.update_log)
-
-    def close(self):
-        self.root.destroy()
-
 class ModularGUI:
     CONFIG_FILE = "layout_config.json"
     PROFILE_PREFIX = "layout_profile_"
@@ -540,7 +433,7 @@ class ModularGUI:
 
     def __init__(self, root):
         self.root = root
-        # self.root.overrideredirect(True)  # 移除系統邊框 - 改用 win32api
+        self.root.overrideredirect(True)  # 移除系統邊框
         root.iconbitmap("tools.ico")
         self.root.geometry("800x600") # 初始尺寸，之後會被載入的佈局覆蓋
 
@@ -746,9 +639,6 @@ class ModularGUI:
         self.root.after(1000, self.ui_check_for_updates_startup) # Delay slightly to let UI load
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-
-        # Apply borderless style after a short delay
-        self.root.after(20, self.make_borderless_with_taskbar)
 
     def _start_download_in_thread(self, version_to_download, download_url):
         """Starts the download process in a separate thread."""
@@ -1201,7 +1091,6 @@ class ModularGUI:
         self.update_layout_scrollregion()
         self._finalize_initial_window_state()
         self.load_layout_config()
-        self.root.deiconify() # 載入完成後顯示視窗
 
     def save_layout_config(self):
         config_path = os.path.join(self.saves_dir, self.CONFIG_FILE)
@@ -1210,8 +1099,7 @@ class ModularGUI:
             empty_config = {
                 "modules": [],
                 "maximized_module_name": None,
-                "module_order": [],
-                "window_geometry": None
+                "module_order": []
             }
             try:
                 with open(config_path, "w", encoding="utf-8") as f:
@@ -1223,12 +1111,8 @@ class ModularGUI:
         config = {
             "modules": [],
             "maximized_module_name": self.maximized_module_name,
-            "module_order": [],
-            "window_geometry": None
+            "module_order": []
         }
-        if not self.is_maximized:
-            config["window_geometry"] = self.root.geometry()
-
         current_instance_ids = set(self.loaded_modules.keys()) & set(self.main_layout_manager.modules.keys())
         config["module_order"] = [iid for iid in self.main_layout_manager.modules.keys() if iid in current_instance_ids]
         for iid in config["module_order"]:
@@ -1267,20 +1151,6 @@ class ModularGUI:
         try:
             with open(config_path, "r", encoding="utf-8") as f:
                 config = json.load(f)
-
-            # Restore window geometry FIRST and determine target width
-            window_geometry = config.get("window_geometry")
-            target_canvas_width = 800  # Default width
-            if window_geometry:
-                try:
-                    self.root.geometry(window_geometry)
-                    # Parse width directly from the reliable geometry string, not from winfo_width
-                    target_canvas_width = int(window_geometry.split('x')[0].split('+')[0])
-                    self.root.update_idletasks() # Still useful to have the window ready
-                    self.shared_state.log(f"Window geometry restored to: {window_geometry}. Using target width: {target_canvas_width}", "INFO")
-                except (tk.TclError, ValueError, IndexError) as e:
-                    self.shared_state.log(f"Failed to set/parse window geometry '{window_geometry}': {e}", "ERROR")
-
             for iid in list(self.loaded_modules.keys()):
                 self.hide_module(iid)
             max_counters = {}
@@ -1309,9 +1179,11 @@ class ModularGUI:
                 module_name = mod["module_name"]
                 iid = mod["instance_id"]
                 
-                # Use the reliable target_canvas_width parsed from the geometry string
-                canvas_width = target_canvas_width
-                
+                # 從相對值計算實際尺寸
+                canvas_width = self.canvas.winfo_width()
+                if canvas_width <= 1:
+                    canvas_width = 800
+                    
                 width = int(mod.get("relative_width", 0.25) * canvas_width)
                 height = int(mod.get("relative_height", 0.187) * canvas_width)
                 
@@ -1551,44 +1423,6 @@ class ModularGUI:
                     self.shared_state.log(f"Error during on_destroy for module {module_name}: {e}", level=logging.ERROR)
 
         self.root.destroy()
-
-    def make_borderless_with_taskbar(self):
-        """
-        Uses Win32 API to remove the window border but keep the taskbar icon.
-        """
-        if platform.system() != "Windows" or not win32gui:
-            self.root.overrideredirect(True) # Fallback for non-Windows or if pywin32 is missing
-            self.shared_state.log("Using overrideredirect as fallback for non-Windows/missing pywin32.", "WARNING")
-            return
-
-        try:
-            # Get window handle (HWND)
-            # GetParent is needed to get the top-level window handle from a Tkinter frame.
-            hwnd = win32gui.GetParent(self.root.winfo_id())
-            
-            # Get current window style
-            style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
-            
-            # Remove title bar and thick frame (for resizing)
-            style &= ~(win32con.WS_CAPTION | win32con.WS_THICKFRAME)
-            
-            # Set new window style
-            win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, style)
-            
-            # Force a redraw of the window frame to apply changes
-            win32gui.SetWindowPos(hwnd, None, 0, 0, 0, 0,
-                                  win32con.SWP_FRAMECHANGED |
-                                  win32con.SWP_NOMOVE |
-                                  win32con.SWP_NOSIZE |
-                                  win32con.SWP_NOZORDER |
-                                  win32con.SWP_NOOWNERZORDER)
-                                  
-            self.shared_state.log("Borderless style applied via Win32 API.", "INFO")
-
-        except Exception as e:
-            self.shared_state.log(f"Error setting borderless style: {e}", "ERROR")
-            # Fallback to old method if API call fails
-            self.root.overrideredirect(True)
 
     def show_context_menu(self, event):
         self.context_menu.delete(0, tk.END)
@@ -2024,7 +1858,8 @@ class ModularGUI:
     
     def minimize_window(self):
         """最小化視窗"""
-        # The win32api approach allows direct iconification without changing overrideredirect
+        self.root.update_idletasks()
+        self.root.overrideredirect(False)
         self.root.iconify()
     
     def toggle_maximize(self, event=None):
@@ -2061,49 +1896,17 @@ class ModularGUI:
     
     def on_window_state_change(self, event):
         """視窗狀態改變時的處理"""
-        # With the win32api method, we no longer need to toggle overrideredirect.
-        # The style is applied once and should persist.
-        pass
+        if self.root.state() == 'normal':
+            self.root.overrideredirect(True)
 
 if __name__ == "__main__":
     import sys
     if '__main__' in sys.modules:
         sys.modules['main'] = sys.modules['__main__']
 
-    # This is the main Tk instance. It will be hidden initially.
     root = tk.Tk()
-    root.withdraw()
-
-    # Create and show the splash screen
-    splash = SplashScreen(root)
-    
-    # Ensure the log file exists and write the first message
-    # This will be picked up by the splash screen's log reader
-    SharedState().log("FlexiTools is starting up...")
-
-    def initialize_main_app():
-        """All the main application setup logic goes here."""
-        try:
-            # The main app initialization
-            configure_styles()
-            apply_post_creation_styles(root)
-            app = ModularGUI(root)
-            root.iconbitmap("assets/logo.ico")
-            
-            # Initialization is complete, close the splash screen
-            # A small delay to ensure the main window is fully rendered before closing splash
-            root.after(500, splash.close)
-            
-            # The main window is made visible inside app.setup_default_layout()
-            # which calls root.deiconify()
-        except Exception as e:
-            # If there's an error during init, close splash and show error
-            splash.close()
-            messagebox.showerror("Application Error", f"Failed to initialize the application: {e}")
-            root.destroy() # Exit if init fails
-
-    # Schedule the main app initialization to run after the splash screen is visible
-    # This allows the splash screen to be responsive while the main app loads.
-    root.after(100, initialize_main_app)
-
+    configure_styles()
+    apply_post_creation_styles(root)
+    app = ModularGUI(root)
     root.mainloop()
+
