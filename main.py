@@ -1960,6 +1960,6 @@ if __name__ == "__main__":
     configure_styles()
     apply_post_creation_styles(root)
     app = ModularGUI(root)
-    root.iconbitmap("tools.ico")
+    root.iconbitmap("assets/logo.ico")
     root.mainloop()
 
