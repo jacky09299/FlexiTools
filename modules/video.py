@@ -612,10 +612,17 @@ class VideoPlayerModule(Module):
                     
                     b, a = scipy.signal.butter(2, [low/nyquist, high/nyquist], btype='band')
                     
-                    for ch in range(n_channels):
-                        filtered_ch = scipy.signal.lfilter(b, a, current_signal[:, ch])
-                        eq_signal[:, ch] += filtered_ch * gain
-            
+                    # Apply filter to each channel
+                    if current_signal.ndim > 1:
+                        for ch in range(current_signal.shape[1]):
+                            filtered_ch = scipy.signal.lfilter(b, a, current_signal[:, ch])
+                            eq_signal[:, ch] += filtered_ch * gain
+                    else:
+                        filtered_ch = scipy.signal.lfilter(b, a, current_signal.flatten())
+                        eq_signal = eq_signal.flatten()
+                        eq_signal += filtered_ch * gain
+                        eq_signal = eq_signal.reshape(-1, 1)
+
             if np.max(np.abs(eq_signal)) < 1e-6:
                  eq_signal = current_signal
             current_signal = eq_signal
@@ -638,7 +645,27 @@ class VideoPlayerModule(Module):
                 room_dim, absorption = env_presets.get(environment, (None, None))
 
                 if environment == "戶外":
-                    pass
+                    # For outdoor, we can't simulate reverb, but we can still do positioning
+                    # We'll create a stereo signal by delaying one channel slightly for non-center positions
+                    if position not in ["無", "前方", "360度環繞"]:
+                        self.shared_state.log("戶外模式簡化位置模擬...", level=logging.DEBUG)
+                        mono_signal = np.mean(current_signal, axis=1) if current_signal.ndim > 1 else current_signal.flatten()
+                        delay_samples = 0
+                        if position == "左方": delay_samples = int(0.0005 * framerate) # 0.5ms delay for right channel
+                        elif position == "右方": delay_samples = -int(0.0005 * framerate) # 0.5ms delay for left channel
+                        
+                        if delay_samples > 0: # Delay right channel
+                            left = mono_signal
+                            right = np.roll(mono_signal, delay_samples)
+                            right[:delay_samples] = 0
+                        elif delay_samples < 0: # Delay left channel
+                            right = mono_signal
+                            left = np.roll(mono_signal, -delay_samples)
+                            left[:-delay_samples] = 0
+                        else:
+                            left = right = mono_signal
+                        current_signal = np.column_stack([left, right])
+
                 elif room_dim:
                     signal_for_room = current_signal
                     if current_signal.ndim > 1:
@@ -646,43 +673,53 @@ class VideoPlayerModule(Module):
                         signal_for_room = np.mean(signal_for_room, axis=1)
 
                     room = pra.ShoeBox(room_dim, fs=framerate, materials=pra.Material(absorption), max_order=3)
-                    center = np.array(room_dim) / 2.0
-                    mic_pos = center
                     
+                    # Create a stereo microphone array
+                    mic_center = np.array(room_dim) / 2.0
+                    mic_locs = np.c_[
+                        mic_center + np.array([-0.1, 0, 0]),  # Left mic
+                        mic_center + np.array([0.1, 0, 0]),   # Right mic
+                    ]
+                    room.add_microphone_array(mic_locs)
+
                     pos_presets = {
-                        "前方": center + np.array([0, -2, 0]), "後方": center + np.array([0, 2, 0]),
-                        "上方": center + np.array([0, 0, 1]), "下方": center + np.array([0, 0, -1]),
-                        "左方": center + np.array([-1.5, 0, 0]), "右方": center + np.array([1.5, 0, 0]),
+                        "前方": mic_center + np.array([0, -2, 0]), "後方": mic_center + np.array([0, 2, 0]),
+                        "上方": mic_center + np.array([0, 0, 1.5]), "下方": mic_center + np.array([0, 0, -1.5]),
+                        "左方": mic_center + np.array([-1.5, 0, 0]), "右方": mic_center + np.array([1.5, 0, 0]),
                         "360度環繞": "surround"
                     }
-                    source_pos = pos_presets.get(position, center + np.array([0, -2, 0]))
+                    source_pos = pos_presets.get(position, mic_center + np.array([0, -2, 0]))
 
                     if position == "360度環繞":
                         self.shared_state.log("360度環繞 - 簡化模擬", level=logging.WARNING)
                         t = np.arange(len(signal_for_room)) / framerate
                         radius = 2.0
-                        x = center[0] + radius * np.cos(2 * np.pi * 0.2 * t)
-                        y = center[1] + radius * np.sin(2 * np.pi * 0.2 * t)
-                        z = np.full_like(x, center[2])
+                        x = mic_center[0] + radius * np.cos(2 * np.pi * 0.2 * t)
+                        y = mic_center[1] + radius * np.sin(2 * np.pi * 0.2 * t)
+                        z = np.full_like(x, mic_center[2])
                         source_path = np.c_[x, y, z]
                         room.add_source(source_path, signal=signal_for_room)
                     else:
                         source_pos = np.clip(source_pos, 0.1, np.array(room_dim) - 0.1)
                         room.add_source(source_pos, signal=signal_for_room)
 
-                    room.add_microphone(mic_pos)
                     room.simulate()
                     
-                    simulated_mono = room.mic_array.signals[0, :len(signal_for_room)]
-                    if n_channels == 2:
-                        current_signal = np.column_stack([simulated_mono, simulated_mono])
-                    else:
-                        current_signal = simulated_mono.reshape(-1, 1)
+                    # Get the two channels from the stereo microphone array
+                    sim_len = len(signal_for_room)
+                    left_channel = room.mic_array.signals[0, :sim_len]
+                    right_channel = room.mic_array.signals[1, :sim_len]
+                    current_signal = np.column_stack([left_channel, right_channel])
 
             except Exception as e:
                 self.shared_state.log(f"環境模擬失敗: {e}", level=logging.ERROR)
 
         # Final normalization and conversion
+        # Ensure output is stereo if we processed it as such
+        final_params = list(params)
+        if current_signal.ndim > 1 and current_signal.shape[1] == 2:
+            final_params[0] = 2 # Set n_channels to 2
+        
         current_signal_float = np.array(current_signal, dtype=np.float64)
         max_abs_val = np.max(np.abs(current_signal_float))
         
@@ -693,7 +730,7 @@ class VideoPlayerModule(Module):
         processed_signal_int = np.clip(current_signal_float, -32768, 32767).astype(np.int16)
         
         with wave.open(output_wav, 'wb') as wf_out:
-            wf_out.setparams(params)
+            wf_out.setparams(tuple(final_params))
             wf_out.writeframes(processed_signal_int.tobytes())
             
         self.shared_state.log("音訊效果套用完畢。", level=logging.INFO)
