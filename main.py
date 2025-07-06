@@ -9,6 +9,8 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
 import tkinter as tk
 from tkinter import ttk
 from tkinter import simpledialog, messagebox
+import ctypes
+from ctypes import wintypes
 import importlib.util
 import random
 from shared_state import SharedState
@@ -433,9 +435,12 @@ class ModularGUI:
 
     def __init__(self, root):
         self.root = root
-        self.root.overrideredirect(True)  # 移除系統邊框
+        # self.root.overrideredirect(True)  # 移除系統邊框 - Replaced by Win32 API calls
         root.iconbitmap("tools.ico")
         self.root.geometry("800x600") # 初始尺寸，之後會被載入的佈局覆蓋
+
+        # Win32 API calls to remove decorations
+        self.root.after_idle(self._apply_win32_decorations)
 
         # 視窗狀態
         self.is_maximized = False
@@ -639,6 +644,51 @@ class ModularGUI:
         self.root.after(1000, self.ui_check_for_updates_startup) # Delay slightly to let UI load
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def _apply_win32_decorations(self):
+        try:
+            # Ensure the window handle is available
+            self.root.update_idletasks() # Ensures winfo_id() is valid
+            hwnd = self.root.winfo_id()
+            if not hwnd:
+                self.shared_state.log("Could not get HWND for Win32 decorations.", "ERROR")
+                return
+
+            # Win32 constants
+            GWL_STYLE = -16
+            WS_CAPTION = 0x00C00000
+            WS_THICKFRAME = 0x00040000
+            # WS_MINIMIZEBOX = 0x00020000 # Already part of WS_SYSMENU or WS_CAPTION
+            # WS_MAXIMIZEBOX = 0x00010000 # Already part of WS_SYSMENU or WS_CAPTION
+            WS_SYSMENU = 0x00080000
+
+            SWP_FRAMECHANGED = 0x0020
+            SWP_NOMOVE = 0x0002
+            SWP_NOSIZE = 0x0001
+            SWP_NOZORDER = 0x0004
+
+            # Get current window style
+            style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
+
+            # Remove standard window decorations
+            style &= ~(WS_CAPTION | WS_THICKFRAME | WS_SYSMENU)
+            # Note: WS_MINIMIZEBOX and WS_MAXIMIZEBOX are typically part of WS_SYSMENU or WS_CAPTION,
+            # so removing WS_CAPTION and WS_SYSMENU should remove them.
+            # If they persist, one might need to explicitly remove them:
+            # style &= ~(WS_MINIMIZEBOX | WS_MAXIMIZEBOX)
+
+            ctypes.windll.user32.SetWindowLongW(hwnd, GWL_STYLE, style)
+
+            # Notify the window that its frame has changed
+            ctypes.windll.user32.SetWindowPos(hwnd, None, 0, 0, 0, 0,
+                                              SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED)
+            self.shared_state.log("Applied Win32 API calls to remove window decorations.", "INFO")
+
+        except Exception as e:
+            self.shared_state.log(f"Error applying Win32 decorations: {e}", "ERROR")
+            # Fallback or error message if needed
+            # For now, just log it. The custom title bar should still mostly work.
+
 
     def _start_download_in_thread(self, version_to_download, download_url):
         """Starts the download process in a separate thread."""
@@ -1859,7 +1909,7 @@ class ModularGUI:
     def minimize_window(self):
         """最小化視窗"""
         self.root.update_idletasks()
-        self.root.overrideredirect(False)
+        # self.root.overrideredirect(False) # No longer needed with Win32 decorations
         self.root.iconify()
     
     def toggle_maximize(self, event=None):
@@ -1896,8 +1946,17 @@ class ModularGUI:
     
     def on_window_state_change(self, event):
         """視窗狀態改變時的處理"""
-        if self.root.state() == 'normal':
-            self.root.overrideredirect(True)
+        # With Win32 based decoration removal, this might not be strictly necessary
+        # as the style is set once. However, it might be a good fallback
+        # or useful if other operations (like native minimize/restore) temporarily
+        # add back some styles. For now, let's comment it out and test.
+        # If issues arise when restoring from minimized, this might need to be:
+        # self.root.after_idle(self._apply_win32_decorations)
+        # or simply be removed if the Win32 changes are persistent enough.
+        
+        # if self.root.state() == 'normal':
+        #    self.root.overrideredirect(True) # Re-apply if needed
+        pass # Current assumption: Win32 changes persist through state changes.
 
 if __name__ == "__main__":
     import sys
