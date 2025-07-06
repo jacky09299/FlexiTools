@@ -26,6 +26,14 @@ import subprocess # For running installer and helper script
 import os # For PID and path manipulation (os.getpid, os.path.join etc.)
 # sys is already imported
 import platform
+
+try:
+    from PIL import Image, ImageTk
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+    print("WARNING: Pillow library not found. Splash screen logo will not be displayed.")
+
 # Conditional import for win32api
 if platform.system() == "Windows":
     try:
@@ -436,6 +444,94 @@ class CustomLayoutManager(AnimatedCanvas):
 
     def get_module_info(self, module_name):
         return self.modules.get(module_name)
+
+class SplashScreen:
+    def __init__(self, root):
+        self.root = tk.Toplevel(root)
+        self.root.overrideredirect(True)
+
+        # Define colors and fonts
+        BG_COLOR = "#2c3e50"
+        TEXT_COLOR = "#ecf0f1"
+        LOG_COLOR = "#bdc3c7"
+        TITLE_FONT = ("Arial", 36, "bold")
+        LOG_FONT = ("Arial", 9)
+
+        # Window size
+        width, height = 500, 250
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+        self.root.geometry(f'{width}x{height}+{x}+{y}')
+
+        # Main frame
+        main_frame = tk.Frame(self.root, bg=BG_COLOR)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Top frame for logo and title
+        top_frame = tk.Frame(main_frame, bg=BG_COLOR)
+        top_frame.pack(pady=20, padx=20, fill=tk.X, expand=True)
+
+        # Logo on the left
+        if PIL_AVAILABLE:
+            try:
+                self.logo_img = Image.open("assets/logo.png")
+                self.logo_img = self.logo_img.resize((100, 100), Image.Resampling.LANCZOS)
+                self.logo_photo = ImageTk.PhotoImage(self.logo_img)
+                logo_label = tk.Label(top_frame, image=self.logo_photo, bg=BG_COLOR)
+                logo_label.pack(side=tk.LEFT, padx=(10, 20))
+            except Exception as e:
+                print(f"Error loading logo: {e}")
+                # Fallback to text if image fails to load
+                logo_label = tk.Label(top_frame, text="Logo", bg=BG_COLOR, fg=TEXT_COLOR, font=("Arial", 16))
+                logo_label.pack(side=tk.LEFT, padx=(10, 20))
+        else:
+            logo_label = tk.Label(top_frame, text="Logo", bg=BG_COLOR, fg=TEXT_COLOR, font=("Arial", 16))
+            logo_label.pack(side=tk.LEFT, padx=(10, 20))
+
+        # Title on the right
+        title_label = tk.Label(top_frame, text="FlexiTools", font=TITLE_FONT, fg=TEXT_COLOR, bg=BG_COLOR)
+        title_label.pack(side=tk.LEFT, expand=True, fill=tk.X)
+
+        # Log label at the bottom
+        self.log_label = tk.Label(main_frame, text="Initializing...", font=LOG_FONT, fg=LOG_COLOR, bg=BG_COLOR, anchor='w')
+        self.log_label.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
+
+        self.last_log_line = ""
+        self.log_file_path = "shared_state.log"
+        self.update_log()
+
+    def update_log(self):
+        try:
+            # Create log file if it doesn't exist
+            if not os.path.exists(self.log_file_path):
+                with open(self.log_file_path, "w", encoding="utf-8") as f:
+                    f.write("") # Create empty file
+            
+            with open(self.log_file_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                if lines:
+                    latest_line = lines[-1].strip()
+                    # Only update if the line is new
+                    if latest_line != self.last_log_line:
+                        self.last_log_line = latest_line
+                        # Extract the message part after the timestamp and level
+                        log_parts = latest_line.split(" - ", 2)
+                        if len(log_parts) > 2:
+                            self.log_label.config(text=log_parts[2])
+                        else:
+                            self.log_label.config(text=latest_line)
+        except FileNotFoundError:
+            self.log_label.config(text="Log file not found...")
+        except Exception as e:
+            self.log_label.config(text=f"Reading log error: {e}")
+
+        # Reschedule the check
+        self.root.after(100, self.update_log)
+
+    def close(self):
+        self.root.destroy()
 
 class ModularGUI:
     CONFIG_FILE = "layout_config.json"
@@ -1481,9 +1577,9 @@ class ModularGUI:
             
             # Force a redraw of the window frame to apply changes
             win32gui.SetWindowPos(hwnd, None, 0, 0, 0, 0,
-                                  win32con.SWP_FRAMECHANGED | 
-                                  win32con.SWP_NOMOVE | 
-                                  win32con.SWP_NOSIZE | 
+                                  win32con.SWP_FRAMECHANGED |
+                                  win32con.SWP_NOMOVE |
+                                  win32con.SWP_NOSIZE |
                                   win32con.SWP_NOZORDER |
                                   win32con.SWP_NOOWNERZORDER)
                                   
@@ -1974,11 +2070,40 @@ if __name__ == "__main__":
     if '__main__' in sys.modules:
         sys.modules['main'] = sys.modules['__main__']
 
+    # This is the main Tk instance. It will be hidden initially.
     root = tk.Tk()
-    root.withdraw() # 初始隱藏主視窗
-    configure_styles()
-    apply_post_creation_styles(root)
-    app = ModularGUI(root)
-    root.iconbitmap("assets/logo.ico")
-    root.mainloop()
+    root.withdraw()
 
+    # Create and show the splash screen
+    splash = SplashScreen(root)
+    
+    # Ensure the log file exists and write the first message
+    # This will be picked up by the splash screen's log reader
+    SharedState().log("FlexiTools is starting up...")
+
+    def initialize_main_app():
+        """All the main application setup logic goes here."""
+        try:
+            # The main app initialization
+            configure_styles()
+            apply_post_creation_styles(root)
+            app = ModularGUI(root)
+            root.iconbitmap("assets/logo.ico")
+            
+            # Initialization is complete, close the splash screen
+            # A small delay to ensure the main window is fully rendered before closing splash
+            root.after(500, splash.close)
+            
+            # The main window is made visible inside app.setup_default_layout()
+            # which calls root.deiconify()
+        except Exception as e:
+            # If there's an error during init, close splash and show error
+            splash.close()
+            messagebox.showerror("Application Error", f"Failed to initialize the application: {e}")
+            root.destroy() # Exit if init fails
+
+    # Schedule the main app initialization to run after the splash screen is visible
+    # This allows the splash screen to be responsive while the main app loads.
+    root.after(100, initialize_main_app)
+
+    root.mainloop()
