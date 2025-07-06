@@ -1,6 +1,43 @@
 {
-  "modules": [],
+  "modules": [
+    {
+      "module_name": "pdf_processor",
+      "instance_id": "pdf_processor#1",
+      "relative_width": 0.9417582417582417,
+      "relative_height": 0.35934065934065934
+    },
+    {
+      "module_name": "mp4_processor",
+      "instance_id": "mp4_processor#1",
+      "relative_width": 0.4164835164835165,
+      "relative_height": 0.367032967032967
+    },
+    {
+      "module_name": "notepad",
+      "instance_id": "notepad#3",
+      "relative_width": 0.38351648351648354,
+      "relative_height": 0.47692307692307695
+    },
+    {
+      "module_name": "draw",
+      "instance_id": "draw#1",
+      "relative_width": 0.4,
+      "relative_height": 0.4714285714285714
+    },
+    {
+      "module_name": "color_palette",
+      "instance_id": "color_palette#1",
+      "relative_width": 0.27362637362637365,
+      "relative_height": 0.32857142857142857
+    }
+  ],
   "maximized_module_name": null,
-  "module_order": [],
-  "window_geometry": null
+  "module_order": [
+    "pdf_processor#1",
+    "mp4_processor#1",
+    "notepad#3",
+    "draw#1",
+    "color_palette#1"
+  ],
+  "window_geometry": "928x639+80+17"
 }
