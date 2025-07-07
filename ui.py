@@ -594,7 +594,9 @@ class ModularGUI:
         self.context_menu = tk.Menu(self.root, tearoff=0)
         self.main_layout_manager.bind("<Button-3>", self.show_context_menu)
 
+        self.shared_state.update_splash_log("Discovering modules...")
         self.discover_modules()
+        self.shared_state.update_splash_progress(80) # Progress after discovering modules
 
         for module_name in sorted(self.available_module_classes.keys()):
             self.modules_menu.add_command(
@@ -602,7 +604,10 @@ class ModularGUI:
                 command=lambda mn=module_name: self.add_module_from_menu(mn)
             )
 
+        self.shared_state.update_splash_log("Setting up layout...")
         self.setup_default_layout()
+        self.shared_state.update_splash_progress(90) # Progress after layout setup
+
         self.root.after(1000, self.ui_check_for_updates_startup)
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 

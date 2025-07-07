@@ -42,7 +42,10 @@ def create_splash_screen(root, shared_state): # Added shared_state
     app_name_label.pack(pady=(0, 5))
 
     status_label = tk.Label(center_frame, text="正在初始化...", font=("Segoe UI", 10), bg=BG_COLOR, fg="#cccccc")
-    status_label.pack(pady=(5, 0))
+    status_label.pack(pady=(5, 10)) # Added some bottom padding
+
+    progress_bar = ttk.Progressbar(center_frame, orient="horizontal", length=300, mode="determinate")
+    progress_bar.pack(pady=(0, 5))
 
     def update_splash_status(message: str):
         if not status_label.winfo_exists(): # Check if widget exists
@@ -55,7 +58,14 @@ def create_splash_screen(root, shared_state): # Added shared_state
         status_label.config(text=display_message)
         splash.update_idletasks() # Use update_idletasks for less intensive updates
 
+    def update_splash_progress(value: int):
+        if not progress_bar.winfo_exists(): # Check if widget exists
+            return
+        progress_bar['value'] = value
+        splash.update_idletasks()
+
     shared_state.set_splash_log_callback(update_splash_status)
+    # The progress callback will be set from main.py after this function returns
 
     splash.update()
-    return splash
+    return splash, update_splash_progress

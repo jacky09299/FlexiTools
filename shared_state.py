@@ -6,6 +6,7 @@ class SharedState:
         self.observers = {}
         self.log_callback = None
         self.splash_log_callback = None
+        self.splash_progress_callback = None # Added for progress bar
         self._setup_logging()
 
     def set_log_callback(self, callback):
@@ -16,6 +17,19 @@ class SharedState:
 
     def clear_splash_log_callback(self):
         self.splash_log_callback = None
+
+    def set_splash_progress_callback(self, callback):
+        self.splash_progress_callback = callback
+
+    def clear_splash_progress_callback(self):
+        self.splash_progress_callback = None
+
+    def update_splash_progress(self, value: int):
+        if self.splash_progress_callback:
+            try:
+                self.splash_progress_callback(value)
+            except Exception as e:
+                self.logger.error(f"Error in splash_progress_callback: {e}")
 
     def _setup_logging(self):
         self.logger = logging.getLogger("ModularGUI")

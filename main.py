@@ -65,10 +65,14 @@ if __name__ == "__main__":
     shared_state_instance = SharedState() # Create SharedState instance EARLIER
 
     splash = None
+    update_splash_progress = None
     try:
         from splash_ui import create_splash_screen
         # Pass shared_state_instance to create_splash_screen
-        splash = create_splash_screen(root, shared_state_instance)
+        splash, update_splash_progress_func = create_splash_screen(root, shared_state_instance)
+        if update_splash_progress_func:
+            shared_state_instance.set_splash_progress_callback(update_splash_progress_func)
+            shared_state_instance.update_splash_progress(10) # Initial progress
     except Exception as e:
         print(f"Failed to create splash screen: {e}")
         # If splash fails, we don't want to hang, just continue.
@@ -76,16 +80,29 @@ if __name__ == "__main__":
         root.deiconify() # Show the main window if splash fails
 
     # --- Main App Initialization ---
-    # shared_state_instance is already created
+    shared_state_instance.update_splash_log("Configuring styles...")
     configure_styles()
+    shared_state_instance.update_splash_progress(30)
+    time.sleep(0.1) # Simulate work
+
+    shared_state_instance.update_splash_log("Applying post-creation styles...")
     apply_post_creation_styles(root)
+    shared_state_instance.update_splash_progress(50)
+    time.sleep(0.1) # Simulate work
+
     # Pass shared_state_instance to ModularGUI
+    shared_state_instance.update_splash_log("Initializing UI...")
     app = ModularGUI(root, shared_state_instance)
+    # Progress will be further updated within ModularGUI's __init__
+    shared_state_instance.update_splash_progress(70) # Progress after ModularGUI init starts
 
     # --- Cleanup ---
     if splash:
+        shared_state_instance.update_splash_progress(100) # Final progress
+        time.sleep(0.2) # Give a moment to see 100%
         splash.destroy()
-        shared_state_instance.clear_splash_log_callback() # Clear callback
+        shared_state_instance.clear_splash_log_callback()
+        shared_state_instance.clear_splash_progress_callback() # Clear progress callback
 
     # The ModularGUI class handles making the main window visible.
     root.mainloop()
