@@ -63,6 +63,7 @@ class ColorPaletteModule(Module):
             p_frame.pack(padx=5,pady=5) # Center it
 
             p_frame.bind("<Button-1>", lambda event, idx=i: self.on_palette_click(idx))
+            p_frame.bind("<Double-Button-1>", lambda event, idx=i: self.on_palette_double_click(idx))
             self.palette_frames.append(p_frame)
 
         # Separator
@@ -158,8 +159,13 @@ class ColorPaletteModule(Module):
             self._prevent_slider_recursion = False
 
         self.update_selection_highlight()
-        self.copy_hex_to_clipboard() # Also copy on click
+        # self.copy_hex_to_clipboard() # 移除單擊時自動複製
         self.shared_state.log(f"Palette {index} clicked. Color: {hex_color}", level=logging.DEBUG)
+
+    def on_palette_double_click(self, index):
+        # 雙擊時才複製色碼
+        self.on_palette_click(index)
+        self.copy_hex_to_clipboard()
 
     def _update_slider_value_label(self, slider_widget, value):
         if slider_widget and slider_widget.master.winfo_exists():

@@ -1,84 +1,63 @@
 {
   "modules": [
     {
-      "module_name": "video",
-      "instance_id": "video#1",
-      "relative_width": 0.2567049808429119,
-      "relative_height": 0.19157088122605365
+      "module_name": "Fitter",
+      "instance_id": "Fitter#1",
+      "relative_width": 0.23932729624838292,
+      "relative_height": 0.4036222509702458
     },
     {
-      "module_name": "CADFileConverter",
-      "instance_id": "CADFileConverter#1",
-      "relative_width": 0.2567049808429119,
-      "relative_height": 0.19157088122605365
+      "module_name": "Fitter",
+      "instance_id": "Fitter#2",
+      "relative_width": 0.2884864165588616,
+      "relative_height": 0.41009055627425617
     },
     {
-      "module_name": "clock",
-      "instance_id": "clock#1",
-      "relative_width": 0.2567049808429119,
-      "relative_height": 0.19157088122605365
+      "module_name": "Fitter",
+      "instance_id": "Fitter#3",
+      "relative_width": 0.2755498059508409,
+      "relative_height": 0.4139715394566624
     },
     {
-      "module_name": "mp4_processor",
-      "instance_id": "mp4_processor#1",
-      "relative_width": 0.2567049808429119,
-      "relative_height": 0.19157088122605365
+      "module_name": "Fitter",
+      "instance_id": "Fitter#4",
+      "relative_width": 0.21216041397153945,
+      "relative_height": 0.4230271668822768
+    },
+    {
+      "module_name": "Fitter",
+      "instance_id": "Fitter#5",
+      "relative_width": 0.24191461836998707,
+      "relative_height": 0.4269081500646831
     },
     {
       "module_name": "split_para",
       "instance_id": "split_para#1",
-      "relative_width": 0.2567049808429119,
-      "relative_height": 0.19157088122605365
+      "relative_width": 0.2445019404915912,
+      "relative_height": 0.4579560155239327
     },
     {
-      "module_name": "unit_converter",
-      "instance_id": "unit_converter#1",
-      "relative_width": 0.2567049808429119,
-      "relative_height": 0.19157088122605365
+      "module_name": "plot_gui",
+      "instance_id": "plot_gui#1",
+      "relative_width": 0.13195342820181113,
+      "relative_height": 0.39327296248382926
     },
     {
-      "module_name": "image_editor",
-      "instance_id": "image_editor#1",
-      "relative_width": 0.2567049808429119,
-      "relative_height": 0.19157088122605365
-    },
-    {
-      "module_name": "gui_cmd",
-      "instance_id": "gui_cmd#1",
-      "relative_width": 0.2567049808429119,
-      "relative_height": 0.19157088122605365
-    },
-    {
-      "module_name": "draw",
-      "instance_id": "draw#1",
-      "relative_width": 0.2567049808429119,
-      "relative_height": 0.19157088122605365
-    },
-    {
-      "module_name": "youtube_downloader",
-      "instance_id": "youtube_downloader#1",
-      "relative_width": 0.34099616858237547,
-      "relative_height": 0.1979565772669221
-    },
-    {
-      "module_name": "youtube_downloader",
-      "instance_id": "youtube_downloader#2",
-      "relative_width": 0.2554278416347382,
-      "relative_height": 0.19157088122605365
+      "module_name": "notepad",
+      "instance_id": "notepad#4",
+      "relative_width": 0.2535575679172057,
+      "relative_height": 0.1888745148771022
     }
   ],
-  "maximized_module_name": "video#1",
+  "maximized_module_name": null,
   "module_order": [
-    "video#1",
-    "CADFileConverter#1",
-    "clock#1",
-    "mp4_processor#1",
+    "Fitter#1",
+    "Fitter#2",
+    "Fitter#3",
+    "Fitter#4",
+    "Fitter#5",
     "split_para#1",
-    "unit_converter#1",
-    "image_editor#1",
-    "gui_cmd#1",
-    "draw#1",
-    "youtube_downloader#1",
-    "youtube_downloader#2"
+    "plot_gui#1",
+    "notepad#4"
   ]
 }

@@ -4,7 +4,32 @@ class SharedState:
     def __init__(self):
         self.variables = {}
         self.observers = {}
+        self.log_callback = None
+        self.splash_log_callback = None
+        self.splash_progress_callback = None # Added for progress bar
         self._setup_logging()
+
+    def set_log_callback(self, callback):
+        self.log_callback = callback
+
+    def set_splash_log_callback(self, callback):
+        self.splash_log_callback = callback
+
+    def clear_splash_log_callback(self):
+        self.splash_log_callback = None
+
+    def set_splash_progress_callback(self, callback):
+        self.splash_progress_callback = callback
+
+    def clear_splash_progress_callback(self):
+        self.splash_progress_callback = None
+
+    def update_splash_progress(self, value: int):
+        if self.splash_progress_callback:
+            try:
+                self.splash_progress_callback(value)
+            except Exception as e:
+                self.logger.error(f"Error in splash_progress_callback: {e}")
 
     def _setup_logging(self):
         self.logger = logging.getLogger("ModularGUI")
@@ -25,6 +50,7 @@ class SharedState:
         self.notify_observers(key, value)
 
     def log(self, message, level=logging.INFO):
+        log_entry = f"{logging.getLevelName(level)}: {message}"
         if level == logging.DEBUG:
             self.logger.debug(message)
         elif level == logging.INFO:
@@ -35,6 +61,19 @@ class SharedState:
             self.logger.error(message)
         elif level == logging.CRITICAL:
             self.logger.critical(message)
+
+        if self.log_callback:
+            try:
+                self.log_callback(log_entry)
+            except Exception as e:
+                self.logger.error(f"Error in log_callback: {e}")
+
+        if self.splash_log_callback:
+            try:
+                # We only want the message part for the splash, not the level
+                self.splash_log_callback(message)
+            except Exception as e:
+                self.logger.error(f"Error in splash_log_callback: {e}")
 
     def add_observer(self, key, callback):
         if key not in self.observers:

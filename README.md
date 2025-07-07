@@ -100,18 +100,52 @@ FlexiTools 內建了多種實用工具模組，涵蓋了從開發、數據分析
 
 ## 💻 技術棧
 
-*   **核心框架**: Python 3, Tkinter (ttkbootstrap)
+*   **核心框架**: Python 3, Tkinter
 *   **主要依賴**:
-    *   `pandas`: 用於數據處理 (Report, Plot GUI)。
-    *   `matplotlib`: 用於數據視覺化 (Plot GUI, Fitter)。
-    *   `PyPDF2`, `pdfrw`, `reportlab`: 用於 PDF 處理。
-    *   `Pillow (PIL)`: 用於圖片處理。
-    *   `cefpython3`: 用於內嵌式瀏覽器。
-    *   `pygame`: 用於音訊播放 (Video Player)。
-    *   `moviepy`: 用於影片處理。
-    *   `yt-dlp`: 用於 YouTube 影片下載。
-    *   `psutil`: 用於系統資訊監控。
-    *   `gdstk`, `ezdxf`: 用於 CAD 檔案處理。
+    *   `PIL`
+    *   `PyPDF2`
+    *   `cProfile`
+    *   `cefpython3`
+    *   `concurrent`
+    *   `ctypes`
+    *   `cv2`
+    *   `importlib`
+    *   `io`
+    *   `json`
+    *   `lmfit`
+    *   `logging`
+    *   `matplotlib`
+    *   `moviepy`
+    *   `multiprocessing`
+    *   `numpy`
+    *   `openpyxl`
+    *   `os`
+    *   `packaging`
+    *   `pandas`
+    *   `pathlib`
+    *   `pdfrw`
+    *   `pstats`
+    *   `psutil`
+    *   `pygame`
+    *   `pyroomacoustics`
+    *   `queue`
+    *   `random`
+    *   `re`
+    *   `rembg`
+    *   `reportlab`
+    *   `requests`
+    *   `scipy`
+    *   `shutil`
+    *   `subprocess`
+    *   `sys`
+    *   `tempfile`
+    *   `threading`
+    *   `time`
+    *   `tkinter`
+    *   `traceback`
+    *   `typing`
+    *   `wave`
+    *   `yt_dlp`
 *   **環境管理**: Conda
 
 ---

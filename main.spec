@@ -26,8 +26,12 @@ a = Analysis(
     ],
     datas=[
         ('LICENSE', '.'),
+        ('LICENSES','LICENSES'),
+        ("tools.ico", "."),
+        ('assets','assets'),
         # 模組資料與 CEF 資料
         ('modules', 'modules'),
+        ('dependencies/tk/_tk_data', '_tk_data'),
         ('dependencies/cef_dependencies/locales', 'locales'),
         ('dependencies/cef_dependencies/cef.pak', '.'),
         ('dependencies/cef_dependencies/cef_100_percent.pak', '.'),
@@ -40,7 +44,16 @@ a = Analysis(
         ('dependencies/cef_dependencies/icudtl.dat', '.'),
         ('dependencies/cef_dependencies/MSVCP90.dll', '.'),
         ('dependencies/cef_dependencies/MSVCP100.dll', '.'),
-        ('dependencies/ffmpeg.exe', '.'),  # 確保這路徑正確
+        ('dependencies/ffmpeg/ffmpeg.exe', '.'),  # 確保這路徑正確
+        ('dependencies/ffmpeg/avcodec-58.dll', '.'),
+        ('dependencies/ffmpeg/avdevice-58.dll', '.'),
+        ('dependencies/ffmpeg/avfilter-7.dll', '.'),
+        ('dependencies/ffmpeg/avformat-58.dll', '.'),
+        ('dependencies/ffmpeg/avutil-56.dll', '.'),
+        ('dependencies/ffmpeg/postproc-55.dll', '.'),
+        ('dependencies/ffmpeg/swresample-3.dll', '.'),
+        ('dependencies/ffmpeg/swscale-5.dll', '.'),
+        ('dependencies/pyroomacoustics', 'pyroomacoustics'),
         # OpenCV 資料
         *cv2_datas,
     ],
@@ -109,6 +122,7 @@ a = Analysis(
         'scipy','scipy.io', 'scipy.io.matlab','scipy.signal',
         'yt_dlp',
         'wave','threading','concurrent.futures','multiprocessing','queue','shutil','tempfile','io', 'pygame',
+        'pyroomacoustics',
     ],
     hookspath=[],
     hooksconfig={},
@@ -132,7 +146,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
