@@ -62,7 +62,6 @@ if __name__ == "__main__":
         sys.modules['main'] = sys.modules['__main__']
 
     root = tk.Tk()
-    root.withdraw()  # Hide main window initially
 
     splash = None
     try:
