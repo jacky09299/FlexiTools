@@ -62,71 +62,17 @@ if __name__ == "__main__":
         sys.modules['main'] = sys.modules['__main__']
 
     root = tk.Tk()
-    #root.withdraw() # Hide main window during setup
+    root.withdraw()  # Hide main window initially
 
     splash = None
     try:
-        from PIL import Image, ImageTk
-
-        splash = tk.Toplevel(root)
-        splash.overrideredirect(True)
-
-        splash_width = 450
-        splash_height = 200
-
-        screen_width = splash.winfo_screenwidth()
-        screen_height = splash.winfo_screenheight()
-        x_cordinate = int((screen_width / 2) - (splash_width / 2))
-        y_cordinate = int((screen_height / 2) - (splash_height / 2))
-        splash.geometry(f"{splash_width}x{splash_height}+{x_cordinate}+{y_cordinate}")
-
-        # Use colors from style_manager if available, otherwise fallback
-        BG_COLOR = "#2c3e50"
-        BORDER_COLOR = "#3498db"
-        try:
-            # These are imported at the top level of main.py
-            BG_COLOR = COLOR_PRIMARY_BG
-            BORDER_COLOR = COLOR_ACCENT_HOVER
-        except NameError:
-            pass # Use fallback if not found
-
-        splash.config(bg=BG_COLOR)
-
-        # A frame to hold all content, allowing for a border effect
-        container = tk.Frame(splash, bg=BG_COLOR, highlightbackground=BORDER_COLOR, highlightthickness=1)
-        container.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
-
-        # --- Image on the left ---
-        img = Image.open("assets/logo.png")
-        img.thumbnail((128, 128), Image.Resampling.LANCZOS)
-        logo_img = ImageTk.PhotoImage(img)
-
-        img_label = tk.Label(container, image=logo_img, bg=BG_COLOR)
-        img_label.image = logo_img # Keep a reference!
-        img_label.pack(side=tk.LEFT, padx=(20, 15), pady=20)
-
-        # --- Text on the right ---
-        text_frame = tk.Frame(container, bg=BG_COLOR)
-        text_frame.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH, pady=10, padx=(0, 20))
-
-        # Use a sub-frame to center the text labels vertically
-        center_frame = tk.Frame(text_frame, bg=BG_COLOR)
-        center_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-
-        # FlexiTools Title
-        app_name_label = tk.Label(center_frame, text="FlexiTools", font=("Segoe UI", 28, "bold"), bg=BG_COLOR, fg="white")
-        app_name_label.pack(pady=(0, 5))
-
-        # Status Message
-        status_label = tk.Label(center_frame, text="正在初始化...", font=("Segoe UI", 10), bg=BG_COLOR, fg="#cccccc")
-        status_label.pack(pady=(5, 0))
-
-        splash.update()
-
+        from splash_ui import create_splash_screen
+        splash = create_splash_screen(root)
     except Exception as e:
         print(f"Failed to create splash screen: {e}")
         # If splash fails, we don't want to hang, just continue.
         # The 'splash' variable will be None.
+        root.deiconify() # Show the main window if splash fails
 
     # --- Main App Initialization ---
     shared_state_instance = SharedState() # Create SharedState instance
@@ -136,11 +82,6 @@ if __name__ == "__main__":
     app = ModularGUI(root, shared_state_instance)
 
     # --- Cleanup ---
-    if splash:
-        splash.destroy()
-
-    # The ModularGUI class handles making the main window visible.
-    root.mainloop()
     if splash:
         splash.destroy()
 
