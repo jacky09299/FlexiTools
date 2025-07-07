@@ -31,6 +31,7 @@ a = Analysis(
         ('assets','assets'),
         # 模組資料與 CEF 資料
         ('modules', 'modules'),
+        ('dependencies/tk/_tk_data', '_tk_data'),
         ('dependencies/cef_dependencies/locales', 'locales'),
         ('dependencies/cef_dependencies/cef.pak', '.'),
         ('dependencies/cef_dependencies/cef_100_percent.pak', '.'),
@@ -52,6 +53,7 @@ a = Analysis(
         ('dependencies/ffmpeg/postproc-55.dll', '.'),
         ('dependencies/ffmpeg/swresample-3.dll', '.'),
         ('dependencies/ffmpeg/swscale-5.dll', '.'),
+        ('dependencies/pyroomacoustics', 'pyroomacoustics'),
         # OpenCV 資料
         *cv2_datas,
     ],
@@ -120,6 +122,7 @@ a = Analysis(
         'scipy','scipy.io', 'scipy.io.matlab','scipy.signal',
         'yt_dlp',
         'wave','threading','concurrent.futures','multiprocessing','queue','shutil','tempfile','io', 'pygame',
+        'pyroomacoustics',
     ],
     hookspath=[],
     hooksconfig={},
@@ -143,7 +146,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
