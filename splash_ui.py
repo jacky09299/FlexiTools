@@ -3,12 +3,12 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 from style_manager import COLOR_PRIMARY_BG, COLOR_ACCENT_HOVER
 
-def create_splash_screen(root):
+def create_splash_screen(root, shared_state): # Added shared_state
     splash = tk.Toplevel(root)
     splash.overrideredirect(True)
 
-    splash_width = 450
-    splash_height = 200
+    splash_width = 550 # Increased width
+    splash_height = 250 # Increased height
 
     screen_width = splash.winfo_screenwidth()
     screen_height = splash.winfo_screenheight()
@@ -43,6 +43,19 @@ def create_splash_screen(root):
 
     status_label = tk.Label(center_frame, text="正在初始化...", font=("Segoe UI", 10), bg=BG_COLOR, fg="#cccccc")
     status_label.pack(pady=(5, 0))
+
+    def update_splash_status(message: str):
+        if not status_label.winfo_exists(): # Check if widget exists
+            return
+        max_chars = 50 # Define max characters for the log message
+        if len(message) > max_chars:
+            display_message = message[:max_chars-3] + "..."
+        else:
+            display_message = message
+        status_label.config(text=display_message)
+        splash.update_idletasks() # Use update_idletasks for less intensive updates
+
+    shared_state.set_splash_log_callback(update_splash_status)
 
     splash.update()
     return splash

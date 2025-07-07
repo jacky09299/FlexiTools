@@ -62,11 +62,13 @@ if __name__ == "__main__":
         sys.modules['main'] = sys.modules['__main__']
 
     root = tk.Tk()
+    shared_state_instance = SharedState() # Create SharedState instance EARLIER
 
     splash = None
     try:
         from splash_ui import create_splash_screen
-        splash = create_splash_screen(root)
+        # Pass shared_state_instance to create_splash_screen
+        splash = create_splash_screen(root, shared_state_instance)
     except Exception as e:
         print(f"Failed to create splash screen: {e}")
         # If splash fails, we don't want to hang, just continue.
@@ -74,7 +76,7 @@ if __name__ == "__main__":
         root.deiconify() # Show the main window if splash fails
 
     # --- Main App Initialization ---
-    shared_state_instance = SharedState() # Create SharedState instance
+    # shared_state_instance is already created
     configure_styles()
     apply_post_creation_styles(root)
     # Pass shared_state_instance to ModularGUI
@@ -83,6 +85,7 @@ if __name__ == "__main__":
     # --- Cleanup ---
     if splash:
         splash.destroy()
+        shared_state_instance.clear_splash_log_callback() # Clear callback
 
     # The ModularGUI class handles making the main window visible.
     root.mainloop()

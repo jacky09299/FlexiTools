@@ -5,10 +5,17 @@ class SharedState:
         self.variables = {}
         self.observers = {}
         self.log_callback = None
+        self.splash_log_callback = None
         self._setup_logging()
 
     def set_log_callback(self, callback):
         self.log_callback = callback
+
+    def set_splash_log_callback(self, callback):
+        self.splash_log_callback = callback
+
+    def clear_splash_log_callback(self):
+        self.splash_log_callback = None
 
     def _setup_logging(self):
         self.logger = logging.getLogger("ModularGUI")
@@ -46,6 +53,13 @@ class SharedState:
                 self.log_callback(log_entry)
             except Exception as e:
                 self.logger.error(f"Error in log_callback: {e}")
+
+        if self.splash_log_callback:
+            try:
+                # We only want the message part for the splash, not the level
+                self.splash_log_callback(message)
+            except Exception as e:
+                self.logger.error(f"Error in splash_log_callback: {e}")
 
     def add_observer(self, key, callback):
         if key not in self.observers:
