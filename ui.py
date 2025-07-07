@@ -1116,18 +1116,32 @@ class ModularGUI:
         except Exception as e: messagebox.showerror("刪除失敗", f"無法刪除設定檔：{e}", parent=self.root)
 
     def _choose_profile_dialog(self, profiles, title, prompt):
-        dialog = tk.Toplevel(self.root); dialog.title(title); dialog.grab_set()
+        dialog = tk.Toplevel(self.root)
+        dialog.title(title)
+        dialog.grab_set()
         tk.Label(dialog, text=prompt).pack(padx=10, pady=(10, 5))
-        var = tk.StringVar(value=profiles[0] if profiles else "")
+        var = tk.StringVar(value="")
         listbox = tk.Listbox(dialog, listvariable=tk.StringVar(value=profiles), height=min(10, len(profiles)))
         listbox.pack(padx=10, pady=5)
-        if profiles: listbox.selection_set(0)
-        def on_ok(): var.set(listbox.get(listbox.curselection()) if listbox.curselection() else ""); dialog.destroy()
-        def on_cancel(): var.set(""); dialog.destroy()
-        btn_frame = tk.Frame(dialog); btn_frame.pack(pady=(0,10))
+        if profiles:
+            listbox.selection_set(0)
+        result = {"value": ""}
+        def on_ok():
+            if listbox.curselection():
+                result["value"] = listbox.get(listbox.curselection())
+            else:
+                result["value"] = ""
+            dialog.destroy()
+        def on_cancel():
+            result["value"] = ""
+            dialog.destroy()
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=(0,10))
         tk.Button(btn_frame, text="確定", width=8, command=on_ok).pack(side=tk.LEFT, padx=5)
         tk.Button(btn_frame, text="取消", width=8, command=on_cancel).pack(side=tk.LEFT, padx=5)
-        dialog.wait_window(); return var.get()
+        dialog.protocol("WM_DELETE_WINDOW", on_cancel)  # 關閉視窗也當作取消
+        dialog.wait_window()
+        return result["value"]
 
     def _list_profiles(self):
         if not os.path.exists(self.saves_dir): return []
