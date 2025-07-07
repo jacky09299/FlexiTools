@@ -1,71 +1,137 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
-from style_manager import COLOR_PRIMARY_BG, COLOR_ACCENT_HOVER
+import sys
 
-def create_splash_screen(root, shared_state): # Added shared_state
+def create_splash_screen(root, shared_state):
     splash = tk.Toplevel(root)
     splash.overrideredirect(True)
 
-    splash_width = 550 # Increased width
-    splash_height = 250 # Increased height
+    # --- Style Configuration based on HTML ---
+    SPLASH_WIDTH = 450
+    SPLASH_HEIGHT = 350
+    BG_COLOR = "#EFF2F6"  # Gradient average: between #F5F7FA and #E1E5EA
+    LOGO_BORDER_COLOR = "#0078D4"
+    TITLE_COLOR = "#005090"
+    PROGRESS_BAR_COLOR = "#0078D4"
+    PROGRESS_BG_COLOR = "#E0E0E0" # Light grey for the trough
+    LOG_TEXT_COLOR = "#2E3338"
 
+    # --- Center the window ---
     screen_width = splash.winfo_screenwidth()
     screen_height = splash.winfo_screenheight()
-    x_cordinate = int((screen_width / 2) - (splash_width / 2))
-    y_cordinate = int((screen_height / 2) - (splash_height / 2))
-    splash.geometry(f"{splash_width}x{splash_height}+{x_cordinate}+{y_cordinate}")
-
-    BG_COLOR = COLOR_PRIMARY_BG
-    BORDER_COLOR = COLOR_ACCENT_HOVER
-
+    x_cordinate = int((screen_width / 2) - (SPLASH_WIDTH / 2))
+    y_cordinate = int((screen_height / 2) - (SPLASH_HEIGHT / 2))
+    splash.geometry(f"{SPLASH_WIDTH}x{SPLASH_HEIGHT}+{x_cordinate}+{y_cordinate}")
     splash.config(bg=BG_COLOR)
 
-    container = tk.Frame(splash, bg=BG_COLOR, highlightbackground=BORDER_COLOR, highlightthickness=1)
-    container.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
+    # --- Main container ---
+    container = tk.Frame(splash, bg=BG_COLOR)
+    container.pack(expand=True, fill=tk.BOTH, pady=20)
 
-    img = Image.open("assets/logo.png")
-    img.thumbnail((128, 128), Image.Resampling.LANCZOS)
-    logo_img = ImageTk.PhotoImage(img)
+    # --- Logo with circular border ---
+    logo_size = 90
+    border_thickness = 4
+    
+    # Use a Canvas for a circular border
+    logo_canvas = tk.Canvas(
+        container,
+        width=logo_size + border_thickness,
+        height=logo_size + border_thickness,
+        bg=BG_COLOR,
+        highlightthickness=0,
+        bd=0
+    )
+    logo_canvas.pack(pady=(10, 15))
 
-    img_label = tk.Label(container, image=logo_img, bg=BG_COLOR)
-    img_label.image = logo_img
-    img_label.pack(side=tk.LEFT, padx=(20, 15), pady=20)
+    # Draw the circular border
+    logo_canvas.create_oval(
+        border_thickness / 2,
+        border_thickness / 2,
+        logo_size + border_thickness / 2,
+        logo_size + border_thickness / 2,
+        outline=LOGO_BORDER_COLOR,
+        width=border_thickness
+    )
 
-    text_frame = tk.Frame(container, bg=BG_COLOR)
-    text_frame.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH, pady=10, padx=(0, 20))
+    try:
+        # Load and place the logo image inside the circle
+        img = Image.open("assets/logo.png")
+        img.thumbnail((logo_size - 10, logo_size - 10), Image.Resampling.LANCZOS)
+        logo_img = ImageTk.PhotoImage(img)
 
-    center_frame = tk.Frame(text_frame, bg=BG_COLOR)
-    center_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        img_label = tk.Label(logo_canvas, image=logo_img, bg=BG_COLOR, bd=0)
+        img_label.image = logo_img
+        img_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+    except FileNotFoundError:
+        # Fallback if image is not found
+        logo_canvas.create_text(
+            (logo_size + border_thickness) / 2,
+            (logo_size + border_thickness) / 2,
+            text="Logo",
+            font=("Segoe UI", 16),
+            fill=LOGO_BORDER_COLOR
+        )
 
-    app_name_label = tk.Label(center_frame, text="FlexiTools", font=("Segoe UI", 28, "bold"), bg=BG_COLOR, fg="white")
-    app_name_label.pack(pady=(0, 5))
 
-    status_label = tk.Label(center_frame, text="正在初始化...", font=("Segoe UI", 10), bg=BG_COLOR, fg="#cccccc")
-    status_label.pack(pady=(5, 10)) # Added some bottom padding
+    # --- Title ---
+    app_name_label = tk.Label(
+        container,
+        text="FlexiTools",
+        font=("Segoe UI", 32, "bold"),
+        bg=BG_COLOR,
+        fg=TITLE_COLOR
+    )
+    app_name_label.pack(pady=(0, 20))
 
-    progress_bar = ttk.Progressbar(center_frame, orient="horizontal", length=300, mode="determinate")
-    progress_bar.pack(pady=(0, 5))
+    # --- Progress Bar ---
+    style = ttk.Style(splash)
+    style.theme_use('clam')
+    style.configure(
+        "Splash.Horizontal.TProgressbar",
+        troughcolor=PROGRESS_BG_COLOR,
+        background=PROGRESS_BAR_COLOR,
+        thickness=16,
+        borderwidth=0,
+    )
+    
+    progress_bar = ttk.Progressbar(
+        container,
+        orient="horizontal",
+        length=300,
+        mode="determinate",
+        style="Splash.Horizontal.TProgressbar"
+    )
+    progress_bar.pack(pady=10)
 
+    # --- Status Log ---
+    # Choose a monospace font available on Windows
+    log_font = "Consolas" if "Consolas" in tk.font.families() else "Courier New"
+    status_label = tk.Label(
+        container,
+        text="啟動中...",
+        font=(log_font, 12),
+        bg=BG_COLOR,
+        fg=LOG_TEXT_COLOR
+    )
+    status_label.pack(pady=(5, 10))
+
+    # --- Update Functions ---
     def update_splash_status(message: str):
-        if not status_label.winfo_exists(): # Check if widget exists
+        if not status_label.winfo_exists():
             return
-        max_chars = 50 # Define max characters for the log message
-        if len(message) > max_chars:
-            display_message = message[:max_chars-3] + "..."
-        else:
-            display_message = message
+        max_chars = 50
+        display_message = (message[:max_chars-3] + "...") if len(message) > max_chars else message
         status_label.config(text=display_message)
-        splash.update_idletasks() # Use update_idletasks for less intensive updates
+        splash.update_idletasks()
 
     def update_splash_progress(value: int):
-        if not progress_bar.winfo_exists(): # Check if widget exists
+        if not progress_bar.winfo_exists():
             return
         progress_bar['value'] = value
         splash.update_idletasks()
 
     shared_state.set_splash_log_callback(update_splash_status)
-    # The progress callback will be set from main.py after this function returns
-
+    
     splash.update()
     return splash, update_splash_progress
