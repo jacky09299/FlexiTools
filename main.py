@@ -53,7 +53,7 @@ except ImportError:
         def check_for_updates(force_check=False): return update_manager.ERROR_CONFIG
 
 # Import the ModularGUI class from ui.py
-from ui import ModularGUI
+from ui import ModularGUI, Module
 # Module class is defined and used within ui.py, no need to import it directly in main.py
 
 if __name__ == "__main__":
