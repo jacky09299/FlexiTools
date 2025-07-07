@@ -10,6 +10,13 @@ import tempfile # For temporary installer download
 import subprocess # For running installer and helper script
 import sys # For sys.executable
 
+try:
+    from PIL import Image, ImageTk
+except ImportError:
+    Image = None
+    ImageTk = None
+
+
 # Attempt to import update_manager and its components
 try:
     import update_manager
@@ -448,9 +455,20 @@ class ModularGUI:
         self.title_bar.pack(fill="x")
         self.title_bar.pack_propagate(False)
 
+        if Image and ImageTk:
+            try:
+                logo_path = "assets/logo.png"
+                logo_image = Image.open(logo_path)
+                logo_image = logo_image.resize((24, 24), Image.Resampling.LANCZOS)
+                self.logo_photo = ImageTk.PhotoImage(logo_image) # Keep reference
+                logo_label = tk.Label(self.title_bar, image=self.logo_photo, bg=COLOR_TITLE_BAR_BG)
+                logo_label.pack(side="left", padx=(10, 5), pady=5)
+            except Exception as e:
+                self.shared_state.log(f"Could not load logo: {e}", "WARNING")
+
         self.title_label = tk.Label(self.title_bar, text="FlexiTools",
                                    bg=COLOR_TITLE_BAR_BG, fg="white", font=("Arial", 10, "bold"))
-        self.title_label.pack(side="left", padx=10, pady=8)
+        self.title_label.pack(side="left", padx=(0, 10), pady=8)
 
         self.controls_frame = tk.Frame(self.title_bar, bg=COLOR_TITLE_BAR_BG)
         self.controls_frame.pack(side="right", padx=5)
