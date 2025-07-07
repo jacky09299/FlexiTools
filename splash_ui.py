@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 import sys
+import tkinter.font as tkfont  # <-- Add this import
 
 def create_splash_screen(root, shared_state):
     splash = tk.Toplevel(root)
@@ -106,7 +107,7 @@ def create_splash_screen(root, shared_state):
 
     # --- Status Log ---
     # Choose a monospace font available on Windows
-    log_font = "Consolas" if "Consolas" in tk.font.families() else "Courier New"
+    log_font = "Consolas" if "Consolas" in tkfont.families() else "Courier New"
     status_label = tk.Label(
         container,
         text="啟動中...",
