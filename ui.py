@@ -594,7 +594,7 @@ class ModularGUI:
         self.context_menu = tk.Menu(self.root, tearoff=0)
         self.main_layout_manager.bind("<Button-3>", self.show_context_menu)
 
-        self.shared_state.update_splash_log("Discovering modules...")
+        self.shared_state.log("Discovering modules...")
         self.discover_modules()
         self.shared_state.update_splash_progress(80) # Progress after discovering modules
 
@@ -604,7 +604,7 @@ class ModularGUI:
                 command=lambda mn=module_name: self.add_module_from_menu(mn)
             )
 
-        self.shared_state.update_splash_log("Setting up layout...")
+        self.shared_state.log("Setting up layout...")
         self.setup_default_layout()
         self.shared_state.update_splash_progress(90) # Progress after layout setup
 

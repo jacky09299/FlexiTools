@@ -80,18 +80,18 @@ if __name__ == "__main__":
         root.deiconify() # Show the main window if splash fails
 
     # --- Main App Initialization ---
-    shared_state_instance.update_splash_log("Configuring styles...")
+    shared_state_instance.log("Configuring styles...")
     configure_styles()
     shared_state_instance.update_splash_progress(30)
     time.sleep(0.1) # Simulate work
 
-    shared_state_instance.update_splash_log("Applying post-creation styles...")
+    shared_state_instance.log("Applying post-creation styles...")
     apply_post_creation_styles(root)
     shared_state_instance.update_splash_progress(50)
     time.sleep(0.1) # Simulate work
 
     # Pass shared_state_instance to ModularGUI
-    shared_state_instance.update_splash_log("Initializing UI...")
+    shared_state_instance.log("Initializing UI...")
     app = ModularGUI(root, shared_state_instance)
     # Progress will be further updated within ModularGUI's __init__
     shared_state_instance.update_splash_progress(70) # Progress after ModularGUI init starts
