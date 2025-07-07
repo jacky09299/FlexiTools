@@ -487,6 +487,10 @@ class ModularGUI:
                                     bg=COLOR_TITLE_BAR_BG, fg="white", font=("Arial", 8))
         self.status_label.pack(side="left", padx=10, pady=4)
 
+        # Register log callback with shared_state
+        if self.shared_state:
+            self.shared_state.set_log_callback(self.update_status_bar_log)
+
         self.saves_dir = os.path.join("modules", "saves")
         if not os.path.exists(self.saves_dir):
             try:
@@ -601,6 +605,36 @@ class ModularGUI:
         self.setup_default_layout()
         self.root.after(1000, self.ui_check_for_updates_startup)
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def update_status_bar_log(self, message):
+        try:
+            status_bar_width = self.status_bar.winfo_width()
+            # Estimate average character width; for more accuracy, could use font.measure
+            # For simplicity, let's assume an average character width of 7 pixels for Arial 8.
+            # This is a rough estimate and might need adjustment.
+            avg_char_width = 7 
+            max_chars = (status_bar_width // 2) // avg_char_width
+
+            if len(message) > max_chars:
+                display_message = message[:max_chars-3] + "..."
+            else:
+                display_message = message
+            
+            if hasattr(self, 'status_label') and self.status_label.winfo_exists():
+                self.status_label.config(text=display_message)
+            else:
+                # This case should ideally not happen if status_label is always present
+                print(f"Status label not available for message: {display_message}")
+        except tk.TclError as e:
+            # This can happen if the window is being destroyed
+            self.shared_state.log(f"Error updating status bar log (TclError): {e}", "WARNING")
+        except Exception as e:
+            # Catch any other unexpected errors
+            if hasattr(self, 'shared_state') and self.shared_state: # Check if shared_state is available
+                 self.shared_state.log(f"Unexpected error updating status bar log: {e}", "ERROR")
+            else:
+                print(f"Unexpected error updating status bar log (shared_state not available): {e}")
+
 
     def _start_download_in_thread(self, version_to_download, download_url):
         download_thread = threading.Thread(

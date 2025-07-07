@@ -4,7 +4,11 @@ class SharedState:
     def __init__(self):
         self.variables = {}
         self.observers = {}
+        self.log_callback = None
         self._setup_logging()
+
+    def set_log_callback(self, callback):
+        self.log_callback = callback
 
     def _setup_logging(self):
         self.logger = logging.getLogger("ModularGUI")
@@ -25,6 +29,7 @@ class SharedState:
         self.notify_observers(key, value)
 
     def log(self, message, level=logging.INFO):
+        log_entry = f"{logging.getLevelName(level)}: {message}"
         if level == logging.DEBUG:
             self.logger.debug(message)
         elif level == logging.INFO:
@@ -35,6 +40,12 @@ class SharedState:
             self.logger.error(message)
         elif level == logging.CRITICAL:
             self.logger.critical(message)
+
+        if self.log_callback:
+            try:
+                self.log_callback(log_entry)
+            except Exception as e:
+                self.logger.error(f"Error in log_callback: {e}")
 
     def add_observer(self, key, callback):
         if key not in self.observers:
