@@ -1166,14 +1166,28 @@ class VideoPlayerModule(Module):
             except Exception: pass
 
     def prepare_video(self, filepath):
+        self.stop_processing.clear()
+        self.frame_buffer.clear()
+        self.frames_processed_count = 0
+        self.current_frame_idx = -1
+        self.video_path = None
+        self.audio_path = None
+        
+        has_audio = False
+        has_video = False
+
+        # 1. Prepare Audio
         try:
-            self.stop_processing.clear()
-            self.frame_buffer.clear()
-            self.frames_processed_count = 0
-            self.current_frame_idx = -1
             self.audio_path = self.extract_audio(filepath)
+            has_audio = True
+        except Exception as e:
+            self.shared_state.log(f"Audio preparation failed for {os.path.basename(filepath)}: {e}", level=logging.WARNING)
+
+        # 2. Prepare Video
+        try:
             cap = cv2.VideoCapture(filepath)
             if not cap.isOpened(): raise Exception(f"Cannot open video file: {filepath}")
+            
             orig_fps = cap.get(cv2.CAP_PROP_FPS) or 25
             self.fps = orig_fps
             self.total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -1181,8 +1195,10 @@ class VideoPlayerModule(Module):
             self.video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             self.video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             cap.release()
+            
             self.temp_video_path = None
             video_path_for_play = filepath
+            
             if orig_fps > 25:
                 if not self.temp_cache_dir:
                     self.temp_cache_dir = tempfile.mkdtemp(prefix='.vidplayer_cache_', dir=os.path.dirname(filepath))
@@ -1197,8 +1213,15 @@ class VideoPlayerModule(Module):
                 self.video_duration = self.total_frames / self.fps if self.fps > 0 else 0
                 self.video_width, self.video_height = int(cap2.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap2.get(cv2.CAP_PROP_FRAME_HEIGHT))
                 cap2.release()
+
             self.video_path = video_path_for_play
             if self.video_width == 0 or self.video_height == 0: raise Exception("Failed to read video dimensions.")
+            has_video = True
+        except Exception as e:
+            self.shared_state.log(f"Video preparation failed for {os.path.basename(filepath)}: {e}", level=logging.WARNING)
+
+        # 3. Decide what to do
+        if has_video:
             if self.frame and self.frame.winfo_exists():
                 self.frame.after(0, lambda: self.time_total_label.config(text=self.format_time(self.video_duration)))
                 self.frame.after(0, lambda: self.timeline_scale.config(to=100))
@@ -1207,25 +1230,59 @@ class VideoPlayerModule(Module):
                 self.processing_thread.start()
                 self.frame_reader_thread.start()
                 self.frame.after(0, lambda: self.progress_label.config(text="Buffering..."))
+                
                 def check_buffer_and_play():
                     if self.stop_processing.is_set(): return
                     if 0 in self.frame_buffer:
                         if pygame.mixer.get_init() and self.audio_path:
                             try:
                                 pygame.mixer.music.load(self.audio_path)
-                                self.frame.after(0, self.start_playback)
                             except pygame.error as e:
-                                messagebox.showerror("Audio Error", f"Could not load audio: {e}", parent=self.frame.winfo_toplevel())
+                                self.shared_state.log(f"Could not load audio: {e}", level=logging.ERROR)
+                                self.audio_path = None
                         else:
-                             self.frame.after(0, self.start_playback)
+                            self.audio_path = None
+                        
+                        self.frame.after(0, self.start_playback)
                         self.frame.after(0, self.enable_button_states)
                     elif self.frame and self.frame.winfo_exists():
                         self.frame.after(100, check_buffer_and_play)
+                
                 if self.frame and self.frame.winfo_exists(): self.frame.after(100, check_buffer_and_play)
-        except Exception as e:
-            if self.frame and self.frame.winfo_exists(): self.frame.after(0, self.enable_button_states)
+        
+        elif has_audio and not has_video:
+            self.shared_state.log(f"Video failed, playing audio only for {os.path.basename(filepath)}", level=logging.INFO)
+            if pygame.mixer.get_init() and self.audio_path:
+                try:
+                    pygame.mixer.music.load(self.audio_path)
+                    pygame.mixer.music.play()
+                    self.is_playing = True
+                    self.enable_button_states()
+                    if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text="Pause")
+                    if hasattr(self, 'progress_label'): self.progress_label.config(text="Playing (Audio Only)")
+                    
+                    def check_audio_end():
+                        if self.is_playing and pygame.mixer.get_init() and not pygame.mixer.music.get_busy() and not self.is_paused:
+                            self.play_next_video()
+                        elif self.is_playing and self.frame and self.frame.winfo_exists():
+                            self.after_id = self.frame.after(500, check_audio_end)
+                    
+                    if self.frame and self.frame.winfo_exists():
+                        self.after_id = self.frame.after(500, check_audio_end)
+
+                except pygame.error as e:
+                    self.shared_state.log(f"Audio-only playback failed: {e}", level=logging.ERROR)
+                    self.play_next_video()
+            else:
+                self.play_next_video()
+
+        else:
+            self.shared_state.log(f"Both audio and video failed for {os.path.basename(filepath)}. Skipping.", level=logging.ERROR)
             self.stop_video()
-            if self.playlist and self.frame and self.frame.winfo_exists(): self.frame.after(100, self.play_next_video)
+            if self.frame and self.frame.winfo_exists():
+                self.frame.after(0, self.enable_button_states)
+                if self.playlist:
+                    self.frame.after(100, self.play_next_video)
 
     def enable_button_states(self):
         if hasattr(self, 'btn_select_file'): self.btn_select_file.config(state=tk.NORMAL)
