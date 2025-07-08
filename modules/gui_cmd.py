@@ -469,18 +469,20 @@ class CMDModule(Module):
                     self.append_output(f"\n執行Python檔案時出錯: {str(e)}\n")
                     self.restart_cmd_process()
 
-    # 新增：強制結束指令功能 (模擬 Ctrl+C)
+    # 新增：強制結束指令功能 (模擬 Ctrl+Break)
     def force_terminate_command(self):
         if self.process and self.process.poll() is None:
             try:
                 if os.name == "nt":
-                    # 0 = CTRL_C_EVENT, 1 = CTRL_BREAK_EVENT
-                    self.process.send_signal(CTRL_C_EVENT)
-                    self.append_output("\n[強制結束] 已發送 Ctrl+C 給 CMD 進程。\n")
+                    # On Windows, CTRL_BREAK_EVENT is a stronger interruption signal
+                    # than CTRL_C_EVENT, and more likely to terminate the running command
+                    # without killing the parent cmd.exe process.
+                    self.process.send_signal(CTRL_BREAK_EVENT)
+                    self.append_output("\n[強制結束] 已發送中斷信號 (Ctrl+Break) 給 CMD 進程。\n")
                 else:
                     self.append_output("\n[強制結束] 僅支援 Windows 平台的 CMD。\n")
             except Exception as e:
-                self.append_output(f"\n[強制結束] 發送 Ctrl+C 失敗: {str(e)}\n")
+                self.append_output(f"\n[強制結束] 發送中斷信號失敗: {str(e)}\n")
 
     def on_destroy(self): # Renamed from on_closing, will be called by Module base class
         self.is_running = False # Signal threads to stop
