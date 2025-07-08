@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 from PIL import Image as PILImage
 import logging
+import subprocess
 
 # PyAcoustics for audio effects
 try:
@@ -890,7 +891,8 @@ class VideoPlayerModule(Module):
             self.temp_audio_path = os.path.join(self.temp_cache_dir, "audio.mp3")
             cmd = f'ffmpeg -y -loglevel error -i "{path_for_ffmpeg}" -vn -ar 44100 -ac 2 -b:a 192k "{self.temp_audio_path}"'
             
-            os.system(cmd)
+            subprocess.run(cmd, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
 
             if not os.path.exists(self.temp_audio_path) or os.path.getsize(self.temp_audio_path) == 0:
                 raise Exception(f"FFmpeg 無法建立或建立了空的音訊檔: {self.temp_audio_path}")
@@ -1204,7 +1206,8 @@ class VideoPlayerModule(Module):
                     self.temp_cache_dir = tempfile.mkdtemp(prefix='.vidplayer_cache_', dir=os.path.dirname(filepath))
                 self.temp_video_path = os.path.join(self.temp_cache_dir, "temp_fps25.mp4")
                 cmd = f'ffmpeg -y -loglevel error -i "{filepath}" -r 25 -vsync 2 -c:v libx264 -preset ultrafast -crf 18 -c:a copy "{self.temp_video_path}"'
-                os.system(cmd)
+                subprocess.run(cmd, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
                 if not os.path.exists(self.temp_video_path) or os.path.getsize(self.temp_video_path) == 0:
                     raise Exception("FFmpeg failed to create FPS=25 temp video.")
                 video_path_for_play = self.temp_video_path
