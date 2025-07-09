@@ -8,6 +8,7 @@ import queue
 import re
 # Removed filedialog import from here as it's already imported above with messagebox
 from main import Module
+import ctypes
 
 # Windows signal constants (避免 subprocess 沒有定義)
 if os.name == "nt":
@@ -142,15 +143,25 @@ class CMDModule(Module):
             # 這一步很重要，特別是如果 conda 不在系統預設的 PATH 中
             env = os.environ.copy()
             # 如果你的 conda 不在預設路徑，可能需要手動添加 conda 的 Scripts 路徑
-            # 例如: env['PATH'] = 'C:\\path\\to\\anaconda3\\Scripts;' + env['PATH']
+            # 例如: env['PATH'] = 'C:\path\to\anaconda3\Scripts;' + env['PATH']
             
+            # For Windows, determine the correct encoding for the CMD shell.
+            # Using the OEM codepage is generally the most reliable way.
+            codepage = f"cp{ctypes.cdll.kernel32.GetOEMCP()}"
+            try:
+                # Verify that the codepage is valid.
+                'test'.encode(codepage)
+            except LookupError:
+                # Fallback to the system's preferred encoding if the OEM codepage is not found.
+                codepage = locale.getpreferredencoding(False)
+
             self.process = subprocess.Popen(
                 ['cmd.exe'],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT, # 將 stderr 合併到 stdout
                 text=True,
-                encoding='utf-8', # 明確指定編碼
+                encoding=codepage, # Use the detected system CMD encoding
                 errors='replace', # 處理潛在的編碼錯誤
                 bufsize=1,  # 行緩衝
                 cwd=os.getcwd(), # Consider using a configurable initial directory
