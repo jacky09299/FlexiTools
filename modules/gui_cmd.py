@@ -165,7 +165,7 @@ class CMDModule(Module):
                 errors='replace', # 處理潛在的編碼錯誤
                 bufsize=1,  # 行緩衝
                 cwd=os.getcwd(), # Consider using a configurable initial directory
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
                 env=env
             )
             # 啟動時發送一個 enter，讓初始提示符顯示出來
@@ -352,7 +352,7 @@ class CMDModule(Module):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                encoding='utf-8'
+                encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW
             )
             envs = []
             for line in result.stdout.splitlines():
@@ -445,7 +445,7 @@ class CMDModule(Module):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     text=True,
-                    encoding='utf-8'
+                    encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW
                 )
                 for line in proc.stdout:
                     self.append_output(line)
@@ -523,7 +523,7 @@ class CMDModule(Module):
                     # CREATE_NEW_PROCESS_GROUP was used, so process.kill() might not be enough.
                     try:
                         subprocess.run(['taskkill', '/F', '/T', '/PID', str(self.process.pid)],
-                                       check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                       check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW)
                     except FileNotFoundError: # taskkill might not be available on all systems/PATH
                         self.process.kill() # Fallback to simple kill
                 except Exception as e:
