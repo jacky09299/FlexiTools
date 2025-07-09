@@ -6,6 +6,7 @@ import os
 import sys
 import queue
 import re
+import locale
 # Removed filedialog import from here as it's already imported above with messagebox
 from main import Module
 import ctypes
@@ -155,6 +156,13 @@ class CMDModule(Module):
                 # Fallback to the system's preferred encoding if the OEM codepage is not found.
                 codepage = locale.getpreferredencoding(False)
 
+            # To allow sending Ctrl+Break signals, the subprocess needs a console.
+            # CREATE_NO_WINDOW prevents this. Instead, we create a console but hide it
+            # using startupinfo flags.
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            # wShowWindow defaults to SW_HIDE (0), so the window will be hidden.
+
             self.process = subprocess.Popen(
                 ['cmd.exe'],
                 stdin=subprocess.PIPE,
@@ -165,7 +173,8 @@ class CMDModule(Module):
                 errors='replace', # 處理潛在的編碼錯誤
                 bufsize=1,  # 行緩衝
                 cwd=os.getcwd(), # Consider using a configurable initial directory
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                startupinfo=startupinfo,
                 env=env
             )
             # 啟動時發送一個 enter，讓初始提示符顯示出來
@@ -480,20 +489,75 @@ class CMDModule(Module):
                     self.append_output(f"\n執行Python檔案時出錯: {str(e)}\n")
                     self.restart_cmd_process()
 
-    # 新增：強制結束指令功能 (模擬 Ctrl+Break)
+    # 新增：強制結束指令功能
     def force_terminate_command(self):
-        if self.process and self.process.poll() is None:
-            try:
-                if os.name == "nt":
-                    # On Windows, CTRL_BREAK_EVENT is a stronger interruption signal
-                    # than CTRL_C_EVENT, and more likely to terminate the running command
-                    # without killing the parent cmd.exe process.
-                    self.process.send_signal(CTRL_BREAK_EVENT)
-                    self.append_output("\n[強制結束] 已發送中斷信號 (Ctrl+Break) 給 CMD 進程。\n")
-                else:
-                    self.append_output("\n[強制結束] 僅支援 Windows 平台的 CMD。\n")
-            except Exception as e:
-                self.append_output(f"\n[強制結束] 發送中斷信號失敗: {str(e)}\n")
+        if not (self.process and self.process.poll() is None):
+            self.append_output("\n[強制結束] CMD 進程未在運行。\n")
+            return
+
+        if os.name != "nt":
+            self.append_output("\n[強制結束] 僅支援 Windows 平台。\n")
+            return
+
+        try:
+            # Since sending signals (Ctrl+C/Break) is unreliable without a proper console,
+            # this method finds the direct child process of cmd.exe and terminates it.
+            # This effectively stops the running command without killing the cmd shell.
+            parent_pid = self.process.pid
+            # Use WMIC to find child processes of the cmd.exe process
+            cmd = f'wmic process where (ParentProcessId={parent_pid}) get ProcessId'
+            
+            # We need to hide the window for this subprocess call
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            
+            proc = subprocess.run(
+                cmd, 
+                capture_output=True, 
+                text=True, 
+                startupinfo=startupinfo,
+                check=False # Don't raise on non-zero exit code
+            )
+
+            if proc.returncode != 0:
+                # WMIC might not be available or fail.
+                self.append_output(f"\n[強制結束] 無法查詢子進程: {proc.stderr}\n")
+                return
+
+            # The output of wmic is like: "ProcessId\n12345\n\n", so we parse it.
+            child_pids = [line.strip() for line in proc.stdout.splitlines() if line.strip().isdigit()]
+
+            if not child_pids:
+                self.append_output("\n[強制結束] 未找到正在運行的子命令。\n")
+                return
+
+            killed_count = 0
+            for pid in child_pids:
+                try:
+                    # Forcefully kill the child process tree (/T)
+                    kill_cmd = ['taskkill', '/F', '/T', '/PID', pid]
+                    kill_proc = subprocess.run(
+                        kill_cmd, 
+                        check=True, 
+                        capture_output=True,
+                        startupinfo=startupinfo
+                    )
+                    self.append_output(f"\n[強制結束] 已終止命令 (PID: {pid})。\n")
+                    killed_count += 1
+                except subprocess.CalledProcessError as e:
+                    # taskkill can fail if the process ended between wmic and now.
+                    # We can ignore "process not found" errors.
+                    error_output = e.stderr.strip()
+                    if "not found" not in error_output:
+                         self.append_output(f"\n[強制結束] 終止命令 (PID: {pid}) 失敗: {error_output}\n")
+
+            if killed_count == 0:
+                self.append_output("\n[強制結束] 未能終止任何子命令 (可能已自行結束)。\n")
+
+        except FileNotFoundError:
+            self.append_output("\n[強制結束] 失敗: `wmic` 或 `taskkill` 命令未找到。\n")
+        except Exception as e:
+            self.append_output(f"\n[強制結束] 操作時發生未知錯誤: {str(e)}\n")
 
     def on_destroy(self): # Renamed from on_closing, will be called by Module base class
         self.is_running = False # Signal threads to stop
