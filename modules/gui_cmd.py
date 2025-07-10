@@ -7,14 +7,11 @@ import sys
 import queue
 import re
 import locale
+import signal # Import the signal module
+import psutil # Import psutil
 # Removed filedialog import from here as it's already imported above with messagebox
 from main import Module
 import ctypes
-
-# Windows signal constants (避免 subprocess 沒有定義)
-if os.name == "nt":
-    CTRL_C_EVENT = 0
-    CTRL_BREAK_EVENT = 1
 
 class CMDModule(Module):
     def __init__(self, master, shared_state, module_name="CMD Emulator", gui_manager=None):
@@ -217,22 +214,31 @@ class CMDModule(Module):
                 print(f"Error reading CMD output: {e}")
 
     def process_output(self):
-        """處理輸出隊列，不再進行複雜的清理"""
+        """處理輸出隊列，直到收到 None (poison pill) 或模塊停止。"""
         while self.is_running:
             try:
                 # 從隊列中一次性獲取所有可用數據，減少 GUI 更新次數
                 output_chunk = self.output_queue.get(block=True, timeout=0.1) # block with timeout
+                
+                if output_chunk is None: # Poison pill to stop the thread
+                    break
+
                 while not self.output_queue.empty():
                     try:
-                        output_chunk += self.output_queue.get_nowait() # non-blocking
+                        next_chunk = self.output_queue.get_nowait() # non-blocking
+                        if next_chunk is None: # Check for poison pill again
+                            output_chunk = None
+                            break
+                        output_chunk += next_chunk
                     except queue.Empty:
-                        break # Should not happen if not empty, but good practice
+                        break
                 
+                if output_chunk is None: # Exit if pill was found in the loop
+                    break
+
                 if output_chunk:
-                    # --- [修改 2] 簡化清理邏輯 ---
-                    # 我們只做最基本的清理，不再過濾提示符
                     cleaned_output = self.clean_output(output_chunk)
-                    self.append_output(cleaned_output) # This will use self.master.after
+                    self.append_output(cleaned_output)
                     
             except queue.Empty:
                 continue # Timeout occurred, loop again
@@ -281,8 +287,12 @@ class CMDModule(Module):
             # 如果用戶只按 enter，我們也發送一個換行符到 cmd
             # 這樣可以觸發 cmd 顯示一個新的提示符，體驗更流暢
             if self.process and self.process.poll() is None:
-                self.process.stdin.write('\n')
-                self.process.stdin.flush()
+                try:
+                    self.process.stdin.write('\n')
+                    self.process.stdin.flush()
+                except (OSError, ValueError):
+                    self.append_output("\n錯誤: 無法寫入已關閉的 CMD 進程。正在重啟...\n")
+                    self.restart_cmd_process()
             return
         
         if command not in self.command_history:
@@ -304,18 +314,70 @@ class CMDModule(Module):
             else:
                 self.append_output("\n錯誤: CMD 進程未運行。正在嘗試重啟...\n")
                 self.restart_cmd_process()
+        except (OSError, ValueError):
+            self.append_output(f"\n命令執行錯誤: 無法寫入已關閉的 CMD 進程。正在重啟...\n")
+            self.restart_cmd_process()
         except Exception as e:
             self.append_output(f"\n命令執行錯誤: {str(e)}\n")
             self.restart_cmd_process()
     
     def restart_cmd_process(self):
+        """強力終止當前的 CMD 進程及其所有子進程，然後啟動一個新實例。"""
+        self.append_output("\n[CMD 會話] 正在重啟...\n")
+
+        # 1. 停止現有的輸出線程
+        if hasattr(self, 'output_thread') and self.output_thread.is_alive():
+            self.output_queue.put(None) # Send poison pill
+            self.output_thread.join(timeout=1)
+            if self.output_thread.is_alive():
+                self.append_output("[警告] 輸出讀取線程未能及時停止。\n")
+        if hasattr(self, 'display_thread') and self.display_thread.is_alive():
+            self.output_queue.put(None) # Send another pill for safety
+            self.display_thread.join(timeout=1)
+            if self.display_thread.is_alive():
+                self.append_output("[警告] 輸出顯示線程未能及時停止。\n")
+
+        # 2. 清理舊的 CMD 進程
         try:
+            if self.process and self.process.poll() is None and self.process.pid:
+                try:
+                    parent = psutil.Process(self.process.pid)
+                    children = parent.children(recursive=True)
+                    if children:
+                        self.append_output(f"[通知] 正在終止 {len(children)} 個子進程...\n")
+                        for child in children:
+                            try: child.kill()
+                            except psutil.NoSuchProcess: pass
+                        psutil.wait_procs(children, timeout=3)
+                except psutil.NoSuchProcess:
+                    pass # 主進程已消失
+                except Exception as e:
+                    self.append_output(f"[警告] 終止子進程時發生錯誤: {e}\n")
+
+                try:
+                    subprocess.run(
+                        ['taskkill', '/F', '/T', '/PID', str(self.process.pid)],
+                        check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                        creationflags=subprocess.CREATE_NO_WINDOW
+                    )
+                except Exception as e:
+                    self.append_output(f"[警告] 使用 taskkill 終止主進程時出錯: {e}\n")
+                    try: self.process.kill()
+                    except Exception as e2: self.append_output(f"[警告] 使用 process.kill() 終止主進程時出錯: {e2}\n")
+            
             if self.process:
-                self.process.terminate()
-            self.init_cmd_process()
-            self.append_output("\n=== CMD 進程已重啟 ===\n")
+                for pipe in [self.process.stdin, self.process.stdout, self.process.stderr]:
+                    if pipe: 
+                        try: pipe.close()
+                        except OSError: pass
+
         except Exception as e:
-            self.append_output(f"重啟進程失敗: {str(e)}\n")
+            self.append_output(f"[錯誤] 清理舊 CMD 進程時發生未知錯誤: {e}\n")
+        finally:
+            # 3. 啟動新進程和新線程
+            self.init_cmd_process()
+            self.start_output_threads() # <--- 重新啟動線程
+            self.append_output("\n=== CMD 會話已成功重啟 ===\n")
     
     def history_up(self, event):
         if self.command_history and self.history_index > 0:
@@ -491,73 +553,19 @@ class CMDModule(Module):
 
     # 新增：強制結束指令功能
     def force_terminate_command(self):
-        if not (self.process and self.process.poll() is None):
-            self.append_output("\n[強制結束] CMD 進程未在運行。\n")
-            return
+        """此功能現在直接調用 restart_cmd_process 來確保一個乾淨的會話。"""
+        self.append_output("\n[強制結束] 正在終止當前所有相關進程並重啟一個新的 CMD 會話...\n")
+        self.restart_cmd_process()
 
-        if os.name != "nt":
-            self.append_output("\n[強制結束] 僅支援 Windows 平台。\n")
-            return
-
-        try:
-            # Since sending signals (Ctrl+C/Break) is unreliable without a proper console,
-            # this method finds the direct child process of cmd.exe and terminates it.
-            # This effectively stops the running command without killing the cmd shell.
-            parent_pid = self.process.pid
-            # Use WMIC to find child processes of the cmd.exe process
-            cmd = f'wmic process where (ParentProcessId={parent_pid}) get ProcessId'
-            
-            # We need to hide the window for this subprocess call
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            
-            proc = subprocess.run(
-                cmd, 
-                capture_output=True, 
-                text=True, 
-                startupinfo=startupinfo,
-                check=False # Don't raise on non-zero exit code
-            )
-
-            if proc.returncode != 0:
-                # WMIC might not be available or fail.
-                self.append_output(f"\n[強制結束] 無法查詢子進程: {proc.stderr}\n")
-                return
-
-            # The output of wmic is like: "ProcessId\n12345\n\n", so we parse it.
-            child_pids = [line.strip() for line in proc.stdout.splitlines() if line.strip().isdigit()]
-
-            if not child_pids:
-                self.append_output("\n[強制結束] 未找到正在運行的子命令。\n")
-                return
-
-            killed_count = 0
-            for pid in child_pids:
-                try:
-                    # Forcefully kill the child process tree (/T)
-                    kill_cmd = ['taskkill', '/F', '/T', '/PID', pid]
-                    kill_proc = subprocess.run(
-                        kill_cmd, 
-                        check=True, 
-                        capture_output=True,
-                        startupinfo=startupinfo
-                    )
-                    self.append_output(f"\n[強制結束] 已終止命令 (PID: {pid})。\n")
-                    killed_count += 1
-                except subprocess.CalledProcessError as e:
-                    # taskkill can fail if the process ended between wmic and now.
-                    # We can ignore "process not found" errors.
-                    error_output = e.stderr.strip()
-                    if "not found" not in error_output:
-                         self.append_output(f"\n[強制結束] 終止命令 (PID: {pid}) 失敗: {error_output}\n")
-
-            if killed_count == 0:
-                self.append_output("\n[強制結束] 未能終止任何子命令 (可能已自行結束)。\n")
-
-        except FileNotFoundError:
-            self.append_output("\n[強制結束] 失敗: `wmic` 或 `taskkill` 命令未找到。\n")
-        except Exception as e:
-            self.append_output(f"\n[強制結束] 操作時發生未知錯誤: {str(e)}\n")
+    def _refresh_prompt(self):
+        """Writes a newline to the stdin to get a new prompt."""
+        if self.process and self.process.poll() is None:
+            try:
+                self.process.stdin.write('\n')
+                self.process.stdin.flush()
+            except (OSError, ValueError):
+                # Pipe might be closed, which is fine.
+                pass
 
     def on_destroy(self): # Renamed from on_closing, will be called by Module base class
         self.is_running = False # Signal threads to stop
