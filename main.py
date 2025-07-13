@@ -60,12 +60,15 @@ if __name__ == "__main__":
     import sys
     if '__main__' in sys.modules:
         sys.modules['main'] = sys.modules['__main__']
+    time.sleep(2)
 
     root = tk.Tk()
+    
     shared_state_instance = SharedState() # Create SharedState instance EARLIER
 
     splash = None
     update_splash_progress = None
+    
     try:
         from splash_ui import create_splash_screen
         # Pass shared_state_instance to create_splash_screen
