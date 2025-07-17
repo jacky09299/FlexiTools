@@ -45,7 +45,7 @@ a = Analysis(
         ('dependencies/cef_dependencies/MSVCP90.dll', '.'),
         ('dependencies/cef_dependencies/MSVCP100.dll', '.'),
         ('dependencies/ffmpeg/ffmpeg.exe', '.'),  # 確保這路徑正確
-        """
+        
         ('dependencies/ffmpeg/avcodec-58.dll', '.'),
         ('dependencies/ffmpeg/avdevice-58.dll', '.'),
         ('dependencies/ffmpeg/avfilter-7.dll', '.'),
@@ -54,7 +54,7 @@ a = Analysis(
         ('dependencies/ffmpeg/postproc-55.dll', '.'),
         ('dependencies/ffmpeg/swresample-3.dll', '.'),
         ('dependencies/ffmpeg/swscale-5.dll', '.'),
-        """
+        
         ('dependencies/pyroomacoustics', 'pyroomacoustics'),
         # OpenCV 資料
         *cv2_datas,
