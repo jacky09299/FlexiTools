@@ -2,24 +2,24 @@
 import tkinter as tk
 from tkinter import ttk
 
-# --- 定義顏色方案 (專業現代化風格) ---
+# --- 定義顏色方案 (混合主題：主介面深色，模組淺色) ---
 COLOR_PRIMARY_BG = "#1E1E1E"       # 主視窗背景 (非常深的灰，接近黑)
-COLOR_MODULE_BG = "#2D2D2D"        # 模組背景 (深灰)
-COLOR_MODULE_FG = "#E0E0E0"        # 模組前景/文字 (淺灰)
+COLOR_MODULE_BG = "#FFFFFF"        # 模組背景 (白色)
+COLOR_MODULE_FG = "#333333"        # 模組前景/文字 (深灰)
 COLOR_ACCENT = "#007ACC"           # 強調色 (專業深藍)
 COLOR_ACCENT_HOVER = "#005F99"     # 強調色 (懸停時更深)
-COLOR_ENTRY_BG = "#3A3A3A"         # 輸入框背景 (中等深灰)
-COLOR_BORDER = "#444444"           # 邊框顏色 (中等深灰)
+COLOR_ENTRY_BG = "#FFFFFF"         # 輸入框背景 (白色)
+COLOR_BORDER = "#CCCCCC"           # 模組邊框顏色 (淺灰)
 
 # 自訂視窗元素顏色
 COLOR_WINDOW_BORDER = "#000000"    # 最外層視窗邊框 (純黑，提供清晰邊界)
 COLOR_TITLE_BAR_BG = "#1E1E1E"     # 標題欄背景 (與主背景一致)
 COLOR_MENU_BAR_BG = "#252526"      # 選單欄背景 (比主背景稍亮，增加層次感)
-COLOR_MENU_BUTTON_FG = "#E0E0E0"   # 選單按鈕文字顏色
+COLOR_MENU_BUTTON_FG = "#E0E0E0"   # 選單按鈕文字顏色 (淺色，用於深色選單欄)
 COLOR_MENU_BUTTON_ACTIVE_BG = "#007ACC" # 選單按鈕懸停背景 (強調色)
 
 # 滾動條顏色
-COLOR_SCROLLBAR_TROUGH = "#2D2D2D" # 滾動條軌道 (與模組背景一致)
+COLOR_SCROLLBAR_TROUGH = "#2D2D2D" # 滾動條軌道 (深灰)
 COLOR_SCROLLBAR_THUMB = "#555555"  # 滾動條滑塊 (中灰)
 COLOR_SCROLLBAR_ACTIVE_THUMB = "#777777" # 滾動條滑塊懸停 (淺灰)
 
