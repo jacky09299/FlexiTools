@@ -121,6 +121,10 @@ def configure_styles():
     style.map('TScrollbar',
               background=[('active', COLOR_SCROLLBAR_ACTIVE_THUMB)])
 
+    # --- Sizegrip 樣式 ---
+    style.configure('TSizegrip',
+                    background=COLOR_MODULE_BG)
+
 def apply_post_creation_styles(root):
     """套用需要在 root 視窗建立後才能設定的樣式。"""
     style = ttk.Style()
