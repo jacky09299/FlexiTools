@@ -4,12 +4,12 @@ from tkinter import ttk
 
 # --- 定義顏色方案 (混合主題：主介面深色，模組淺色) ---
 COLOR_PRIMARY_BG = "#1E1E1E"       # 主視窗背景 (非常深的灰，接近黑)
-COLOR_MODULE_BG = "#F3F9FD"        # 模組背景 (白色)
+COLOR_MODULE_BG = "#D0E0EB"        # 模組背景 (白色)
 COLOR_MODULE_FG = "#333333"        # 模組前景/文字 (深灰)
-COLOR_ACCENT = "#4A4C4D"           # 強調色 (專業深藍)
+COLOR_ACCENT = "#A6AAAB"           # 強調色 (專業深藍)
 COLOR_ACCENT_HOVER = "#8D9193"     # 強調色 (懸停時更深)
 COLOR_ENTRY_BG = "#FFFFFF"         # 輸入框背景 (白色)
-COLOR_BORDER = "#F3F9FD"           # 模組邊框顏色 (淺灰)
+COLOR_BORDER = "#D0E0EB"           # 模組邊框顏色 (淺灰)
 
 # 自訂視窗元素顏色
 COLOR_WINDOW_BORDER = "#000000"    # 最外層視窗邊框 (純黑，提供清晰邊界)
