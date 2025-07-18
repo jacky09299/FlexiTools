@@ -76,7 +76,7 @@ def configure_styles():
                           ('active', COLOR_ACCENT_HOVER)],
               foreground=[('active', '#FFFFFF')])
 
-    style.configure('Module.TButton',
+    style.configure('TButton',
                     background=COLOR_ACCENT,
                     foreground="#FFFFFF", # 按鈕文字改為白色
                     font=FONT_BOLD,
@@ -84,7 +84,7 @@ def configure_styles():
                     relief='flat',
                     padding=(10, 5))
 
-    style.map('Module.TButton',
+    style.map('TButton',
               background=[('!active', COLOR_ACCENT),
                           ('pressed', COLOR_ACCENT_HOVER),
                           ('active', COLOR_ACCENT_HOVER)],
