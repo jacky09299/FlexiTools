@@ -1,0 +1,35 @@
+{
+  "modules": [
+    {
+      "module_name": "notepad",
+      "instance_id": "notepad#5",
+      "relative_width": 0.5093099671412924,
+      "relative_height": 0.4249726177437021
+    },
+    {
+      "module_name": "notepad",
+      "instance_id": "notepad#6",
+      "relative_width": 0.47973713033953996,
+      "relative_height": 0.42606790799561883
+    },
+    {
+      "module_name": "gui_cmd",
+      "instance_id": "gui_cmd#2",
+      "relative_width": 1.0,
+      "relative_height": 0.6221248630887185
+    },
+    {
+      "module_name": "todo_list",
+      "instance_id": "todo_list#1",
+      "relative_width": 0.3176341730558598,
+      "relative_height": 0.4950711938663746
+    }
+  ],
+  "maximized_module_name": null,
+  "module_order": [
+    "notepad#5",
+    "notepad#6",
+    "gui_cmd#2",
+    "todo_list#1"
+  ]
+}
