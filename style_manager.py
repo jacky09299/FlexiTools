@@ -6,8 +6,8 @@ from tkinter import ttk
 COLOR_PRIMARY_BG = "#1E1E1E"       # 主視窗背景 (非常深的灰，接近黑)
 COLOR_MODULE_BG = "#FFFFFF"        # 模組背景 (白色)
 COLOR_MODULE_FG = "#333333"        # 模組前景/文字 (深灰)
-COLOR_ACCENT = "#007ACC"           # 強調色 (專業深藍)
-COLOR_ACCENT_HOVER = "#005F99"     # 強調色 (懸停時更深)
+COLOR_ACCENT = "#A5A9AC"           # 強調色 (專業深藍)
+COLOR_ACCENT_HOVER = "#8D9193"     # 強調色 (懸停時更深)
 COLOR_ENTRY_BG = "#FFFFFF"         # 輸入框背景 (白色)
 COLOR_BORDER = "#CCCCCC"           # 模組邊框顏色 (淺灰)
 
