@@ -84,10 +84,10 @@ class Module:
         self.title_bar_frame = ttk.Frame(self.frame, height=25, style="DragHandle.TFrame")
         self.title_bar_frame.pack(fill=tk.X, side=tk.TOP, pady=(0,2))
 
-        self.drag_handle_label = ttk.Label(self.title_bar_frame, text="☰", cursor="fleur")
+        self.drag_handle_label = ttk.Label(self.title_bar_frame, text="☰", cursor="fleur", style='Module.TLabel')
         self.drag_handle_label.pack(side=tk.LEFT, padx=5)
 
-        self.title_label = ttk.Label(self.title_bar_frame, text=self.module_name)
+        self.title_label = ttk.Label(self.title_bar_frame, text=self.module_name, style='Module.TLabel')
         self.title_label.pack(side=tk.LEFT, padx=5)
 
         self.close_button = ttk.Button(self.title_bar_frame, text="X", width=3,
