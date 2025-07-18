@@ -79,7 +79,7 @@ class Module:
         self.module_name = module_name
         self.gui_manager = gui_manager
 
-        self.frame = ttk.Frame(self.master, borderwidth=1, relief=tk.SOLID)
+        self.frame = ttk.Frame(self.master, style='Module.TFrame')
 
         self.title_bar_frame = ttk.Frame(self.frame, height=25, style="DragHandle.TFrame")
         self.title_bar_frame.pack(fill=tk.X, side=tk.TOP, pady=(0,2))
@@ -91,12 +91,12 @@ class Module:
         self.title_label.pack(side=tk.LEFT, padx=5)
 
         self.close_button = ttk.Button(self.title_bar_frame, text="X", width=3,
-                                        command=self.close_module_action)
+                                        command=self.close_module_action, style='TitleBar.TButton')
         self.close_button.pack(side=tk.RIGHT, padx=(0, 2))
 
         self.maximize_button = ttk.Button(
             self.title_bar_frame, text="⬜", width=3,
-            command=self.toggle_maximize_action
+            command=self.toggle_maximize_action, style='TitleBar.TButton'
         )
         self.maximize_button.pack(side=tk.RIGHT, padx=(0, 2))
 
@@ -991,7 +991,7 @@ class ModularGUI:
             return None
         ModuleClass = self.available_module_classes[module_name]
         instance_id = self._generate_instance_id(module_name)
-        frame_wrapper = ttk.Frame(parent_layout_manager, relief=tk.SUNKEN, borderwidth=1)
+        frame_wrapper = ttk.Frame(parent_layout_manager, style='Module.TFrame')
         try:
             module_instance = ModuleClass(frame_wrapper, self.shared_state, instance_id, self)
             module_instance.get_frame().pack(fill=tk.BOTH, expand=True)
