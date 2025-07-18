@@ -6,8 +6,8 @@ from tkinter import ttk
 COLOR_PRIMARY_BG = "#1E1E1E"       # 主視窗背景 (非常深的灰，接近黑)
 COLOR_MODULE_BG = "#D0E0EB"        # 模組背景 (白色)
 COLOR_MODULE_FG = "#333333"        # 模組前景/文字 (深灰)
-COLOR_ACCENT = "#A6AAAB"           # 強調色 (專業深藍)
-COLOR_ACCENT_HOVER = "#8D9193"     # 強調色 (懸停時更深)
+COLOR_ACCENT = "#E6F1FA"           # 強調色 (專業深藍)
+COLOR_ACCENT_HOVER = "#D0E8F9"     # 強調色 (懸停時更深)
 COLOR_ENTRY_BG = "#FFFFFF"         # 輸入框背景 (白色)
 COLOR_BORDER = "#D0E0EB"           # 模組邊框顏色 (淺灰)
 
@@ -78,7 +78,7 @@ def configure_styles():
 
     style.configure('TButton',
                     background=COLOR_ACCENT,
-                    foreground="#FFFFFF", # 按鈕文字改為白色
+                    foreground="#1B2021", # 按鈕文字改為白色
                     font=FONT_BOLD,
                     borderwidth=0,
                     relief='flat',
