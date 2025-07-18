@@ -58,7 +58,24 @@ def configure_styles():
                     foreground=COLOR_ACCENT,
                     font=FONT_HEADER)
 
+    style.configure('DragHandle.TFrame', background=COLOR_MODULE_BG)
+
     # --- 按鈕樣式 ---
+    # Style for title bar buttons
+    style.configure('TitleBar.TButton',
+                    background=COLOR_MODULE_BG,
+                    foreground=COLOR_MODULE_FG,
+                    font=FONT_NORMAL,
+                    borderwidth=0,
+                    relief='flat',
+                    padding=(2, 2))
+
+    style.map('TitleBar.TButton',
+              background=[('!active', COLOR_MODULE_BG),
+                          ('pressed', COLOR_ACCENT_HOVER),
+                          ('active', COLOR_ACCENT_HOVER)],
+              foreground=[('active', '#FFFFFF')])
+
     style.configure('Module.TButton',
                     background=COLOR_ACCENT,
                     foreground="#FFFFFF", # 按鈕文字改為白色
