@@ -593,7 +593,7 @@ class ModularGUI:
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.canvas_container.pack_propagate(False)
 
-        self.main_layout_manager = CustomLayoutManager(self.canvas)
+        self.main_layout_manager = CustomLayoutManager(self.canvas, bg="#77BFF7")
 
         self.main_layout_manager_window_id = self.canvas.create_window(
             (0, 0), window=self.main_layout_manager, anchor='nw'
