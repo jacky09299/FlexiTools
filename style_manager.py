@@ -42,13 +42,13 @@ def configure_styles():
     style.configure('Main.TFrame', background=COLOR_PRIMARY_BG)
 
     # --- 2. 模組樣式 (與主視窗分離) ---
-    style.configure('Module.TFrame',
+    style.configure('TFrame',
                     background=COLOR_MODULE_BG,
                     borderwidth=1,
                     relief='solid',
                     bordercolor=COLOR_BORDER) # 新增 bordercolor
 
-    style.configure('Module.TLabel',
+    style.configure('TLabel',
                     background=COLOR_MODULE_BG,
                     foreground=COLOR_MODULE_FG,
                     font=FONT_NORMAL)
@@ -91,7 +91,7 @@ def configure_styles():
               relief=[('pressed', 'sunken')])
 
     # --- 輸入框樣式 ---
-    style.configure('Module.TEntry',
+    style.configure('TEntry',
                     fieldbackground=COLOR_ENTRY_BG,
                     foreground=COLOR_MODULE_FG,
                     insertcolor=COLOR_MODULE_FG, # 游標顏色
@@ -100,7 +100,7 @@ def configure_styles():
                     bordercolor=COLOR_BORDER) # 新增 bordercolor
 
     # --- 下拉選單樣式 ---
-    style.configure('Module.TCombobox',
+    style.configure('TCombobox',
                     background=COLOR_ENTRY_BG,
                     fieldbackground=COLOR_ENTRY_BG,
                     foreground=COLOR_MODULE_FG,
