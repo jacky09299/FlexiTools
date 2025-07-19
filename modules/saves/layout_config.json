@@ -1,63 +1,42 @@
 {
   "modules": [
     {
-      "module_name": "Fitter",
-      "instance_id": "Fitter#1",
-      "relative_width": 0.23932729624838292,
-      "relative_height": 0.4036222509702458
-    },
-    {
-      "module_name": "Fitter",
-      "instance_id": "Fitter#2",
-      "relative_width": 0.2884864165588616,
-      "relative_height": 0.41009055627425617
-    },
-    {
-      "module_name": "Fitter",
-      "instance_id": "Fitter#3",
-      "relative_width": 0.2755498059508409,
-      "relative_height": 0.4139715394566624
-    },
-    {
-      "module_name": "Fitter",
-      "instance_id": "Fitter#4",
-      "relative_width": 0.21216041397153945,
-      "relative_height": 0.4230271668822768
-    },
-    {
-      "module_name": "Fitter",
-      "instance_id": "Fitter#5",
-      "relative_width": 0.24191461836998707,
-      "relative_height": 0.4269081500646831
-    },
-    {
-      "module_name": "split_para",
-      "instance_id": "split_para#1",
-      "relative_width": 0.2445019404915912,
-      "relative_height": 0.4579560155239327
-    },
-    {
-      "module_name": "plot_gui",
-      "instance_id": "plot_gui#1",
-      "relative_width": 0.13195342820181113,
-      "relative_height": 0.39327296248382926
+      "module_name": "notepad",
+      "instance_id": "notepad#5",
+      "relative_width": 0.4859335038363171,
+      "relative_height": 0.4040920716112532
     },
     {
       "module_name": "notepad",
-      "instance_id": "notepad#4",
-      "relative_width": 0.2535575679172057,
-      "relative_height": 0.1888745148771022
+      "instance_id": "notepad#6",
+      "relative_width": 0.45652173913043476,
+      "relative_height": 0.4053708439897698
+    },
+    {
+      "module_name": "gui_cmd",
+      "instance_id": "gui_cmd#2",
+      "relative_width": 0.9539641943734015,
+      "relative_height": 0.592071611253197
+    },
+    {
+      "module_name": "todo_list",
+      "instance_id": "todo_list#1",
+      "relative_width": 0.30179028132992325,
+      "relative_height": 0.4718670076726343
+    },
+    {
+      "module_name": "clock",
+      "instance_id": "clock#1",
+      "relative_width": 0.639386189258312,
+      "relative_height": 0.4322250639386189
     }
   ],
   "maximized_module_name": null,
   "module_order": [
-    "Fitter#1",
-    "Fitter#2",
-    "Fitter#3",
-    "Fitter#4",
-    "Fitter#5",
-    "split_para#1",
-    "plot_gui#1",
-    "notepad#4"
+    "notepad#5",
+    "notepad#6",
+    "gui_cmd#2",
+    "todo_list#1",
+    "clock#1"
   ]
 }
