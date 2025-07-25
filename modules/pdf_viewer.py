@@ -3,12 +3,11 @@ from tkinter import filedialog, messagebox, ttk
 import fitz  # PyMuPDF
 from PIL import Image, ImageTk
 import io
+from ui import Module
 
-class PDFReader:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("PDF 閱讀器 - 支援框選放大")
-        self.root.geometry("1200x800")
+class PDFViewerModule(Module):
+    def __init__(self, master, shared_state, module_name="PDF Viewer", gui_manager=None):
+        super().__init__(master, shared_state, module_name, gui_manager)
         
         # PDF 相關變數
         self.pdf_document = None
@@ -33,15 +32,15 @@ class PDFReader:
         self.initial_fit_done = False  # 標記是否已做初始縮放
         
         self.setup_ui()
-        
+
     def setup_ui(self):
-        # 主要框架
-        main_frame = ttk.Frame(self.root)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # The main frame for the module's content, child of self.frame
+        content_frame = ttk.Frame(self.frame)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         
         # 工具列
-        toolbar = ttk.Frame(main_frame)
-        toolbar.pack(fill=tk.X, pady=(0, 10))
+        toolbar = ttk.Frame(content_frame)
+        toolbar.pack(fill=tk.X, pady=(0, 5))
         
         # 按鈕
         ttk.Button(toolbar, text="選擇 PDF", command=self.open_pdf).pack(side=tk.LEFT, padx=(0, 5))
@@ -61,18 +60,18 @@ class PDFReader:
         
         # 頁碼顯示
         self.page_label = ttk.Label(toolbar, text="頁碼: 0/0")
-        self.page_label.pack(side=tk.LEFT, padx=(20, 0))
+        self.page_label.pack(side=tk.LEFT, padx=(10, 0))
         
         # 縮放顯示
         self.zoom_label = ttk.Label(toolbar, text="縮放: 100%")
-        self.zoom_label.pack(side=tk.LEFT, padx=(10, 0))
+        self.zoom_label.pack(side=tk.LEFT, padx=(5, 0))
         
         # 歷史記錄顯示
         self.history_label = ttk.Label(toolbar, text="歷史: 0")
-        self.history_label.pack(side=tk.LEFT, padx=(10, 0))
+        self.history_label.pack(side=tk.LEFT, padx=(5, 0))
         
         # 畫布框架（帶滾動條）
-        canvas_frame = ttk.Frame(main_frame)
+        canvas_frame = ttk.Frame(content_frame)
         canvas_frame.pack(fill=tk.BOTH, expand=True)
         
         # 創建畫布和滾動條
@@ -93,14 +92,14 @@ class PDFReader:
         self.canvas.bind("<B1-Motion>", self.update_selection)
         self.canvas.bind("<ButtonRelease-1>", self.end_selection)
         
-        # 綁定鍵盤事件
-        self.root.bind("<Key>", self.key_pressed)
-        self.root.focus_set()
+        # 綁定鍵盤事件到頂層窗口 for global shortcuts
+        # self.frame.winfo_toplevel().bind("<Key>", self.key_pressed)
+        # self.frame.focus_set() # Focus management handled by ModularGUI
         
         # 狀態列
-        self.status_bar = ttk.Label(main_frame, text="請選擇 PDF 檔案", relief=tk.SUNKEN)
-        self.status_bar.pack(fill=tk.X, side=tk.BOTTOM, pady=(10, 0))
-        
+        self.status_bar = ttk.Label(content_frame, text="請選擇 PDF 檔案", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar.pack(fill=tk.X, side=tk.BOTTOM, pady=(5, 0))
+
     def fit_page_to_canvas(self):
         """計算讓整個PDF頁面剛好顯示於畫布的縮放比例"""
         if not self.pdf_document:
@@ -133,7 +132,7 @@ class PDFReader:
                 self.initial_fit_done = False
                 # 先顯示頁面，等canvas顯示後再fit
                 self.display_page()
-                self.root.after(100, self.initial_fit_page)
+                self.frame.after(100, self.initial_fit_page)
                 self.update_history_label()
                 self.status_bar.config(text=f"已開啟: {file_path}")
             except Exception as e:
@@ -416,11 +415,3 @@ class PDFReader:
             self.go_back()
         elif event.keysym == "Escape":
             self.reset_view()
-
-def main():
-    root = tk.Tk()
-    app = PDFReader(root)
-    root.mainloop()
-
-if __name__ == "__main__":
-    main()
