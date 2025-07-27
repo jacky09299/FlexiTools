@@ -6,7 +6,6 @@ import logging # Added for consistency with other modules
 
 # PyPDF2 for PDF manipulation
 from PyPDF2 import PdfReader, PdfWriter
-from pdfrw import PageMerge
 # reportlab for creating watermark PDFs
 from reportlab.pdfgen import canvas as reportlab_canvas
 # from reportlab.lib.pagesizes import letter # Not strictly needed if using dynamic page sizes
@@ -79,19 +78,25 @@ class PdfProcessorModule(Module):
         self.split_page_ranges_var = tk.StringVar()
         ttk.Entry(split_frame, textvariable=self.split_page_ranges_var, width=50).grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
+        # Output Folder Selection
+        ttk.Label(split_frame, text="Output Folder:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        self.split_output_folder_var = tk.StringVar()
+        ttk.Entry(split_frame, textvariable=self.split_output_folder_var, width=50, state="readonly").grid(row=3, column=1, padx=5, pady=5, sticky="ew")
+        ttk.Button(split_frame, text="Choose Folder...", command=self._select_split_output_folder).grid(row=3, column=2, padx=5, pady=5)
+
         # Output Naming Pattern
-        ttk.Label(split_frame, text="Output Pattern:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(split_frame, text="Output Pattern:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
         self.split_output_pattern_var = tk.StringVar(value="{basename}_part{i}.pdf") # Changed default
-        ttk.Entry(split_frame, textvariable=self.split_output_pattern_var, width=50).grid(row=2, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Label(split_frame, text="Placeholders: {i}, {filename}, {basename}, {start}, {end}").grid(row=3, column=1, padx=5, pady=2, sticky="w")
+        ttk.Entry(split_frame, textvariable=self.split_output_pattern_var, width=50).grid(row=4, column=1, padx=5, pady=5, sticky="ew")
+        ttk.Label(split_frame, text="Placeholders: {i}, {filename}, {basename}, {start}, {end}").grid(row=5, column=1, padx=5, pady=2, sticky="w")
 
 
         # Split Button
-        ttk.Button(split_frame, text="Split PDF", command=self._execute_split_pdf).grid(row=4, column=1, padx=5, pady=10)
+        ttk.Button(split_frame, text="Split PDF", command=self._execute_split_pdf).grid(row=6, column=1, padx=5, pady=10)
 
         # Status Label
         self.split_status_var = tk.StringVar()
-        ttk.Label(split_frame, textvariable=self.split_status_var, wraplength=400).grid(row=5, column=0, columnspan=3, padx=5, pady=5, sticky="w")
+        ttk.Label(split_frame, textvariable=self.split_status_var, wraplength=400).grid(row=7, column=0, columnspan=3, padx=5, pady=5, sticky="w")
 
         split_frame.columnconfigure(1, weight=1) # Allow entry fields to expand
 
@@ -240,18 +245,23 @@ class PdfProcessorModule(Module):
         ttk.Entry(extract_frame, textvariable=self.extract_input_pdf_path_var, width=50, state="readonly").grid(row=0, column=1, padx=5, pady=5, sticky="ew")
         ttk.Button(extract_frame, text="Browse...", command=self._select_input_pdf_extract_text).grid(row=0, column=2, padx=5, pady=5)
 
+        # Page Ranges for Extract
+        ttk.Label(extract_frame, text="Pages (e.g., all, 1-5, 8, 10-12):").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.extract_page_ranges_var = tk.StringVar(value="all")
+        ttk.Entry(extract_frame, textvariable=self.extract_page_ranges_var, width=50).grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+
         # Output TXT File
-        ttk.Label(extract_frame, text="Output Text File (.txt):").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(extract_frame, text="Output Text File (.txt):").grid(row=2, column=0, padx=5, pady=5, sticky="w")
         self.extract_output_txt_path_var = tk.StringVar()
-        ttk.Entry(extract_frame, textvariable=self.extract_output_txt_path_var, width=50, state="readonly").grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Button(extract_frame, text="Browse...", command=self._select_output_txt_file_extract_text).grid(row=1, column=2, padx=5, pady=5)
+        ttk.Entry(extract_frame, textvariable=self.extract_output_txt_path_var, width=50, state="readonly").grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+        ttk.Button(extract_frame, text="Browse...", command=self._select_output_txt_file_extract_text).grid(row=2, column=2, padx=5, pady=5)
 
         # Extract Text Button
-        ttk.Button(extract_frame, text="Extract Text to File", command=self._execute_extract_text).grid(row=2, column=1, padx=5, pady=10)
+        ttk.Button(extract_frame, text="Extract Text to File", command=self._execute_extract_text).grid(row=3, column=1, padx=5, pady=10)
 
         # Status Label
         self.extract_status_var = tk.StringVar()
-        ttk.Label(extract_frame, textvariable=self.extract_status_var, wraplength=400).grid(row=3, column=0, columnspan=3, padx=5, pady=5, sticky="w")
+        ttk.Label(extract_frame, textvariable=self.extract_status_var, wraplength=400).grid(row=4, column=0, columnspan=3, padx=5, pady=5, sticky="w")
 
         extract_frame.columnconfigure(1, weight=1)
 
@@ -368,13 +378,16 @@ class PdfProcessorModule(Module):
             messagebox.showerror("Invalid Page Ranges", self.split_status_var.get() or "Failed to parse page ranges.", parent=self.tab_split)
             return
 
-        default_output_root = os.path.join(os.path.expanduser("~"), "pdf_processor_outputs")
-        self.current_output_dir = os.path.join(default_output_root, "split_files")
-
-        if hasattr(self.gui_manager, 'saves_dir') and self.gui_manager.saves_dir:
-             # Use a subdirectory within the application's designated saves_dir if available
-             app_specific_output_dir = os.path.join(self.gui_manager.saves_dir, "pdf_processor_module", "split_files")
-             self.current_output_dir = app_specific_output_dir
+        # Output directory logic
+        output_folder = self.split_output_folder_var.get()
+        if output_folder:
+            self.current_output_dir = output_folder
+        else:
+            default_output_root = os.path.join(os.path.expanduser("~"), "pdf_processor_outputs")
+            self.current_output_dir = os.path.join(default_output_root, "split_files")
+            if hasattr(self.gui_manager, 'saves_dir') and self.gui_manager.saves_dir:
+                app_specific_output_dir = os.path.join(self.gui_manager.saves_dir, "pdf_processor_module", "split_files")
+                self.current_output_dir = app_specific_output_dir
 
         try:
             os.makedirs(self.current_output_dir, exist_ok=True)
@@ -511,11 +524,20 @@ class PdfProcessorModule(Module):
 
 
     def _select_output_merged_pdf(self):
+        initial_name = "merged_output.pdf"
+        if self.merge_file_paths:
+            first_basename = os.path.splitext(os.path.basename(self.merge_file_paths[0]))[0]
+            count = len(self.merge_file_paths)
+            if count > 1:
+                initial_name = f"{first_basename}_and_{count - 1}_more_merged.pdf"
+            else:
+                initial_name = f"{first_basename}_merged.pdf"
+
         filepath = filedialog.asksaveasfilename(
             title="Save Merged PDF As...",
             defaultextension=".pdf",
             filetypes=[("PDF Files", "*.pdf"), ("All Files", "*.*")],
-            initialfile="merged_document.pdf",
+            initialfile=initial_name,
             parent=self.tab_merge
         )
         if filepath:
@@ -874,19 +896,18 @@ class PdfProcessorModule(Module):
                 return
 
             first_page_for_dims = reader.pages[0]
-            page_width = first_page_for_dims.mediabox.width
-            page_height = first_page_for_dims.mediabox.height
+            page_width = float(first_page_for_dims.mediabox.width)
+            page_height = float(first_page_for_dims.mediabox.height)
 
             watermark_pdf_reader = self._create_watermark_layer(watermark_text, font_name, font_size, opacity, page_width, page_height)
             watermark_page = watermark_pdf_reader.pages[0]
 
-            for i, page_object in enumerate(reader.pages):
+            for i, page in enumerate(reader.pages):
                 if i in target_page_indices:
-                    # PyPDF2 PageMerge for safe merging
-                    merger = PageMerge(page_object)
-                    merger.add(watermark_page).render() # render() applies the merge
+                    # Use PyPDF2's merge_page for watermarking
+                    page.merge_page(watermark_page)
                     self.shared_state.log(f"Watermark Tab: Watermarking page {i+1}.")
-                writer.add_page(page_object) # Add original or merged page
+                writer.add_page(page) # Add original or merged page
 
             with open(output_pdf_path, "wb") as output_file:
                 writer.write(output_file)
@@ -941,6 +962,37 @@ class PdfProcessorModule(Module):
         else:
             self.extract_status_var.set("Output TXT file save location not set.")
 
+    def _parse_page_ranges_for_extract(self, ranges_str, total_pages):
+        """Parse page ranges for extract text, return a sorted list of 0-based page indices."""
+        ranges_str = ranges_str.strip().lower()
+        if ranges_str == "all":
+            return list(range(total_pages))
+        indices = set()
+        parts = ranges_str.split(',')
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+            if '-' in part:
+                try:
+                    start_str, end_str = part.split('-', 1)
+                    start = int(start_str)
+                    end = int(end_str)
+                except ValueError:
+                    return None
+                if not (1 <= start <= end <= total_pages):
+                    return None
+                indices.update(range(start - 1, end))
+            else:
+                try:
+                    page = int(part)
+                except ValueError:
+                    return None
+                if not (1 <= page <= total_pages):
+                    return None
+                indices.add(page - 1)
+        return sorted(indices) if indices else None
+
     def _execute_extract_text(self):
         self.shared_state.log("Extract Text Tab: Attempting to extract text.")
         self.extract_status_var.set("Processing text extraction...")
@@ -948,6 +1000,7 @@ class PdfProcessorModule(Module):
 
         input_pdf_path = self.extract_input_pdf_path_var.get()
         output_txt_path = self.extract_output_txt_path_var.get()
+        page_ranges_str = self.extract_page_ranges_var.get()
 
         if not input_pdf_path or not os.path.exists(input_pdf_path):
             self.extract_status_var.set("Error: Input PDF not selected or not found.")
@@ -970,31 +1023,36 @@ class PdfProcessorModule(Module):
 
         try:
             reader = PdfReader(input_pdf_path)
-            extracted_text_parts = []
             num_pages = len(reader.pages)
 
             if reader.is_encrypted:
                 try:
-                    # Attempt to decrypt with an empty password, common for some "locked" PDFs
                     reader.decrypt("")
                     self.shared_state.log("Extract Text Tab: PDF was encrypted, attempted decryption with empty password.")
                 except Exception as e_decrypt:
                     self.extract_status_var.set(f"Warning: PDF is encrypted and decryption failed ({e_decrypt}). Text might be incomplete.")
                     self.shared_state.log(f"Extract Text Tab: PDF decryption failed: {e_decrypt}", "WARNING")
-                    # Continue trying to extract, it might still work for some parts or if not strictly enforced
 
-            for i, page in enumerate(reader.pages):
-                self.extract_status_var.set(f"Extracting text from page {i+1}/{num_pages}...")
+            # Parse page ranges
+            page_indices = self._parse_page_ranges_for_extract(page_ranges_str, num_pages)
+            if page_indices is None:
+                self.extract_status_var.set("Error: Invalid page range format or out of bounds.")
+                messagebox.showerror("Page Range Error", "Invalid page range format or out of bounds.", parent=self.tab_extract_text)
+                return
+
+            extracted_text_parts = []
+            for idx, page_num in enumerate(page_indices):
+                self.extract_status_var.set(f"Extracting text from page {page_num+1} ({idx+1}/{len(page_indices)})...")
                 self.tab_extract_text.update_idletasks()
                 try:
-                    text = page.extract_text()
+                    text = reader.pages[page_num].extract_text()
                     if text:
                         extracted_text_parts.append(text)
                 except Exception as e_page_extract:
-                    self.shared_state.log(f"Extract Text Tab: Error extracting text from page {i+1}: {e_page_extract}", "WARNING")
-                    extracted_text_parts.append(f"[ERROR EXTRACTING PAGE {i+1}: {e_page_extract}]\n")
+                    self.shared_state.log(f"Extract Text Tab: Error extracting text from page {page_num+1}: {e_page_extract}", "WARNING")
+                    extracted_text_parts.append(f"[ERROR EXTRACTING PAGE {page_num+1}: {e_page_extract}]\n")
 
-            full_text = "\n\n".join(extracted_text_parts) # Separate pages by double newline
+            full_text = "\n\n".join(extracted_text_parts)
 
             with open(output_txt_path, "w", encoding="utf-8") as output_file:
                 output_file.write(full_text)
@@ -1015,6 +1073,18 @@ class PdfProcessorModule(Module):
     def on_destroy(self):
         super().on_destroy()
         self.shared_state.log(f"{self.module_name} instance destroyed.")
+
+    def _select_split_output_folder(self):
+        folder_selected = filedialog.askdirectory(
+            title="Select Output Folder for Split PDFs",
+            parent=self.tab_split
+        )
+        if folder_selected:
+            self.split_output_folder_var.set(folder_selected)
+            self.split_status_var.set(f"Output folder set: {folder_selected}")
+            self.shared_state.log(f"Split Tab: Output folder selected: {folder_selected}")
+        else:
+            self.split_status_var.set("Output folder selection cancelled.")
 
 if __name__ == '__main__':
     # This section is for testing the module standalone if needed.
