@@ -4,12 +4,12 @@ import threading
 import time
 import pyperclip
 from concurrent.futures import ThreadPoolExecutor
-from pynput import keyboard
+import keyboard
 import requests
 import win32gui
 import win32api
 import win32con
-from main import Module
+from ui import Module
 
 class FloatingWindow:
     def __init__(self, parent):
@@ -209,44 +209,43 @@ class TranslatorModule(Module):
     def __init__(self, master, shared_state, module_name="Translator", gui_manager=None):
         super().__init__(master, shared_state, module_name, gui_manager)
         
+        # 設定翻譯器
         self.is_translating = False
         self.last_text = ""
         self.executor = ThreadPoolExecutor(max_workers=2)
         self.keyboard_listener = None
         
+        # 浮動視窗
         self.floating_window = FloatingWindow(self)
         
-        self.create_widgets()
+        # 建立介面
+        self.create_ui()
         
-    def create_widgets(self):
-        module_main_content_frame = ttk.Frame(self.frame)
-        module_main_content_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-
-        main_frame = ttk.Frame(module_main_content_frame, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        module_main_content_frame.columnconfigure(0, weight=1)
-        module_main_content_frame.rowconfigure(0, weight=1)
-
-        title_label = ttk.Label(main_frame, text="即時翻譯工具", font=("Arial", 16, "bold"))
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 15))
-
-        left_panel = ttk.Frame(main_frame)
-        left_panel.grid(row=1, column=0, sticky="ns", padx=(0, 10))
-        right_panel = ttk.Frame(main_frame)
-        right_panel.grid(row=1, column=1, sticky="nsew")
-
+    def create_ui(self):
+        # 主框架
+        main_frame = ttk.Frame(self.frame, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
         main_frame.columnconfigure(1, weight=1)
         main_frame.rowconfigure(1, weight=1)
+
+        # 左右分割
+        left_panel = ttk.Frame(main_frame)
+        left_panel.grid(row=0, column=0, sticky="ns", padx=(0, 10))
+        right_panel = ttk.Frame(main_frame)
+        right_panel.grid(row=0, column=1, sticky="nsew")
         
+        # --- 左側控制面板 ---
         controls_frame = ttk.LabelFrame(left_panel, text="控制項")
         controls_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         controls_frame.columnconfigure(0, weight=1)
 
+        # 目標語言選擇
         ttk.Label(controls_frame, text="翻譯目標語言:").grid(row=0, column=0, sticky=tk.W, pady=5, padx=5)
         
         self.language_var = tk.StringVar()
         self.language_combo = ttk.Combobox(controls_frame, textvariable=self.language_var)
         
+        # 常用語言清單
         common_languages = {
             'zh-tw': '繁體中文',
             'zh-cn': '簡體中文', 
@@ -265,17 +264,20 @@ class TranslatorModule(Module):
         }
         
         self.language_combo['values'] = list(common_languages.values())
-        self.language_combo.current(0)
+        self.language_combo.current(0)  # 預設選擇繁體中文
         self.language_combo.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=5, padx=5)
         
+        # 語言代碼對應
         self.lang_code_map = {v: k for k, v in common_languages.items()}
         
+        # 移除換行勾選框
         self.remove_newline_var = tk.BooleanVar(value=True)
         self.remove_newline_check = ttk.Checkbutton(controls_frame, 
                                                     text="移除換行 (翻譯前)",
                                                     variable=self.remove_newline_var)
         self.remove_newline_check.grid(row=2, column=0, sticky=tk.W, padx=5, pady=(5,0))
         
+        # 顯示模式選擇
         mode_frame = ttk.Frame(controls_frame)
         mode_frame.grid(row=3, column=0, pady=10, sticky="ew", padx=5)
         
@@ -287,12 +289,15 @@ class TranslatorModule(Module):
         ttk.Radiobutton(mode_frame, text="主視窗", variable=self.display_mode, 
                        value="main").pack(side="left")
         
+        # 啟用/停用翻譯按鈕
         self.toggle_btn = ttk.Button(controls_frame, text="啟用翻譯", command=self.toggle_translation)
         self.toggle_btn.grid(row=4, column=0, pady=10)
         
+        # 狀態標籤
         self.status_label = ttk.Label(controls_frame, text="翻譯未啟用", foreground="red", anchor="center")
         self.status_label.grid(row=5, column=0, pady=5, sticky="ew")
         
+        # 手動輸入框
         manual_input_frame = ttk.LabelFrame(left_panel, text="手動翻譯")
         manual_input_frame.grid(row=1, column=0, sticky="ew")
         manual_input_frame.columnconfigure(0, weight=1)
@@ -303,9 +308,11 @@ class TranslatorModule(Module):
         manual_btn = ttk.Button(manual_input_frame, text="翻譯輸入的文字", command=self.manual_translate)
         manual_btn.grid(row=1, column=0, pady=(0, 5))
 
+        # --- 右側面板 ---
         right_panel.rowconfigure(1, weight=1)
         right_panel.columnconfigure(0, weight=1)
 
+        # 說明文字
         instruction_frame = ttk.LabelFrame(right_panel, text="使用說明")
         instruction_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
 
@@ -320,6 +327,7 @@ class TranslatorModule(Module):
         instruction_label = ttk.Label(instruction_frame, text=instruction_text, justify=tk.LEFT)
         instruction_label.pack(anchor="w", padx=5, pady=5)
 
+        # 翻譯結果顯示區域
         result_frame = ttk.LabelFrame(right_panel, text="翻譯紀錄")
         result_frame.grid(row=1, column=0, sticky="nsew")
         result_frame.rowconfigure(0, weight=1)
@@ -344,109 +352,130 @@ class TranslatorModule(Module):
         self.toggle_btn.config(text="停用翻譯")
         self.status_label.config(text="翻譯已啟用 - 反白文字後按Ctrl+C", foreground="green")
         
+        # 啟動剪貼簿監控
         self.monitor_thread = threading.Thread(target=self.monitor_clipboard, daemon=True)
         self.monitor_thread.start()
         
+        # 啟動鍵盤監控（監控Ctrl+C）
         try:
             self.keyboard_listener = keyboard.Listener(on_press=self.on_key_press)
             self.keyboard_listener.start()
         except Exception as e:
-            print(f"無法啟動鍵盤監控: {e}")
+            self.shared_state.log(f"無法啟動鍵盤監控: {e}", "ERROR")
         
     def stop_translation(self):
         self.is_translating = False
         self.toggle_btn.config(text="啟用翻譯")
         self.status_label.config(text="翻譯未啟用", foreground="red")
         
+        # 停止監聽器
         if self.keyboard_listener:
             self.keyboard_listener.stop()
-            self.keyboard_listener = None
             
+        # 關閉浮動視窗
         self.floating_window.close()
     
     def on_key_press(self, key):
-        # This function is kept for compatibility with the listener,
-        # but the actual translation is triggered by clipboard changes,
-        # which is a more reliable method than detecting Ctrl+C.
-        pass
+        try:
+            # 檢測 Ctrl+C
+            if hasattr(key, 'char') and key.char == 'c':
+                pass
+        except AttributeError:
+            pass
     
     def monitor_clipboard(self):
         while self.is_translating:
             try:
+                # 獲取剪貼簿內容
                 current_text = pyperclip.paste()
                 
+                # 檢查是否有新的文字且不為空
                 if current_text and current_text != self.last_text and len(current_text.strip()) > 0:
+                    # 放寬文字長度限制，增加到5000字元
                     if len(current_text) > 5000:
-                        print(f"文字過長 ({len(current_text)} 字元)，跳過翻譯")
+                        self.shared_state.log(f"文字過長 ({len(current_text)} 字元)，跳過翻譯", "DEBUG")
                         self.last_text = current_text
                         continue
                     
+                    # 更寬鬆的過濾條件
+                    # 只排除明顯的檔案路徑和單純的URL
                     if (current_text.startswith(('http://', 'https://', 'file://', 'ftp://')) and 
-                        len(current_text.split()) == 1):
-                        print("跳過URL內容")
+                        len(current_text.split()) == 1):  # 單一URL
+                        self.shared_state.log("跳過URL內容", "DEBUG")
                         self.last_text = current_text
                         continue
                     
+                    # 排除Windows檔案路徑（含有:\\ 且沒有空格的）
                     if (':\\' in current_text and ' ' not in current_text and 
                         len(current_text.split('\n')) == 1):
-                        print("跳過檔案路徑")
+                        self.shared_state.log("跳過檔案路徑", "DEBUG")
                         self.last_text = current_text
                         continue
                     
-                    print(f"準備翻譯: {current_text[:50]}..." if len(current_text) > 50 else f"準備翻譯: {current_text}")
+                    self.shared_state.log(f"準備翻譯: {current_text[:50]}..." if len(current_text) > 50 else f"準備翻譯: {current_text}", "DEBUG")
                     self.last_text = current_text
                     
+                    # 在背景執行翻譯
                     self.executor.submit(self.translate_text, current_text)
                     
-                time.sleep(0.3)
+                time.sleep(0.3)  # 檢查間隔
                 
             except Exception as e:
-                print(f"監控剪貼簿時發生錯誤: {e}")
+                self.shared_state.log(f"監控剪貼簿時發生錯誤: {e}", "ERROR")
                 time.sleep(1)
     
     def manual_translate(self):
+        # 手動翻譯輸入框中的文字
         text = self.input_text.get("1.0", tk.END).strip()
         if text:
             self.executor.submit(self.translate_text, text)
-            self.input_text.delete("1.0", tk.END)
+            self.input_text.delete("1.0", tk.END)  # 清空輸入框
     
     def translate_text(self, text):
         try:
-            print(f"開始翻譯文字 ({len(text)} 字元)")
+            self.shared_state.log(f"開始翻譯文字 ({len(text)} 字元)", "DEBUG")
             
+            # 檢查是否需要移除換行
             if self.remove_newline_var.get():
                 text = " ".join(text.split())
             
+            # 獲取目標語言代碼
             selected_lang = self.language_var.get()
             target_lang = self.lang_code_map.get(selected_lang, 'zh-tw')
             
+            # 對於較長的文字，分段處理
             if len(text) > 2000:
+                # 將長文字分段翻譯
                 segments = self.split_text_into_segments(text, 2000)
                 translated_segments = []
                 
                 for i, segment in enumerate(segments):
-                    print(f"翻譯第 {i+1}/{len(segments)} 段")
+                    self.shared_state.log(f"翻譯第 {i+1}/{len(segments)} 段", "DEBUG")
                     translated_segment = self.translate_segment(segment, target_lang)
                     if translated_segment.startswith("翻譯失敗"):
+                        # 如果某段翻譯失敗，直接返回錯誤
                         self.frame.after(0, self.update_result, text, translated_segment, "error")
                         return
                     translated_segments.append(translated_segment)
-                    time.sleep(0.5)
+                    time.sleep(0.5)  # 避免API請求過於頻繁
                 
                 translated_text = ' '.join(translated_segments)
             else:
+                # 短文字直接翻譯
                 translated_text = self.translate_segment(text, target_lang)
             
-            print(f"翻譯完成: {translated_text[:50]}...")
+            self.shared_state.log(f"翻譯完成: {translated_text[:50]}...", "DEBUG")
             
+            # 在主執行緒更新UI
             self.frame.after(0, self.update_result, text, translated_text, target_lang)
             
         except Exception as e:
             error_msg = f"翻譯錯誤: {str(e)}"
-            print(f"翻譯出錯: {text[:50]}... -> {error_msg}")
+            self.shared_state.log(f"翻譯出錯: {text[:50]}... -> {error_msg}", "ERROR")
             self.frame.after(0, self.update_result, text, error_msg, "error")
     
     def split_text_into_segments(self, text, max_length):
+        """將長文字分割成較短的段落"""
         segments = []
         sentences = text.replace('\n', ' ').split('.')
         current_segment = ""
@@ -465,7 +494,9 @@ class TranslatorModule(Module):
         return segments if segments else [text]
     
     def translate_segment(self, text, target_lang):
+        """翻譯單一文字段落"""
         try:
+            # 建構翻譯請求
             base_url = "https://translate.googleapis.com/translate_a/single"
             params = {
                 'client': 'gtx',
@@ -499,15 +530,19 @@ class TranslatorModule(Module):
             return f"翻譯失敗：{str(e)}"
     
     def update_result(self, original_text, translated_text, target_lang):
+        # 如果勾選了移除換行，則先處理最終結果
         if self.remove_newline_var.get() and target_lang != "error":
             processed_translated_text = " ".join(translated_text.split())
         else:
             processed_translated_text = translated_text
 
+        # 根據顯示模式決定如何顯示結果
         if self.display_mode.get() == "floating" and target_lang != "error":
+            # 浮動視窗模式
             x, y = win32gui.GetCursorPos()
             self.floating_window.show_translation(original_text, processed_translated_text, x + 10, y + 10)
         
+        # 同時也在主視窗顯示（作為備份記錄）
         timestamp = time.strftime("%H:%M:%S")
         result_info = f"[{timestamp}] 翻譯至 {self.language_var.get()}\n"
         result_info += f"原文: {original_text}\n"
@@ -515,13 +550,15 @@ class TranslatorModule(Module):
         result_info += "-" * 50 + "\n"
         
         self.result_text.insert(tk.END, result_info)
-        self.result_text.see(tk.END)
+        self.result_text.see(tk.END)  # 捲動到最新內容
         
+        # 將翻譯結果複製到剪貼簿
         if target_lang != "error":
+            # 暫時停止監控以避免無窮迴圈
             temp_last = self.last_text
             pyperclip.copy(processed_translated_text)
             time.sleep(0.1)
-            self.last_text = processed_translated_text
+            self.last_text = processed_translated_text  # 避免翻譯結果被再次翻譯
     
     def on_destroy(self):
         self.is_translating = False
