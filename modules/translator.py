@@ -30,6 +30,7 @@ class FloatingWindow:
             
         # 創建新的浮動視窗
         self.window = tk.Toplevel(self.parent.frame)
+        self.window.withdraw()  # 先隱藏視窗，防止閃爍
         self.window.title("")
         
         # 設定視窗屬性：無邊框、置頂
@@ -115,6 +116,9 @@ class FloatingWindow:
             
         # 設定視窗位置
         self.window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        
+        # 顯示視窗
+        self.window.deiconify()
         
         # 更新視窗邊界
         self.update_window_bounds()
