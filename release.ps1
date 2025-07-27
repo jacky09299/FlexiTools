@@ -44,11 +44,31 @@ if ($current -eq $branch) {
         git checkout -b $branch origin/$branch
     } else {
         # 检查 develop 分支是否存在
-        if (git show-ref --verify --quiet "refs/heads/develop") { 
-            $baseBranch = 'develop' 
-        } else {
-            [System.Windows.Forms.MessageBox]::Show("本地没有 'develop' 分支，无法创建 release 分支。", "错误", 'OK', 'Error')
-            exit 1
+        try {
+            $localBranches = git branch --format="%(refname:short)" 2>$null
+            $remoteBranches = git branch -r --format="%(refname:short)" 2>$null
+            
+            Write-Host "本地分支: $($localBranches -join ', ')"
+            Write-Host "远程分支: $($remoteBranches -join ', ')"
+            
+            if ($localBranches -contains "develop") {
+                # 本地存在 develop 分支
+                $baseBranch = 'develop'
+                Write-Host "使用本地 develop 分支作为基准"
+            } elseif ($remoteBranches -contains "origin/develop") {
+                # 远程存在 develop 分支，创建本地跟踪分支
+                Write-Host "从远程创建本地 develop 分支..."
+                git checkout -b develop origin/develop
+                $baseBranch = 'develop'
+            } else {
+                [System.Windows.Forms.MessageBox]::Show("本地和远程都没有 'develop' 分支，无法创建 release 分支。`n本地分支: $($localBranches -join ', ')`n远程分支: $($remoteBranches -join ', ')", "错误", 'OK', 'Error')
+                exit 1
+            }
+        } catch {
+            Write-Host "分支检查失败: $_"
+            # 如果检查失败，直接尝试使用 develop
+            $baseBranch = 'develop'
+            Write-Host "尝试直接使用 develop 分支"
         }
         Write-Host "基于 '$baseBranch' 创建新分支 '$branch'..."
         git checkout $baseBranch
