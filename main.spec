@@ -87,6 +87,7 @@ a = Analysis(
         # PDF 相關
         'PyPDF2',
         'pdfrw',
+        'fitz',
         'reportlab',
         'reportlab.pdfgen',
         'reportlab.platypus',
@@ -120,11 +121,11 @@ a = Analysis(
 
         # 其他潛在隱藏模組
         'pkg_resources.py2_warn',
-        'fitz',
         'scipy','scipy.io', 'scipy.io.matlab','scipy.signal',
         'yt_dlp',
         'wave','threading','concurrent.futures','multiprocessing','queue','shutil','tempfile','io', 'pygame',
         'pyroomacoustics',
+        'pyperclip', 'keyboard',
     ],
     hookspath=[],
     hooksconfig={},
