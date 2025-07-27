@@ -79,19 +79,25 @@ class PdfProcessorModule(Module):
         self.split_page_ranges_var = tk.StringVar()
         ttk.Entry(split_frame, textvariable=self.split_page_ranges_var, width=50).grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
+        # Output Folder Selection
+        ttk.Label(split_frame, text="Output Folder:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        self.split_output_folder_var = tk.StringVar()
+        ttk.Entry(split_frame, textvariable=self.split_output_folder_var, width=50, state="readonly").grid(row=3, column=1, padx=5, pady=5, sticky="ew")
+        ttk.Button(split_frame, text="Choose Folder...", command=self._select_split_output_folder).grid(row=3, column=2, padx=5, pady=5)
+
         # Output Naming Pattern
-        ttk.Label(split_frame, text="Output Pattern:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(split_frame, text="Output Pattern:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
         self.split_output_pattern_var = tk.StringVar(value="{basename}_part{i}.pdf") # Changed default
-        ttk.Entry(split_frame, textvariable=self.split_output_pattern_var, width=50).grid(row=2, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Label(split_frame, text="Placeholders: {i}, {filename}, {basename}, {start}, {end}").grid(row=3, column=1, padx=5, pady=2, sticky="w")
+        ttk.Entry(split_frame, textvariable=self.split_output_pattern_var, width=50).grid(row=4, column=1, padx=5, pady=5, sticky="ew")
+        ttk.Label(split_frame, text="Placeholders: {i}, {filename}, {basename}, {start}, {end}").grid(row=5, column=1, padx=5, pady=2, sticky="w")
 
 
         # Split Button
-        ttk.Button(split_frame, text="Split PDF", command=self._execute_split_pdf).grid(row=4, column=1, padx=5, pady=10)
+        ttk.Button(split_frame, text="Split PDF", command=self._execute_split_pdf).grid(row=6, column=1, padx=5, pady=10)
 
         # Status Label
         self.split_status_var = tk.StringVar()
-        ttk.Label(split_frame, textvariable=self.split_status_var, wraplength=400).grid(row=5, column=0, columnspan=3, padx=5, pady=5, sticky="w")
+        ttk.Label(split_frame, textvariable=self.split_status_var, wraplength=400).grid(row=7, column=0, columnspan=3, padx=5, pady=5, sticky="w")
 
         split_frame.columnconfigure(1, weight=1) # Allow entry fields to expand
 
@@ -368,13 +374,16 @@ class PdfProcessorModule(Module):
             messagebox.showerror("Invalid Page Ranges", self.split_status_var.get() or "Failed to parse page ranges.", parent=self.tab_split)
             return
 
-        default_output_root = os.path.join(os.path.expanduser("~"), "pdf_processor_outputs")
-        self.current_output_dir = os.path.join(default_output_root, "split_files")
-
-        if hasattr(self.gui_manager, 'saves_dir') and self.gui_manager.saves_dir:
-             # Use a subdirectory within the application's designated saves_dir if available
-             app_specific_output_dir = os.path.join(self.gui_manager.saves_dir, "pdf_processor_module", "split_files")
-             self.current_output_dir = app_specific_output_dir
+        # Output directory logic
+        output_folder = self.split_output_folder_var.get()
+        if output_folder:
+            self.current_output_dir = output_folder
+        else:
+            default_output_root = os.path.join(os.path.expanduser("~"), "pdf_processor_outputs")
+            self.current_output_dir = os.path.join(default_output_root, "split_files")
+            if hasattr(self.gui_manager, 'saves_dir') and self.gui_manager.saves_dir:
+                app_specific_output_dir = os.path.join(self.gui_manager.saves_dir, "pdf_processor_module", "split_files")
+                self.current_output_dir = app_specific_output_dir
 
         try:
             os.makedirs(self.current_output_dir, exist_ok=True)
@@ -860,7 +869,7 @@ class PdfProcessorModule(Module):
             reader = PdfReader(input_pdf_path)
             total_pages = len(reader.pages)
 
-            target_page_indices = self._parse_pages_for_watermarking(pages_to_watermark_str, total_pages)
+            target_page_indices = self._parse_pages_for_watermarking(pages_to_watermarking, total_pages)
             if target_page_indices is None:
                 messagebox.showerror("Page Selection Error", self.watermark_status_var.get() or "Invalid page selection.", parent=self.tab_watermark)
                 return
@@ -1015,6 +1024,18 @@ class PdfProcessorModule(Module):
     def on_destroy(self):
         super().on_destroy()
         self.shared_state.log(f"{self.module_name} instance destroyed.")
+
+    def _select_split_output_folder(self):
+        folder_selected = filedialog.askdirectory(
+            title="Select Output Folder for Split PDFs",
+            parent=self.tab_split
+        )
+        if folder_selected:
+            self.split_output_folder_var.set(folder_selected)
+            self.split_status_var.set(f"Output folder set: {folder_selected}")
+            self.shared_state.log(f"Split Tab: Output folder selected: {folder_selected}")
+        else:
+            self.split_status_var.set("Output folder selection cancelled.")
 
 if __name__ == '__main__':
     # This section is for testing the module standalone if needed.
