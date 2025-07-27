@@ -23,7 +23,7 @@ class FloatingWindow:
         self.click_timer = None
         self.mouse_inside_window = False
         
-    def show_translation(self, original_text, translated_text, x, y):
+    def show_translation(self, original_text, translated_text, x, y, font_size):
         # 如果已有浮動視窗，先關閉
         if self.window:
             self.close()
@@ -88,7 +88,7 @@ class FloatingWindow:
         # 翻譯結果標籤（較大字體）
         translated_label = tk.Label(frame, text=translated_text, 
                                   bg='#2c3e50', fg='#ecf0f1', 
-                                  font=('Microsoft YaHei', 11, 'bold'), 
+                                  font=('Microsoft YaHei', font_size, 'bold'), 
                                   wraplength=400, justify='left')
         translated_label.pack(fill='x', padx=5, pady=(2, 5))
         self.bind_mouse_events(translated_label)
@@ -221,6 +221,7 @@ class TranslatorModule(Module):
         
         # 浮動視窗
         self.floating_window = FloatingWindow(self)
+        self.font_size = tk.IntVar(value=11)
         
         # 建立介面
         self.create_ui()
@@ -292,14 +293,23 @@ class TranslatorModule(Module):
                        value="floating").pack(side="left", padx=5)
         ttk.Radiobutton(mode_frame, text="主視窗", variable=self.display_mode, 
                        value="main").pack(side="left")
+
+        # 浮動視窗字體大小
+        font_size_frame = ttk.Frame(controls_frame)
+        font_size_frame.grid(row=4, column=0, pady=5, sticky="ew", padx=5)
+        ttk.Label(font_size_frame, text="浮動視窗字體:").pack(side="left")
+        self.font_size_scale = ttk.Scale(font_size_frame, from_=8, to=50, orient=tk.HORIZONTAL, variable=self.font_size, command=self.update_font_label)
+        self.font_size_scale.pack(side="left", expand=True, fill="x", padx=5)
+        self.font_size_label = ttk.Label(font_size_frame, text=f"{self.font_size.get()}pt")
+        self.font_size_label.pack(side="left")
         
         # 啟用/停用翻譯按鈕
         self.toggle_btn = ttk.Button(controls_frame, text="啟用翻譯", command=self.toggle_translation)
-        self.toggle_btn.grid(row=4, column=0, pady=10)
+        self.toggle_btn.grid(row=5, column=0, pady=10)
         
         # 狀態標籤
         self.status_label = ttk.Label(controls_frame, text="翻譯未啟用", foreground="red", anchor="center")
-        self.status_label.grid(row=5, column=0, pady=5, sticky="ew")
+        self.status_label.grid(row=6, column=0, pady=5, sticky="ew")
         
         # 手動輸入框
         manual_input_frame = ttk.LabelFrame(left_panel, text="手動翻譯")
@@ -544,7 +554,8 @@ class TranslatorModule(Module):
         if self.display_mode.get() == "floating" and target_lang != "error":
             # 浮動視窗模式
             x, y = win32gui.GetCursorPos()
-            self.floating_window.show_translation(original_text, processed_translated_text, x + 10, y + 10)
+            font_size = self.font_size.get()
+            self.floating_window.show_translation(original_text, processed_translated_text, x + 10, y + 10, font_size)
         
         # 同時也在主視窗顯示（作為備份記錄）
         timestamp = time.strftime("%H:%M:%S")
@@ -563,6 +574,10 @@ class TranslatorModule(Module):
             pyperclip.copy(processed_translated_text)
             time.sleep(0.1)
             self.last_text = processed_translated_text  # 避免翻譯結果被再次翻譯
+
+    def update_font_label(self, value):
+        self.font_size_label.config(text=f"{float(value):.0f}pt")
+        self.font_size.set(int(float(value)))
     
     def on_destroy(self):
         self.is_translating = False
