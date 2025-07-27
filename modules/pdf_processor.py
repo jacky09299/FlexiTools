@@ -246,18 +246,23 @@ class PdfProcessorModule(Module):
         ttk.Entry(extract_frame, textvariable=self.extract_input_pdf_path_var, width=50, state="readonly").grid(row=0, column=1, padx=5, pady=5, sticky="ew")
         ttk.Button(extract_frame, text="Browse...", command=self._select_input_pdf_extract_text).grid(row=0, column=2, padx=5, pady=5)
 
+        # Page Ranges for Extract
+        ttk.Label(extract_frame, text="Pages (e.g., all, 1-5, 8, 10-12):").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.extract_page_ranges_var = tk.StringVar(value="all")
+        ttk.Entry(extract_frame, textvariable=self.extract_page_ranges_var, width=50).grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+
         # Output TXT File
-        ttk.Label(extract_frame, text="Output Text File (.txt):").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(extract_frame, text="Output Text File (.txt):").grid(row=2, column=0, padx=5, pady=5, sticky="w")
         self.extract_output_txt_path_var = tk.StringVar()
-        ttk.Entry(extract_frame, textvariable=self.extract_output_txt_path_var, width=50, state="readonly").grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Button(extract_frame, text="Browse...", command=self._select_output_txt_file_extract_text).grid(row=1, column=2, padx=5, pady=5)
+        ttk.Entry(extract_frame, textvariable=self.extract_output_txt_path_var, width=50, state="readonly").grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+        ttk.Button(extract_frame, text="Browse...", command=self._select_output_txt_file_extract_text).grid(row=2, column=2, padx=5, pady=5)
 
         # Extract Text Button
-        ttk.Button(extract_frame, text="Extract Text to File", command=self._execute_extract_text).grid(row=2, column=1, padx=5, pady=10)
+        ttk.Button(extract_frame, text="Extract Text to File", command=self._execute_extract_text).grid(row=3, column=1, padx=5, pady=10)
 
         # Status Label
         self.extract_status_var = tk.StringVar()
-        ttk.Label(extract_frame, textvariable=self.extract_status_var, wraplength=400).grid(row=3, column=0, columnspan=3, padx=5, pady=5, sticky="w")
+        ttk.Label(extract_frame, textvariable=self.extract_status_var, wraplength=400).grid(row=4, column=0, columnspan=3, padx=5, pady=5, sticky="w")
 
         extract_frame.columnconfigure(1, weight=1)
 
@@ -869,7 +874,7 @@ class PdfProcessorModule(Module):
             reader = PdfReader(input_pdf_path)
             total_pages = len(reader.pages)
 
-            target_page_indices = self._parse_pages_for_watermarking(pages_to_watermarking, total_pages)
+            target_page_indices = self._parse_pages_for_watermarking(pages_to_watermark_str, total_pages)
             if target_page_indices is None:
                 messagebox.showerror("Page Selection Error", self.watermark_status_var.get() or "Invalid page selection.", parent=self.tab_watermark)
                 return
@@ -883,8 +888,8 @@ class PdfProcessorModule(Module):
                 return
 
             first_page_for_dims = reader.pages[0]
-            page_width = first_page_for_dims.mediabox.width
-            page_height = first_page_for_dims.mediabox.height
+            page_width = float(first_page_for_dims.mediabox.width)
+            page_height = float(first_page_for_dims.mediabox.height)
 
             watermark_pdf_reader = self._create_watermark_layer(watermark_text, font_name, font_size, opacity, page_width, page_height)
             watermark_page = watermark_pdf_reader.pages[0]
@@ -950,6 +955,37 @@ class PdfProcessorModule(Module):
         else:
             self.extract_status_var.set("Output TXT file save location not set.")
 
+    def _parse_page_ranges_for_extract(self, ranges_str, total_pages):
+        """Parse page ranges for extract text, return a sorted list of 0-based page indices."""
+        ranges_str = ranges_str.strip().lower()
+        if ranges_str == "all":
+            return list(range(total_pages))
+        indices = set()
+        parts = ranges_str.split(',')
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+            if '-' in part:
+                try:
+                    start_str, end_str = part.split('-', 1)
+                    start = int(start_str)
+                    end = int(end_str)
+                except ValueError:
+                    return None
+                if not (1 <= start <= end <= total_pages):
+                    return None
+                indices.update(range(start - 1, end))
+            else:
+                try:
+                    page = int(part)
+                except ValueError:
+                    return None
+                if not (1 <= page <= total_pages):
+                    return None
+                indices.add(page - 1)
+        return sorted(indices) if indices else None
+
     def _execute_extract_text(self):
         self.shared_state.log("Extract Text Tab: Attempting to extract text.")
         self.extract_status_var.set("Processing text extraction...")
@@ -957,6 +993,7 @@ class PdfProcessorModule(Module):
 
         input_pdf_path = self.extract_input_pdf_path_var.get()
         output_txt_path = self.extract_output_txt_path_var.get()
+        page_ranges_str = self.extract_page_ranges_var.get()
 
         if not input_pdf_path or not os.path.exists(input_pdf_path):
             self.extract_status_var.set("Error: Input PDF not selected or not found.")
@@ -979,31 +1016,36 @@ class PdfProcessorModule(Module):
 
         try:
             reader = PdfReader(input_pdf_path)
-            extracted_text_parts = []
             num_pages = len(reader.pages)
 
             if reader.is_encrypted:
                 try:
-                    # Attempt to decrypt with an empty password, common for some "locked" PDFs
                     reader.decrypt("")
                     self.shared_state.log("Extract Text Tab: PDF was encrypted, attempted decryption with empty password.")
                 except Exception as e_decrypt:
                     self.extract_status_var.set(f"Warning: PDF is encrypted and decryption failed ({e_decrypt}). Text might be incomplete.")
                     self.shared_state.log(f"Extract Text Tab: PDF decryption failed: {e_decrypt}", "WARNING")
-                    # Continue trying to extract, it might still work for some parts or if not strictly enforced
 
-            for i, page in enumerate(reader.pages):
-                self.extract_status_var.set(f"Extracting text from page {i+1}/{num_pages}...")
+            # Parse page ranges
+            page_indices = self._parse_page_ranges_for_extract(page_ranges_str, num_pages)
+            if page_indices is None:
+                self.extract_status_var.set("Error: Invalid page range format or out of bounds.")
+                messagebox.showerror("Page Range Error", "Invalid page range format or out of bounds.", parent=self.tab_extract_text)
+                return
+
+            extracted_text_parts = []
+            for idx, page_num in enumerate(page_indices):
+                self.extract_status_var.set(f"Extracting text from page {page_num+1} ({idx+1}/{len(page_indices)})...")
                 self.tab_extract_text.update_idletasks()
                 try:
-                    text = page.extract_text()
+                    text = reader.pages[page_num].extract_text()
                     if text:
                         extracted_text_parts.append(text)
                 except Exception as e_page_extract:
-                    self.shared_state.log(f"Extract Text Tab: Error extracting text from page {i+1}: {e_page_extract}", "WARNING")
-                    extracted_text_parts.append(f"[ERROR EXTRACTING PAGE {i+1}: {e_page_extract}]\n")
+                    self.shared_state.log(f"Extract Text Tab: Error extracting text from page {page_num+1}: {e_page_extract}", "WARNING")
+                    extracted_text_parts.append(f"[ERROR EXTRACTING PAGE {page_num+1}: {e_page_extract}]\n")
 
-            full_text = "\n\n".join(extracted_text_parts) # Separate pages by double newline
+            full_text = "\n\n".join(extracted_text_parts)
 
             with open(output_txt_path, "w", encoding="utf-8") as output_file:
                 output_file.write(full_text)
