@@ -4,7 +4,7 @@ import threading
 import time
 import pyperclip
 from concurrent.futures import ThreadPoolExecutor
-import keyboard
+from pynput import keyboard
 import requests
 import win32gui
 import win32api
@@ -29,7 +29,7 @@ class FloatingWindow:
             self.close()
             
         # 創建新的浮動視窗
-        self.window = tk.Toplevel(self.parent.root)
+        self.window = tk.Toplevel(self.parent.frame)
         self.window.title("")
         
         # 設定視窗屬性：無邊框、置頂
@@ -192,7 +192,7 @@ class FloatingWindow:
                     is_outside = (x < self.window_bounds['x1'] or x > self.window_bounds['x2'] or
                                   y < self.window_bounds['y1'] or y > self.window_bounds['y2'])
                     if is_outside:
-                        self.parent.root.after(0, self.close)
+                        self.parent.frame.after(0, self.close)
                         break 
             time.sleep(0.1) # Polling interval
 
@@ -360,15 +360,15 @@ class TranslatorModule(Module):
         
         if self.keyboard_listener:
             self.keyboard_listener.stop()
+            self.keyboard_listener = None
             
         self.floating_window.close()
     
     def on_key_press(self, key):
-        try:
-            if hasattr(key, 'char') and key.char == 'c':
-                pass
-        except AttributeError:
-            pass
+        # This function is kept for compatibility with the listener,
+        # but the actual translation is triggered by clipboard changes,
+        # which is a more reliable method than detecting Ctrl+C.
+        pass
     
     def monitor_clipboard(self):
         while self.is_translating:
