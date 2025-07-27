@@ -524,11 +524,20 @@ class PdfProcessorModule(Module):
 
 
     def _select_output_merged_pdf(self):
+        initial_name = "merged_output.pdf"
+        if self.merge_file_paths:
+            first_basename = os.path.splitext(os.path.basename(self.merge_file_paths[0]))[0]
+            count = len(self.merge_file_paths)
+            if count > 1:
+                initial_name = f"{first_basename}_and_{count - 1}_more_merged.pdf"
+            else:
+                initial_name = f"{first_basename}_merged.pdf"
+
         filepath = filedialog.asksaveasfilename(
             title="Save Merged PDF As...",
             defaultextension=".pdf",
             filetypes=[("PDF Files", "*.pdf"), ("All Files", "*.*")],
-            initialfile="merged_document.pdf",
+            initialfile=initial_name,
             parent=self.tab_merge
         )
         if filepath:
