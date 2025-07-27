@@ -6,7 +6,6 @@ import logging # Added for consistency with other modules
 
 # PyPDF2 for PDF manipulation
 from PyPDF2 import PdfReader, PdfWriter
-from pdfrw import PageMerge
 # reportlab for creating watermark PDFs
 from reportlab.pdfgen import canvas as reportlab_canvas
 # from reportlab.lib.pagesizes import letter # Not strictly needed if using dynamic page sizes
@@ -894,13 +893,12 @@ class PdfProcessorModule(Module):
             watermark_pdf_reader = self._create_watermark_layer(watermark_text, font_name, font_size, opacity, page_width, page_height)
             watermark_page = watermark_pdf_reader.pages[0]
 
-            for i, page_object in enumerate(reader.pages):
+            for i, page in enumerate(reader.pages):
                 if i in target_page_indices:
-                    # PyPDF2 PageMerge for safe merging
-                    merger = PageMerge(page_object)
-                    merger.add(watermark_page).render() # render() applies the merge
+                    # Use PyPDF2's merge_page for watermarking
+                    page.merge_page(watermark_page)
                     self.shared_state.log(f"Watermark Tab: Watermarking page {i+1}.")
-                writer.add_page(page_object) # Add original or merged page
+                writer.add_page(page) # Add original or merged page
 
             with open(output_pdf_path, "wb") as output_file:
                 writer.write(output_file)
