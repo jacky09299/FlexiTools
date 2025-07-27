@@ -36,6 +36,7 @@ dependencies:
       - importlib-resources==6.5.2
       - jsonschema==4.24.0
       - jsonschema-specifications==2025.4.1
+      - keyboard==0.13.5
       - kiwisolver==1.4.7
       - lazy-loader==0.4
       - llvmlite==0.43.0
@@ -55,8 +56,10 @@ dependencies:
       - pdfrw==0.4
       - pefile==2023.2.7
       - pillow==11.2.1
+      - pip-licenses==5.0.0
       - platformdirs==4.3.8
       - pooch==1.8.2
+      - prettytable==3.16.0
       - proglog==0.1.12
       - protobuf==6.31.1
       - psutil==5.9.5
@@ -67,10 +70,12 @@ dependencies:
       - pymatting==1.1.14
       - pyparsing==3.2.3
       - pypdf2==3.0.1
+      - pyperclip==1.9.0
       - pyreadline3==3.5.4
       - pyroomacoustics==0.8.4
       - python-dateutil==2.9.0.post0
       - pytz==2025.2
+      - pywin32==311
       - pywin32-ctypes==0.2.3
       - referencing==0.36.2
       - rembg==2.0.61
@@ -82,10 +87,12 @@ dependencies:
       - six==1.17.0
       - sympy==1.14.0
       - tifffile==2024.8.30
+      - tomli==2.2.1
       - tqdm==4.67.1
       - typing-extensions==4.14.1
       - tzdata==2025.2
       - uncertainties==3.2.3
       - urllib3==2.5.0
+      - wcwidth==0.2.13
       - yt-dlp==2025.6.30
       - zipp==3.23.0
