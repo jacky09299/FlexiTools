@@ -4,7 +4,6 @@ Add-Type -AssemblyName Microsoft.VisualBasic
 
 # 弹出输入框获取版本号
 $Version = [Microsoft.VisualBasic.Interaction]::InputBox("请输入要发布的版本号 (例如: v1.4.0)", "发布版本号")
-
 if ([string]::IsNullOrWhiteSpace($Version)) {
     [System.Windows.Forms.MessageBox]::Show("未输入版本号，操作已取消。", "取消", 'OK', 'Warning')
     exit 1
@@ -44,11 +43,11 @@ if ($current -eq $branch) {
         Write-Host "从远端创建并切换到 '$branch'..."
         git checkout -b $branch origin/$branch
     } else {
-        # 选择基准分支
-        if (git show-ref --verify --quiet "refs/heads/develop") { $baseBranch = 'develop' }
-        elseif (git show-ref --verify --quiet "refs/heads/main") { $baseBranch = 'main' }
-        else {
-            [System.Windows.Forms.MessageBox]::Show("本地既无 'develop' 也无 'main' 分支，无法创建 release 分支。", "错误", 'OK', 'Error')
+        # 检查 develop 分支是否存在
+        if (git show-ref --verify --quiet "refs/heads/develop") { 
+            $baseBranch = 'develop' 
+        } else {
+            [System.Windows.Forms.MessageBox]::Show("本地没有 'develop' 分支，无法创建 release 分支。", "错误", 'OK', 'Error')
             exit 1
         }
         Write-Host "基于 '$baseBranch' 创建新分支 '$branch'..."
@@ -72,4 +71,4 @@ if (git tag -l $Version) {
 git tag $Version
 git push origin $Version
 
-[System.Windows.Forms.MessageBox]::Show("发布完成!\n版本: $Version\n分支: $branch", "完成", 'OK', 'Information')
+[System.Windows.Forms.MessageBox]::Show("发布完成!`n版本: $Version`n分支: $branch", "完成", 'OK', 'Information')
