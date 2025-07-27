@@ -279,9 +279,16 @@ class RealtimeTranslator:
         # 語言代碼對應
         self.lang_code_map = {v: k for k, v in common_languages.items()}
         
+        # 移除換行勾選框
+        self.remove_newline_var = tk.BooleanVar(value=True)
+        self.remove_newline_check = ttk.Checkbutton(controls_frame, 
+                                                    text="移除換行 (翻譯前)",
+                                                    variable=self.remove_newline_var)
+        self.remove_newline_check.grid(row=2, column=0, sticky=tk.W, padx=5, pady=(5,0))
+        
         # 顯示模式選擇
         mode_frame = ttk.Frame(controls_frame)
-        mode_frame.grid(row=2, column=0, pady=10, sticky="ew", padx=5)
+        mode_frame.grid(row=3, column=0, pady=10, sticky="ew", padx=5)
         
         ttk.Label(mode_frame, text="顯示模式:").pack(side="left")
         
@@ -293,11 +300,11 @@ class RealtimeTranslator:
         
         # 啟用/停用翻譯按鈕
         self.toggle_btn = ttk.Button(controls_frame, text="啟用翻譯", command=self.toggle_translation)
-        self.toggle_btn.grid(row=3, column=0, pady=10)
+        self.toggle_btn.grid(row=4, column=0, pady=10)
         
         # 狀態標籤
         self.status_label = ttk.Label(controls_frame, text="翻譯未啟用", foreground="red", anchor="center")
-        self.status_label.grid(row=4, column=0, pady=5, sticky="ew")
+        self.status_label.grid(row=5, column=0, pady=5, sticky="ew")
         
         # 手動輸入框
         manual_input_frame = ttk.LabelFrame(left_panel, text="手動翻譯")
@@ -437,6 +444,10 @@ class RealtimeTranslator:
         try:
             print(f"開始翻譯文字 ({len(text)} 字元)")
             
+            # 檢查是否需要移除換行
+            if self.remove_newline_var.get():
+                text = " ".join(text.split())
+            
             # 獲取目標語言代碼
             selected_lang = self.language_var.get()
             target_lang = self.lang_code_map.get(selected_lang, 'zh-tw')
@@ -528,17 +539,23 @@ class RealtimeTranslator:
             return f"翻譯失敗：{str(e)}"
     
     def update_result(self, original_text, translated_text, target_lang):
+        # 如果勾選了移除換行，則先處理最終結果
+        if self.remove_newline_var.get() and target_lang != "error":
+            processed_translated_text = " ".join(translated_text.split())
+        else:
+            processed_translated_text = translated_text
+
         # 根據顯示模式決定如何顯示結果
         if self.display_mode.get() == "floating" and target_lang != "error":
             # 浮動視窗模式
             x, y = win32gui.GetCursorPos()
-            self.floating_window.show_translation(original_text, translated_text, x + 10, y + 10)
+            self.floating_window.show_translation(original_text, processed_translated_text, x + 10, y + 10)
         
         # 同時也在主視窗顯示（作為備份記錄）
         timestamp = time.strftime("%H:%M:%S")
         result_info = f"[{timestamp}] 翻譯至 {self.language_var.get()}\n"
         result_info += f"原文: {original_text}\n"
-        result_info += f"譯文: {translated_text}\n"
+        result_info += f"譯文: {processed_translated_text}\n"
         result_info += "-" * 50 + "\n"
         
         self.result_text.insert(tk.END, result_info)
@@ -548,9 +565,9 @@ class RealtimeTranslator:
         if target_lang != "error":
             # 暫時停止監控以避免無窮迴圈
             temp_last = self.last_text
-            pyperclip.copy(translated_text)
+            pyperclip.copy(processed_translated_text)
             time.sleep(0.1)
-            self.last_text = translated_text  # 避免翻譯結果被再次翻譯
+            self.last_text = processed_translated_text  # 避免翻譯結果被再次翻譯
     
     def run(self):
         try:
