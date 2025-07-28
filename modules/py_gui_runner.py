@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 import threading
+import shutil
 from main import Module
 
 class PyGuiRunner(Module):
@@ -12,7 +13,10 @@ class PyGuiRunner(Module):
         super().__init__(master, shared_state, module_name, gui_manager)
         self.shared_state.log(f"PyGuiRunner '{self.module_name}' initialized.")
         self.target_file = ""
+        self.is_external_script = False
         self.input_widgets = []
+        self.scripts_dir = os.path.join("modules", "saves", "py_gui_runners")
+        os.makedirs(self.scripts_dir, exist_ok=True)
         self.create_ui()
 
     def create_ui(self):
@@ -20,14 +24,32 @@ class PyGuiRunner(Module):
         main_frame = ttk.Frame(self.frame, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
         main_frame.columnconfigure(0, weight=1)
-        main_frame.rowconfigure(2, weight=1)
+        main_frame.rowconfigure(3, weight=1)
+
+        # Top frame for script management
+        script_frame = ttk.Frame(main_frame)
+        script_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 5))
+        script_frame.columnconfigure(1, weight=1)
+
+        self.add_button = ttk.Button(script_frame, text="加入程式組", command=self.add_script_to_pool, state=tk.DISABLED)
+        self.add_button.grid(row=0, column=0, padx=(0, 5))
+
+        self.script_var = tk.StringVar()
+        self.script_combo = ttk.Combobox(script_frame, textvariable=self.script_var, state="readonly")
+        self.script_combo.grid(row=0, column=1, sticky="ew", padx=(0, 5))
+        self.script_combo.bind("<<ComboboxSelected>>", self.on_script_select)
+
+        delete_button = ttk.Button(script_frame, text="刪除選定", command=self.delete_selected_script)
+        delete_button.grid(row=0, column=2, padx=(0, 5))
+        
+        self.populate_scripts_dropdown()
 
         # Top frame for file selection
         top_frame = ttk.Frame(main_frame)
-        top_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        top_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
         top_frame.columnconfigure(1, weight=1)
 
-        select_button = ttk.Button(top_frame, text="選擇 .py 檔案", command=self.select_file)
+        select_button = ttk.Button(top_frame, text="選擇外部 .py 檔案", command=self.select_file)
         select_button.grid(row=0, column=0, padx=(0, 10))
 
         self.file_label = ttk.Label(top_frame, text="尚未選擇檔案", anchor="w")
@@ -35,11 +57,11 @@ class PyGuiRunner(Module):
 
         # Frame for dynamic input fields
         self.inputs_frame = ttk.LabelFrame(main_frame, text="輸入參數", padding="10")
-        self.inputs_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        self.inputs_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(0, 10))
 
         # Frame for output
         output_frame = ttk.LabelFrame(main_frame, text="輸出結果", padding="10")
-        output_frame.grid(row=2, column=0, columnspan=2, sticky="nsew")
+        output_frame.grid(row=3, column=0, columnspan=2, sticky="nsew")
         output_frame.columnconfigure(0, weight=1)
         output_frame.rowconfigure(0, weight=1)
 
@@ -48,21 +70,109 @@ class PyGuiRunner(Module):
 
         # Bottom frame for execution button
         bottom_frame = ttk.Frame(main_frame)
-        bottom_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
-        bottom_frame.columnconfigure(0, weight=1) # Center the button
+        bottom_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+        bottom_frame.columnconfigure(0, weight=1)
 
         self.run_button = ttk.Button(bottom_frame, text="執行", command=self.run_script, state=tk.DISABLED)
         self.run_button.grid(row=0, column=0)
 
+    def add_script_to_pool(self):
+        """Adds the currently loaded external script to the scripts directory."""
+        if not self.target_file or not self.is_external_script:
+            messagebox.showwarning("沒有外部腳本", "請先選擇一個外部腳本檔案。", parent=self.frame)
+            return
+
+        filename = os.path.basename(self.target_file)
+        dest_path = os.path.join(self.scripts_dir, filename)
+
+        if os.path.exists(dest_path):
+            if not messagebox.askyesno("檔案已存在", f"檔案 '{filename}' 已存在於程式組中。要覆蓋它嗎？", parent=self.frame):
+                return
+        
+        try:
+            shutil.copy(self.target_file, dest_path)
+            messagebox.showinfo("成功", f"腳本 '{filename}' 已成功加入。", parent=self.frame)
+            
+            self.target_file = dest_path
+            self.is_external_script = False
+            self.add_button.config(state=tk.DISABLED)
+            
+            self.populate_scripts_dropdown()
+            self.script_var.set(filename)
+
+        except Exception as e:
+            messagebox.showerror("複製失敗", f"無法將檔案複製到程式組資料夾：\n{e}", parent=self.frame)
+
+    def populate_scripts_dropdown(self):
+        """Scans the scripts directory and populates the dropdown."""
+        try:
+            scripts = [f for f in os.listdir(self.scripts_dir) if f.endswith(".py")]
+            self.script_combo['values'] = sorted(scripts)
+            if not scripts:
+                self.script_var.set("程式組中沒有腳本")
+            else:
+                if self.script_var.get() not in scripts:
+                    self.script_var.set("")
+        except Exception as e:
+            self.shared_state.log(f"Error populating scripts dropdown: {e}")
+            self.script_combo['values'] = []
+            self.script_var.set("讀取腳本失敗")
+
+    def on_script_select(self, event=None):
+        """Handles the selection of a script from the dropdown."""
+        selected_script = self.script_var.get()
+        if not selected_script or selected_script == "程式組中沒有腳本":
+            return
+        
+        self.is_external_script = False
+        self.add_button.config(state=tk.DISABLED)
+        filepath = os.path.join(self.scripts_dir, selected_script)
+        self.load_script(filepath)
+
+    def delete_selected_script(self):
+        """Deletes the currently selected script from the pool."""
+        selected_script = self.script_var.get()
+        if not selected_script or selected_script == "程式組中沒有腳本":
+            messagebox.showwarning("沒有選擇", "請先從下拉清單中選擇一個腳本。", parent=self.frame)
+            return
+
+        if not messagebox.askyesno("確認刪除", f"您確定要刪除腳本 '{selected_script}' 嗎？此操作無法復原。", parent=self.frame):
+            return
+
+        filepath = os.path.join(self.scripts_dir, selected_script)
+        try:
+            os.remove(filepath)
+            messagebox.showinfo("成功", f"腳本 '{selected_script}' 已被刪除。", parent=self.frame)
+            self.populate_scripts_dropdown()
+            self.target_file = ""
+            self.file_label.config(text="尚未選擇檔案")
+            self.add_button.config(state=tk.DISABLED)
+            self.is_external_script = False
+            self.run_button.config(state=tk.DISABLED)
+            for widget in self.inputs_frame.winfo_children():
+                widget.destroy()
+            self.input_widgets.clear()
+            self.script_var.set("")
+        except Exception as e:
+            messagebox.showerror("刪除失敗", f"無法刪除檔案：\n{e}", parent=self.frame)
+
     def select_file(self):
-        """Open a file dialog to select a .py file and parse it for input() calls."""
+        """Open a file dialog to select an external .py file."""
         filepath = filedialog.askopenfilename(
             title="選擇一個 Python 檔案",
-            filetypes=[("Python files", "*.py"), ("All files", "*.*")]
+            filetypes=[("Python files", "*.py"), ("All files", "*.*")],
+            parent=self.frame
         )
         if not filepath:
             return
+        
+        self.script_var.set("")
+        self.is_external_script = True
+        self.add_button.config(state=tk.NORMAL)
+        self.load_script(filepath)
 
+    def load_script(self, filepath):
+        """Loads and parses a script file to generate the UI for inputs."""
         self.target_file = filepath
         self.file_label.config(text=os.path.basename(filepath))
         self.run_button.config(state=tk.DISABLED)
@@ -88,6 +198,8 @@ class PyGuiRunner(Module):
         except Exception as e:
             messagebox.showerror("讀取錯誤", f"無法讀取或解析檔案：\n{e}", parent=self.frame)
             self.file_label.config(text="檔案讀取失敗")
+            self.add_button.config(state=tk.DISABLED)
+            self.is_external_script = False
 
     def _create_input_widget(self, prompt):
         """Creates an appropriate input widget based on the prompt text."""
@@ -98,28 +210,22 @@ class PyGuiRunner(Module):
         label = ttk.Label(row_frame, text=prompt, anchor="w")
         label.grid(row=0, column=0, padx=(0, 5), sticky="w")
 
-        # Keywords for file/folder selection
         file_keywords = ['檔名', '檔案', 'file', 'filename', 'path', '路徑', '選擇', '載入', '讀取', '儲存']
         folder_keywords = ['資料夾', 'folder', 'directory', '目錄', '資料目錄']
         prompt_lower = prompt.lower()
 
-        # Check for folder selection
         if any(keyword in prompt_lower for keyword in folder_keywords):
             widget = self._create_dialog_widget(row_frame, "folder")
             self.input_widgets.append((widget, "path"))
             return
 
-        # Check for file selection (including extension check)
         ext_match = re.search(r'\(\s*([.\w\s,*/]+)\s*\)', prompt)
         if any(keyword in prompt_lower for keyword in file_keywords) or ext_match:
             filetypes = []
             if ext_match:
-                # Parse extensions like "(.png, .jpg)" or "(.txt)"
                 extensions = re.findall(r'(\.?\w+)', ext_match.group(1))
                 if extensions:
-                    # Create a descriptive name for the file type
                     type_name = f"{', '.join(ext.upper() for ext in extensions)} 檔案"
-                    # Create the glob pattern (e.g., "*.png *.jpg")
                     patterns = [f"*{ext}" if not ext.startswith('.') else f"*{ext}" for ext in extensions]
                     filetypes.append((type_name, " ".join(patterns)))
             filetypes.append(("All files", "*.*"))
@@ -128,7 +234,6 @@ class PyGuiRunner(Module):
             self.input_widgets.append((widget, "path"))
             return
 
-        # Default to a standard text entry
         entry = ttk.Entry(row_frame)
         entry.grid(row=0, column=1, sticky="ew", padx=(0, 5))
         self.input_widgets.append((entry, "entry"))
