@@ -99,8 +99,8 @@ class PyGuiRunner(Module):
         label.grid(row=0, column=0, padx=(0, 5), sticky="w")
 
         # Keywords for file/folder selection
-        file_keywords = ['檔名', '檔案', 'file', 'filename', 'path', '路徑', '路徑', '選擇', '載入', '讀取', '儲存']
-        folder_keywords = ['資料夾', 'folder', 'directory']
+        file_keywords = ['檔名', '檔案', 'file', 'filename', 'path', '路徑', '選擇', '載入', '讀取', '儲存']
+        folder_keywords = ['資料夾', 'folder', 'directory', '目錄', '資料目錄']
         prompt_lower = prompt.lower()
 
         # Check for folder selection
