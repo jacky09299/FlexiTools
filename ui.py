@@ -711,9 +711,12 @@ class ModularGUI:
 
         batch_script_content = f"""@echo off
         echo Closing FlexiTools (PID: {current_pid})...
-        TASKKILL /F /PID {current_pid}
-        echo Waiting for application to close...
-        timeout /t 3 /nobreak > NUL
+        :killloop
+        TASKKILL /F /PID {current_pid} >nul 2>&1
+        timeout /t 1 /nobreak >nul
+        tasklist /FI "PID eq {current_pid}" | find "{current_pid}" >nul
+        if not errorlevel 1 goto killloop
+
 
         echo Running installer in silent mode...
         start /wait "" "{installer_path}" /UPDATE /S
