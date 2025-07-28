@@ -12,7 +12,7 @@ class PyGuiRunner(Module):
         super().__init__(master, shared_state, module_name, gui_manager)
         self.shared_state.log(f"PyGuiRunner '{self.module_name}' initialized.")
         self.target_file = ""
-        self.input_entries = []
+        self.input_widgets = []
         self.create_ui()
 
     def create_ui(self):
@@ -67,38 +67,104 @@ class PyGuiRunner(Module):
         self.file_label.config(text=os.path.basename(filepath))
         self.run_button.config(state=tk.DISABLED)
 
-        # Clear previous input fields
         for widget in self.inputs_frame.winfo_children():
             widget.destroy()
-        self.input_entries.clear()
+        self.input_widgets.clear()
 
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 content = f.read()
 
-            # Find all input prompts
-            prompts = re.findall(r'input\s*\(\s*["\'](.*?)["\']\s*\)', content)
+            prompts = re.findall(r'input\s*\(\s*["\\](.*?)["\\]\s*\)', content)
 
             if not prompts:
                 ttk.Label(self.inputs_frame, text="此程式不需輸入參數。").pack(pady=5)
                 self.run_button.config(state=tk.NORMAL)
             else:
-                for i, prompt in enumerate(prompts):
-                    row_frame = ttk.Frame(self.inputs_frame)
-                    row_frame.pack(fill=tk.X, pady=2)
-
-                    label = ttk.Label(row_frame, text=prompt, width=20, anchor="w")
-                    label.pack(side=tk.LEFT, padx=(0, 5))
-
-                    entry = ttk.Entry(row_frame)
-                    entry.pack(side=tk.LEFT, expand=True, fill=tk.X)
-                    self.input_entries.append(entry)
-
+                for prompt in prompts:
+                    self._create_input_widget(prompt)
                 self.run_button.config(state=tk.NORMAL)
 
         except Exception as e:
             messagebox.showerror("讀取錯誤", f"無法讀取或解析檔案：\n{e}", parent=self.frame)
             self.file_label.config(text="檔案讀取失敗")
+
+    def _create_input_widget(self, prompt):
+        """Creates an appropriate input widget based on the prompt text."""
+        row_frame = ttk.Frame(self.inputs_frame)
+        row_frame.pack(fill=tk.X, pady=2, expand=True)
+        row_frame.columnconfigure(1, weight=1)
+
+        label = ttk.Label(row_frame, text=prompt, anchor="w")
+        label.grid(row=0, column=0, padx=(0, 5), sticky="w")
+
+        # Keywords for file/folder selection
+        file_keywords = ['檔名', '檔案', 'file', 'filename', 'path', '路徑', '路徑', '選擇', '載入', '讀取', '儲存']
+        folder_keywords = ['資料夾', 'folder', 'directory']
+        prompt_lower = prompt.lower()
+
+        # Check for folder selection
+        if any(keyword in prompt_lower for keyword in folder_keywords):
+            widget = self._create_dialog_widget(row_frame, "folder")
+            self.input_widgets.append((widget, "path"))
+            return
+
+        # Check for file selection (including extension check)
+        ext_match = re.search(r'\(\s*([.\w\s,*/]+)\s*\)', prompt)
+        if any(keyword in prompt_lower for keyword in file_keywords) or ext_match:
+            filetypes = []
+            if ext_match:
+                # Parse extensions like "(.png, .jpg)" or "(.txt)"
+                extensions = re.findall(r'(\.?\w+)', ext_match.group(1))
+                if extensions:
+                    # Create a descriptive name for the file type
+                    type_name = f"{', '.join(ext.upper() for ext in extensions)} 檔案"
+                    # Create the glob pattern (e.g., "*.png *.jpg")
+                    patterns = [f"*{ext}" if not ext.startswith('.') else f"*{ext}" for ext in extensions]
+                    filetypes.append((type_name, " ".join(patterns)))
+            filetypes.append(("All files", "*.*"))
+
+            widget = self._create_dialog_widget(row_frame, "file", filetypes=filetypes)
+            self.input_widgets.append((widget, "path"))
+            return
+
+        # Default to a standard text entry
+        entry = ttk.Entry(row_frame)
+        entry.grid(row=0, column=1, sticky="ew", padx=(0, 5))
+        self.input_widgets.append((entry, "entry"))
+
+
+    def _create_dialog_widget(self, parent, dialog_type, filetypes=None):
+        """Helper to create a frame with an entry and a browse button."""
+        widget_frame = ttk.Frame(parent)
+        widget_frame.grid(row=0, column=1, sticky="ew")
+        widget_frame.columnconfigure(0, weight=1)
+
+        entry = ttk.Entry(widget_frame, state="readonly")
+        entry.grid(row=0, column=0, sticky="ew", padx=(0, 5))
+
+        button_text = "選擇資料夾" if dialog_type == "folder" else "選擇檔案"
+        command = lambda e=entry, f=filetypes: self._open_dialog(e, dialog_type, f)
+        
+        browse_button = ttk.Button(widget_frame, text=button_text, command=command)
+        browse_button.grid(row=0, column=1)
+        
+        return entry
+
+    def _open_dialog(self, entry_widget, dialog_type, filetypes=None):
+        """Opens a file or folder dialog and updates the entry widget."""
+        path = ""
+        if dialog_type == "file":
+            path = filedialog.askopenfilename(title="選擇檔案", filetypes=filetypes, parent=self.frame)
+        elif dialog_type == "folder":
+            path = filedialog.askdirectory(title="選擇資料夾", parent=self.frame)
+        
+        if path:
+            entry_widget.config(state="normal")
+            entry_widget.delete(0, tk.END)
+            entry_widget.insert(0, path)
+            entry_widget.config(state="readonly")
+
 
     def run_script(self):
         """Execute the selected script with inputs from the entry fields."""
@@ -106,18 +172,15 @@ class PyGuiRunner(Module):
             messagebox.showwarning("沒有檔案", "請先選擇一個 .py 檔案。", parent=self.frame)
             return
 
-        # 1. Disable UI elements
         self.run_button.config(state=tk.DISABLED)
         self.output_text.config(state=tk.NORMAL)
         self.output_text.delete('1.0', tk.END)
         self.output_text.insert(tk.END, f"正在執行 {os.path.basename(self.target_file)}...\n\n")
         self.output_text.config(state=tk.DISABLED)
 
-        # 2. Get inputs from entries
-        inputs = [entry.get() for entry in self.input_entries]
+        inputs = [widget.get() for widget, _ in self.input_widgets]
         input_string = "\n".join(inputs)
 
-        # 3. Run the script in a separate thread
         thread = threading.Thread(target=self._execute_in_thread, args=(self.target_file, input_string))
         thread.daemon = True
         thread.start()
@@ -125,11 +188,9 @@ class PyGuiRunner(Module):
     def _execute_in_thread(self, filepath, input_data):
         """The actual subprocess execution, run in a thread."""
         try:
-            # Create a copy of the current environment and set PYTHONIOENCODING
             env = os.environ.copy()
             env['PYTHONIOENCODING'] = 'utf-8'
 
-            # 6. Use sys.executable and subprocess.run
             process = subprocess.run(
                 [sys.executable, filepath],
                 input=input_data,
@@ -137,13 +198,12 @@ class PyGuiRunner(Module):
                 text=True,
                 encoding='utf-8',
                 errors='replace',
-                check=False,  # Don't raise exception for non-zero exit codes
+                check=False,
                 env=env
             )
             output = process.stdout
             error = process.stderr
 
-            # Combine output and error for display
             full_output = ""
             if output:
                 full_output += "--- STDOUT ---\n"
@@ -160,7 +220,6 @@ class PyGuiRunner(Module):
         except Exception as e:
             full_output = f"執行期間發生未預期的錯誤：\n{e}"
 
-        # Schedule the UI update on the main thread
         self.master.after(0, self._update_output, full_output)
 
     def _update_output(self, result):
