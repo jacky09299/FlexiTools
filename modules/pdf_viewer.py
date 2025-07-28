@@ -8,7 +8,7 @@ from ui import Module
 class PDFViewerModule(Module):
     def __init__(self, master, shared_state, module_name="PDF Viewer", gui_manager=None):
         super().__init__(master, shared_state, module_name, gui_manager)
-        
+        Image.MAX_IMAGE_PIXELS = None
         # PDF 相關變數
         self.pdf_document = None
         self.current_page = 0
