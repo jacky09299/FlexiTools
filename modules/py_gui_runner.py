@@ -125,6 +125,10 @@ class PyGuiRunner(Module):
     def _execute_in_thread(self, filepath, input_data):
         """The actual subprocess execution, run in a thread."""
         try:
+            # Create a copy of the current environment and set PYTHONIOENCODING
+            env = os.environ.copy()
+            env['PYTHONIOENCODING'] = 'utf-8'
+
             # 6. Use sys.executable and subprocess.run
             process = subprocess.run(
                 [sys.executable, filepath],
@@ -133,7 +137,8 @@ class PyGuiRunner(Module):
                 text=True,
                 encoding='utf-8',
                 errors='replace',
-                check=False  # Don't raise exception for non-zero exit codes
+                check=False,  # Don't raise exception for non-zero exit codes
+                env=env
             )
             output = process.stdout
             error = process.stderr
