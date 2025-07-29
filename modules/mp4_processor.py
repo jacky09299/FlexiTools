@@ -12,9 +12,13 @@ from PIL import Image
 from main import Module
 import os
 import cv2 # For _process_to_frames
-from moviepy.editor import VideoFileClip, AudioFileClip, CompositeAudioClip, CompositeVideoClip, concatenate_videoclips # For audio extraction and splitting
+from moviepy.editor import (
+    VideoFileClip, AudioFileClip, CompositeAudioClip, CompositeVideoClip,
+    concatenate_videoclips, concatenate_audioclips, ColorClip
+) # For audio extraction, splitting and merging
 from rembg import remove # For background removal
 import numpy as np # For background removal
+import traceback
 
 class MP4Processor(Module):
     def __init__(self, parent, shared_state, module_name, gui_manager):
@@ -26,6 +30,10 @@ class MP4Processor(Module):
 
         self.fps_var = tk.StringVar(value='30')
         self.segments_to_save_var = tk.StringVar()
+
+        # For Merge Media
+        self.merge_output_filename_var = tk.StringVar(value="merged_output.mp4")
+        self.merge_file_list = []
 
         self.create_ui()
 
@@ -72,6 +80,63 @@ class MP4Processor(Module):
             self.frames_options_frame.pack(fill=tk.X, expand=True)
         elif selected_mode == "Split MP4":
             self.split_options_frame.pack(fill=tk.X, expand=True)
+        elif selected_mode == "Merge Media":
+            self.merge_options_frame.pack(fill=tk.BOTH, expand=True)
+
+    def _merge_add_files(self):
+        files = filedialog.askopenfilenames(
+            title="Select Media Files to Merge",
+            filetypes=(
+                ("Media Files", "*.mp4 *.mov *.avi *.mkv *.mp3 *.wav *.ogg"),
+                ("Video Files", "*.mp4 *.mov *.avi *.mkv"),
+                ("Audio Files", "*.mp3 *.wav *.ogg"),
+                ("All files", "*.*")
+            )
+        )
+        if files:
+            for f in files:
+                self.merge_file_list.append(f)
+                self.merge_listbox.insert(tk.END, os.path.basename(f))
+            self._log_status(f"Added {len(files)} files to merge list.")
+
+    def _merge_remove_selected(self):
+        selected_indices = self.merge_listbox.curselection()
+        if not selected_indices:
+            return
+        idx = selected_indices[0]
+        self.merge_listbox.delete(idx)
+        removed_file = self.merge_file_list.pop(idx)
+        self._log_status(f"Removed '{os.path.basename(removed_file)}' from merge list.")
+
+    def _merge_move_up(self):
+        selected_indices = self.merge_listbox.curselection()
+        if not selected_indices:
+            return
+        idx = selected_indices[0]
+        if idx > 0:
+            # Move in listbox
+            text = self.merge_listbox.get(idx)
+            self.merge_listbox.delete(idx)
+            self.merge_listbox.insert(idx - 1, text)
+            self.merge_listbox.selection_set(idx - 1)
+            # Move in backing list
+            item = self.merge_file_list.pop(idx)
+            self.merge_file_list.insert(idx - 1, item)
+
+    def _merge_move_down(self):
+        selected_indices = self.merge_listbox.curselection()
+        if not selected_indices:
+            return
+        idx = selected_indices[0]
+        if idx < self.merge_listbox.size() - 1:
+            # Move in listbox
+            text = self.merge_listbox.get(idx)
+            self.merge_listbox.delete(idx)
+            self.merge_listbox.insert(idx + 1, text)
+            self.merge_listbox.selection_set(idx + 1)
+            # Move in backing list
+            item = self.merge_file_list.pop(idx)
+            self.merge_file_list.insert(idx + 1, item)
 
     def _parse_time(self, time_str):
         """Converts HH:MM:SS, MM:SS, or SS string to seconds."""
@@ -271,6 +336,8 @@ class MP4Processor(Module):
             if cap: cap.release()
             if out: out.release()
             cv2.destroyAllWindows()
+
+    def _process_split_mp4(self, video_path, output_dir, split_points_str, segments_to_save_str):
         self._log_status(f"Starting 'Split MP4' for: {video_path}")
         main_video_clip = None
         subclip = None # Initialize for finally block
@@ -348,6 +415,131 @@ class MP4Processor(Module):
             if main_video_clip: main_video_clip.close()
             # subclip is closed within the loop's finally
 
+    def _process_merge_media(self, file_list, output_path):
+        self._log_status("Starting 'Merge Media' process...")
+        is_audio_only = all(f.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a', '.flac')) for f in file_list)
+
+        if is_audio_only:
+            self._log_status("All files appear to be audio. Performing audio-only merge.")
+            return self._merge_audio_files(file_list, output_path)
+        else:
+            self._log_status("Video file(s) detected. Performing video/mixed-media merge.")
+            return self._merge_video_files(file_list, output_path)
+
+    def _merge_audio_files(self, file_list, output_path):
+        clips = []
+        final_clip = None
+        try:
+            self._log_status(f"Output audio file will be: {output_path}")
+            for i, file_path in enumerate(file_list):
+                self._log_status(f"Loading audio file {i+1}/{len(file_list)}: {os.path.basename(file_path)}")
+                try:
+                    clips.append(AudioFileClip(file_path))
+                except Exception as e:
+                    self._log_status(f"Could not load audio file {os.path.basename(file_path)}. Skipping. Error: {e}")
+
+            if not clips:
+                self._log_status("No valid audio clips to merge.")
+                return False
+
+            final_clip = concatenate_audioclips(clips)
+
+            # Ensure output path has a suitable audio extension
+            if not output_path.lower().endswith(('.mp3', '.wav', '.ogg')):
+                output_path += ".mp3" # Default to mp3
+                self._log_status(f"Output filename adjusted for audio: {output_path}")
+
+            self._log_status("Concatenation complete. Writing to audio file...")
+            final_clip.write_audiofile(output_path, logger='bar')
+
+            self._log_status(f"Successfully merged audio to: {output_path}")
+            return True
+        except Exception as e:
+            self._log_status(f"An error occurred during audio merge: {e}")
+            self._log_status(traceback.format_exc())
+            return False
+        finally:
+            self._log_status("Cleaning up audio resources...")
+            for clip in clips:
+                try:
+                    clip.close()
+                except Exception: pass
+            if final_clip:
+                try:
+                    final_clip.close()
+                except Exception: pass
+
+    def _merge_video_files(self, file_list, output_path):
+        self._log_status(f"Output video file will be: {output_path}")
+        clips = []
+        final_clip = None
+        target_size = None
+        target_fps = 24 # A sensible default
+
+        try:
+            # Determine target resolution and fps from the first valid video
+            for file_path in file_list:
+                try:
+                    with VideoFileClip(file_path) as clip:
+                        if clip.size and clip.fps:
+                            target_size = clip.size
+                            target_fps = clip.fps
+                            self._log_status(f"Using resolution {target_size} and FPS {target_fps:.2f} from '{os.path.basename(file_path)}' as target.")
+                            break
+                except Exception:
+                    continue
+
+            if not target_size:
+                self._log_status("Error: Could not determine a target resolution. Please include at least one standard video file.")
+                return False
+
+            # Process all files into clips
+            for i, file_path in enumerate(file_list):
+                self._log_status(f"Processing file {i+1}/{len(file_list)}: {os.path.basename(file_path)}")
+                clip = None
+                try:
+                    clip = VideoFileClip(file_path, target_resolution=(target_size[1], target_size[0]), resize_algorithm='bicubic')
+                    if clip.fps is None: clip.fps = target_fps
+                    if clip.size != target_size:
+                        clip = clip.resize(target_size)
+                    clips.append(clip)
+                except Exception:
+                    if clip: clip.close()
+                    try:
+                        audio_clip = AudioFileClip(file_path)
+                        video_from_audio = ColorClip(size=target_size, color=(0,0,0), duration=audio_clip.duration).set_audio(audio_clip)
+                        video_from_audio.fps = target_fps
+                        clips.append(video_from_audio)
+                        self._log_status(f"Treated '{os.path.basename(file_path)}' as audio on a black background.")
+                    except Exception as e_audio:
+                        self._log_status(f"Failed to process '{os.path.basename(file_path)}'. Skipping. Error: {e_audio}")
+
+            if not clips:
+                self._log_status("Error: No valid clips could be created.")
+                return False
+
+            self._log_status("Concatenating clips...")
+            final_clip = concatenate_videoclips(clips, method="compose")
+
+            self._log_status("Writing final video file...")
+            final_clip.write_videofile(output_path, codec="libx264", audio_codec="aac", threads=4, logger='bar')
+
+            self._log_status(f"Successfully merged video to: {output_path}")
+            return True
+        except Exception as e:
+            self._log_status(f"An error occurred during video merge: {e}")
+            self._log_status(traceback.format_exc())
+            return False
+        finally:
+            self._log_status("Cleaning up video resources...")
+            for clip in clips:
+                try:
+                    clip.close()
+                except Exception: pass
+            if final_clip:
+                try:
+                    final_clip.close()
+                except Exception: pass
 
     def _start_processing(self):
         self.process_button.config(state=tk.DISABLED)
@@ -363,15 +555,9 @@ class MP4Processor(Module):
             output_dir = self.output_path_var.get()
             mode = self.processing_mode_var.get()
 
-            if not input_val:
-                self._log_status("Error: Input path must be selected.")
-                return
-            if not os.path.exists(input_val):
-                self._log_status(f"Error: Input path does not exist: {input_val}")
-                return
-
             if not output_dir:
                 self._log_status("Error: Output directory must be selected.")
+                self.process_button.config(state=tk.NORMAL)
                 return
             if not os.path.isdir(output_dir):
                 try:
@@ -379,7 +565,41 @@ class MP4Processor(Module):
                     self._log_status(f"Created output directory: {output_dir}")
                 except Exception as e:
                     self._log_status(f"Error: Could not create output directory {output_dir}: {e}")
+                    self.process_button.config(state=tk.NORMAL)
                     return
+
+            # --- Mode-specific validation and execution ---
+            self._log_status(f"Mode selected: {mode}")
+
+            if mode == "Merge Media":
+                files_to_merge = self.merge_file_list
+                if not files_to_merge or len(files_to_merge) < 2:
+                    self._log_status("Error: Please add at least two files to merge.")
+                    self.process_button.config(state=tk.NORMAL)
+                    return
+                output_filename = self.merge_output_filename_var.get()
+                if not output_filename:
+                    self._log_status("Error: Output filename cannot be empty.")
+                    self.process_button.config(state=tk.NORMAL)
+                    return
+                output_path = os.path.join(output_dir, output_filename)
+                success = self._process_merge_media(files_to_merge, output_path)
+                if success:
+                    self._log_status("--- Media merging finished successfully. ---")
+                else:
+                    self._log_status("--- Media merging finished with errors. Please check logs. ---")
+                self.process_button.config(state=tk.NORMAL)
+                return # Exit after merge processing
+
+            # --- The rest of the modes use the standard file/folder input ---
+            if not input_val:
+                self._log_status("Error: Input path must be selected for this mode.")
+                self.process_button.config(state=tk.NORMAL)
+                return
+            if not os.path.exists(input_val):
+                self._log_status(f"Error: Input path does not exist: {input_val}")
+                self.process_button.config(state=tk.NORMAL)
+                return
 
             if mode == "Convert to Frames":
                 fps_str = self.fps_var.get()
@@ -387,36 +607,35 @@ class MP4Processor(Module):
                     fps_int = int(fps_str)
                     if fps_int <= 0:
                         self._log_status("Error: FPS must be a positive number.")
+                        self.process_button.config(state=tk.NORMAL)
                         return
                 except ValueError:
                     self._log_status("Error: Invalid FPS value. Must be a number.")
+                    self.process_button.config(state=tk.NORMAL)
                     return
             elif mode == "Split MP4":
                 split_points_str = self.split_points_text.get("1.0", tk.END).strip()
                 if not split_points_str:
                     self._log_status("Error: Split points cannot be empty for Split MP4 mode.")
+                    self.process_button.config(state=tk.NORMAL)
                     return
-
-            self._log_status(f"Mode selected: {mode}")
 
             files_to_process = []
             if self.input_type_var.get() == "file":
                 files_to_process.append(input_val)
-            else:
+            else: # folder
                 if os.path.isdir(input_val):
                     for item in os.listdir(input_val):
                         if item.lower().endswith(".mp4"):
                             files_to_process.append(os.path.join(input_val, item))
                     if not files_to_process:
                         self._log_status(f"No MP4 files found in folder: {input_val}")
+                        self.process_button.config(state=tk.NORMAL)
                         return
-                else: # Should have been caught by os.path.exists, but as a safeguard
+                else:
                     self._log_status(f"Error: Input folder not found: {input_val}")
+                    self.process_button.config(state=tk.NORMAL)
                     return
-
-            if not files_to_process: # Should be redundant if folder checks are done right
-                self._log_status("Error: No files to process.")
-                return
 
             all_files_processed_successfully = True
             for video_path in files_to_process:
@@ -431,6 +650,10 @@ class MP4Processor(Module):
                     current_file_success = self._process_to_ogg(video_path, output_dir)
                 elif mode == "Remove Background":
                     current_file_success = self._process_remove_background(video_path, output_dir)
+                elif mode == "Split MP4":
+                    split_points = self.split_points_text.get("1.0", tk.END).strip()
+                    segments_to_save = self.segments_to_save_var.get()
+                    current_file_success = self._process_split_mp4(video_path, output_dir, split_points, segments_to_save)
                 else:
                     self._log_status(f"Error: Unknown processing mode: {mode}")
                     current_file_success = False
@@ -448,6 +671,7 @@ class MP4Processor(Module):
 
         except Exception as e: # Catch any unexpected errors in _start_processing itself
             self._log_status(f"Critical error in processing orchestrator: {e}")
+            self._log_status(traceback.format_exc())
         finally:
             self.process_button.config(state=tk.NORMAL)
 
@@ -466,7 +690,7 @@ class MP4Processor(Module):
         input_path_frame.pack(fill=tk.X, pady=(5,0))
         browse_input_btn = ttk.Button(input_path_frame, text="Browse Input", command=self._browse_input)
         browse_input_btn.pack(side=tk.LEFT, padx=5)
-        self.input_path_label = ttk.Label(input_path_frame, text="No input selected", anchor=tk.W, relief=tk.SUNKEN, padding=(2,2))
+        self.input_path_label = ttk.Label(input_path_frame, text="No input selected (not used for Merge)", anchor=tk.W, relief=tk.SUNKEN, padding=(2,2))
         self.input_path_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
         # --- Output Location Frame ---
@@ -484,7 +708,7 @@ class MP4Processor(Module):
         options_frame.pack(fill=tk.X, padx=5, pady=5)
         processing_mode_label = ttk.Label(options_frame, text="Mode:")
         processing_mode_label.pack(side=tk.LEFT, padx=(0,5), pady=5)
-        processing_options = ["Convert to Frames", "Extract to MP3", "Extract to OGG", "Split MP4", "Remove Background"]
+        processing_options = ["Convert to Frames", "Extract to MP3", "Extract to OGG", "Split MP4", "Remove Background", "Merge Media"]
         self.processing_mode_combobox = ttk.Combobox(options_frame, textvariable=self.processing_mode_var, values=processing_options, state="readonly")
         self.processing_mode_combobox.pack(fill=tk.X, expand=True, padx=5, pady=5)
         self.processing_mode_combobox.current(0)
@@ -492,7 +716,7 @@ class MP4Processor(Module):
 
         # --- Dynamic Options Frame ---
         self.dynamic_options_frame = ttk.Frame(content_frame, padding=(5,5))
-        self.dynamic_options_frame.pack(fill=tk.X, padx=5, pady=(0,5))
+        self.dynamic_options_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=(0,5))
 
         # --- Specific Controls for "Convert to Frames" ---
         self.frames_options_frame = ttk.Frame(self.dynamic_options_frame)
@@ -509,7 +733,7 @@ class MP4Processor(Module):
         self.split_options_frame = ttk.Frame(self.dynamic_options_frame)
         split_points_label_frame = ttk.Frame(self.split_options_frame)
         split_points_label_frame.pack(fill=tk.X, pady=(0,2))
-        split_points_label = ttk.Label(split_points_label_frame, text="Split Points (e.g., 00:00:10-00:00:20, 00:00:30-00:00:45):")
+        split_points_label = ttk.Label(split_points_label_frame, text="Split Points (e.g., 0:10-0:20, 0:30-0:45):")
         split_points_label.pack(side=tk.LEFT)
         self.split_points_text = tk.Text(self.split_options_frame, height=3, relief=tk.SUNKEN, borderwidth=1)
         self.split_points_text.pack(fill=tk.X, pady=(0,5))
@@ -519,6 +743,30 @@ class MP4Processor(Module):
         segments_label.pack(side=tk.LEFT, padx=(0,5))
         self.segments_to_save_entry = ttk.Entry(segments_to_save_frame, textvariable=self.segments_to_save_var)
         self.segments_to_save_entry.pack(fill=tk.X, expand=True)
+
+        # --- Specific Controls for "Merge Media" ---
+        self.merge_options_frame = ttk.Frame(self.dynamic_options_frame)
+        # Listbox with scrollbar
+        list_frame = ttk.LabelFrame(self.merge_options_frame, text="Files to Merge (in order)", padding=(10, 5))
+        list_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        self.merge_listbox = tk.Listbox(list_frame, selectmode=tk.SINGLE, height=6)
+        self.merge_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.merge_listbox.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.merge_listbox.config(yscrollcommand=scrollbar.set)
+        # Buttons
+        button_frame = ttk.Frame(self.merge_options_frame)
+        button_frame.pack(fill=tk.X, pady=5)
+        ttk.Button(button_frame, text="Add Files...", command=self._merge_add_files).pack(side=tk.LEFT, padx=2)
+        ttk.Button(button_frame, text="Remove Selected", command=self._merge_remove_selected).pack(side=tk.LEFT, padx=2)
+        ttk.Button(button_frame, text="Move Up", command=self._merge_move_up).pack(side=tk.LEFT, padx=2)
+        ttk.Button(button_frame, text="Move Down", command=self._merge_move_down).pack(side=tk.LEFT, padx=2)
+        # Output filename
+        output_name_frame = ttk.Frame(self.merge_options_frame)
+        output_name_frame.pack(fill=tk.X, pady=(5,0))
+        ttk.Label(output_name_frame, text="Output Filename:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Entry(output_name_frame, textvariable=self.merge_output_filename_var).pack(fill=tk.X, expand=True)
+
 
         # --- Process Button ---
         self.process_button = ttk.Button(content_frame, text="Start Processing", command=self._start_processing)
