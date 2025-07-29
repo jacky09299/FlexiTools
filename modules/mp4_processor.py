@@ -450,7 +450,7 @@ class MP4Processor(Module):
                 self._log_status(f"Output filename adjusted for audio: {output_path}")
 
             self._log_status("Concatenation complete. Writing to audio file...")
-            final_clip.write_audiofile(output_path, logger='bar')
+            final_clip.write_audiofile(output_path, logger=None)
 
             self._log_status(f"Successfully merged audio to: {output_path}")
             return True
@@ -522,7 +522,7 @@ class MP4Processor(Module):
             final_clip = concatenate_videoclips(clips, method="compose")
 
             self._log_status("Writing final video file...")
-            final_clip.write_videofile(output_path, codec="libx264", audio_codec="aac", threads=4, logger='bar')
+            final_clip.write_videofile(output_path, codec="libx264", audio_codec="aac", threads=4, logger=None)
 
             self._log_status(f"Successfully merged video to: {output_path}")
             return True
