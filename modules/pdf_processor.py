@@ -329,18 +329,8 @@ class PdfProcessorModule(Module):
             self.shared_state.log("Split Tab: No valid page ranges parsed.", "ERROR")
             return None
 
-        parsed_ranges.sort(key=lambda x: x[0])
-        merged_ranges = []
-        if not parsed_ranges: # Should not happen if previous check is there, but defensive
-            return []
-
-        for r_start, r_end in parsed_ranges:
-            if not merged_ranges or r_start > merged_ranges[-1][1] + 1:
-                merged_ranges.append([r_start, r_end])
-            else:
-                merged_ranges[-1][1] = max(merged_ranges[-1][1], r_end)
-
-        return [(s, e) for s, e in merged_ranges]
+        # 移除自動合併區間的邏輯，直接回傳所有區間
+        return parsed_ranges
 
 
     def _execute_split_pdf(self):
