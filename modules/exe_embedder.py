@@ -42,15 +42,34 @@ class ExeEmbedderModule(Module):
 
         self.create_ui()
 
+        # Add event bindings for the hover menu
+        self.hide_menu_timer = None
+        # We assume the Module base class creates a title_label widget.
+        # If not, this feature will not activate, and the menu will be shown by default.
+        if hasattr(self, 'title_label'):
+            self.title_label.bind("<Enter>", self.show_menu)
+            self.title_label.bind("<Leave>", self.schedule_hide_menu)
+            self.menu_frame.bind("<Enter>", self.cancel_hide_menu)
+            self.menu_frame.bind("<Leave>", self.schedule_hide_menu)
+        else:
+            self.shared_state.log("Warning: ExeEmbedderModule could not find 'title_label' to bind hover menu.")
+            # As a fallback, show the menu permanently if the title_label is not found.
+            self.show_menu()
+
     def create_ui(self):
-        """Create the user interface, now with a scrollable area."""
+        """Create the user interface, with a hover-activated menu to save space."""
         main_frame = ttk.Frame(self.frame, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
         main_frame.columnconfigure(0, weight=1)
-        main_frame.rowconfigure(2, weight=1)
+        main_frame.rowconfigure(1, weight=1)  # Row 1 (scroll area) will expand
 
-        # Top frame for script management
-        script_frame = ttk.Frame(main_frame)
+        # --- Start of Hover Menu ---
+        self.menu_frame = ttk.Frame(main_frame)
+        # This frame will be gridded in/out by show_menu/hide_menu
+        self.menu_frame.columnconfigure(1, weight=1)
+
+        # Script management (now inside menu_frame)
+        script_frame = ttk.Frame(self.menu_frame)
         script_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 5))
         script_frame.columnconfigure(1, weight=1)
 
@@ -67,8 +86,8 @@ class ExeEmbedderModule(Module):
 
         self.populate_scripts_dropdown()
 
-        # Top frame for file selection
-        top_frame = ttk.Frame(main_frame)
+        # File selection (now inside menu_frame)
+        top_frame = ttk.Frame(self.menu_frame)
         top_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
         top_frame.columnconfigure(1, weight=1)
 
@@ -77,10 +96,11 @@ class ExeEmbedderModule(Module):
 
         self.file_label = ttk.Label(top_frame, text="尚未選擇檔案", anchor="w")
         self.file_label.pack(side="left", fill="x", expand=True)
+        # --- End of Hover Menu ---
 
         # Host frame for the canvas and scrollbars
         scroll_host_frame = ttk.Frame(main_frame, relief="sunken")
-        scroll_host_frame.grid(row=2, column=0, columnspan=2, sticky="nsew", pady=(0, 5))
+        scroll_host_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(0, 5))
         scroll_host_frame.grid_rowconfigure(0, weight=1)
         scroll_host_frame.grid_columnconfigure(0, weight=1)
 
@@ -100,11 +120,31 @@ class ExeEmbedderModule(Module):
 
         # Bottom frame for execution button
         bottom_frame = ttk.Frame(main_frame)
-        bottom_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(5, 0))
+        bottom_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(5, 0))
         bottom_frame.columnconfigure(0, weight=1)
 
         self.run_button = ttk.Button(bottom_frame, text="執行", command=self.run_exe, state=tk.DISABLED)
         self.run_button.grid(row=0, column=0)
+
+    def show_menu(self, event=None):
+        """Shows the control menu."""
+        self.cancel_hide_menu()
+        self.menu_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+
+    def hide_menu(self, event=None):
+        """Hides the control menu."""
+        self.menu_frame.grid_remove()
+
+    def schedule_hide_menu(self, event=None):
+        """Schedules the menu to be hidden after a short delay."""
+        self.cancel_hide_menu()
+        self.hide_menu_timer = self.master.after(100, self.hide_menu)
+
+    def cancel_hide_menu(self, event=None):
+        """Cancels a scheduled menu hide action."""
+        if self.hide_menu_timer:
+            self.master.after_cancel(self.hide_menu_timer)
+            self.hide_menu_timer = None
 
     def add_script_to_pool(self):
         """Adds the currently loaded external script to the scripts directory."""
