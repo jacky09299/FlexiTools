@@ -14,6 +14,7 @@ GWL_STYLE = -16
 WS_CAPTION = 0x00C00000
 WS_THICKFRAME = 0x00040000
 WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+WM_CLOSE = 0x0010
 
 class RECT(ctypes.Structure):
     _fields_ = [
@@ -147,18 +148,24 @@ class ExeEmbedderModule(Module):
         """Cleanup function to be called when the module is closed."""
         self.shared_state.log(f"ExeEmbedderModule '{self.module_name}' is being destroyed.")
         if self.embedded_hwnd:
-            user32.SetParent(self.embedded_hwnd, 0)
-        self.embedded_hwnd = None
+            # Attempt to gracefully close the embedded window by sending WM_CLOSE
+            user32.PostMessageW(self.embedded_hwnd, WM_CLOSE, 0, 0)
+            self.embedded_hwnd = None
 
         if self.process:
             try:
+                # Wait a moment for the process to terminate gracefully
+                self.process.wait(timeout=0.5)
+            except (subprocess.TimeoutExpired, Exception):
+                # If it's still running, force terminate
                 if self.process.poll() is None:
-                    self.process.terminate()
-                    self.process.wait(timeout=0.5)
-                    if self.process.poll() is None:
-                        self.process.kill()
-            except Exception as e:
-                self.shared_state.log(f"Error terminating process: {e}")
+                    try:
+                        self.process.terminate()
+                        self.process.wait(timeout=0.5)
+                        if self.process.poll() is None:
+                            self.process.kill()
+                    except Exception as e:
+                        self.shared_state.log(f"Error forcefully terminating process: {e}")
             self.process = None
         
         self.selected_file_path.set("")
