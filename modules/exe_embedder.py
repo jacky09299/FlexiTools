@@ -57,50 +57,10 @@ class ExeEmbedderModule(Module):
             self.show_menu()
 
     def create_ui(self):
-        """Create the user interface, with a hover-activated menu to save space."""
-        main_frame = ttk.Frame(self.frame, padding="10")
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        main_frame.columnconfigure(0, weight=1)
-        main_frame.rowconfigure(1, weight=1)  # Row 1 (scroll area) will expand
-
-        # --- Start of Hover Menu ---
-        self.menu_frame = ttk.Frame(main_frame)
-        # This frame will be gridded in/out by show_menu/hide_menu
-        self.menu_frame.columnconfigure(1, weight=1)
-
-        # Script management (now inside menu_frame)
-        script_frame = ttk.Frame(self.menu_frame)
-        script_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 5))
-        script_frame.columnconfigure(1, weight=1)
-
-        self.add_button = ttk.Button(script_frame, text="加入程式組", command=self.add_script_to_pool, state=tk.DISABLED)
-        self.add_button.grid(row=0, column=0, padx=(0, 5))
-
-        self.script_var = tk.StringVar()
-        self.script_combo = ttk.Combobox(script_frame, textvariable=self.script_var, state="readonly")
-        self.script_combo.grid(row=0, column=1, sticky="ew", padx=(0, 5))
-        self.script_combo.bind("<<ComboboxSelected>>", self.on_script_select)
-
-        delete_button = ttk.Button(script_frame, text="刪除選定", command=self.delete_selected_script)
-        delete_button.grid(row=0, column=2, padx=(0, 5))
-
-        self.populate_scripts_dropdown()
-
-        # File selection (now inside menu_frame)
-        top_frame = ttk.Frame(self.menu_frame)
-        top_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
-        top_frame.columnconfigure(1, weight=1)
-
-        select_button = ttk.Button(top_frame, text="選擇外部 .exe 檔案", command=self.select_external_exe)
-        select_button.pack(side="left", padx=(0, 10))
-
-        self.file_label = ttk.Label(top_frame, text="尚未選擇檔案", anchor="w")
-        self.file_label.pack(side="left", fill="x", expand=True)
-        # --- End of Hover Menu ---
-
-        # Host frame for the canvas and scrollbars
-        scroll_host_frame = ttk.Frame(main_frame, relief="sunken")
-        scroll_host_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(0, 5))
+        """Create the user interface, with an overlay hover-activated menu to save space."""
+        # Host frame for the canvas and scrollbars (the main content)
+        scroll_host_frame = ttk.Frame(self.frame, relief="sunken")
+        scroll_host_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         scroll_host_frame.grid_rowconfigure(0, weight=1)
         scroll_host_frame.grid_columnconfigure(0, weight=1)
 
@@ -118,22 +78,42 @@ class ExeEmbedderModule(Module):
         self.embed_target_frame = ttk.Frame(self.canvas)
         self.canvas.create_window((0, 0), window=self.embed_target_frame, anchor="nw")
 
-        # Bottom frame for execution button
-        bottom_frame = ttk.Frame(main_frame)
-        bottom_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(5, 0))
-        bottom_frame.columnconfigure(0, weight=1)
+        # --- Start of Overlay Hover Menu ---
+        # The menu is a child of self.frame, so it can be placed on top of scroll_host_frame
+        self.menu_frame = ttk.Frame(self.frame, relief="raised", borderwidth=1, padding=5)
+        self.menu_frame.columnconfigure(1, weight=1)
 
-        self.run_button = ttk.Button(bottom_frame, text="執行", command=self.run_exe, state=tk.DISABLED)
-        self.run_button.grid(row=0, column=0)
+        # Row 0: Script management
+        self.add_button = ttk.Button(self.menu_frame, text="加入程式組", command=self.add_script_to_pool, state=tk.DISABLED)
+        self.add_button.grid(row=0, column=0, padx=(0, 5), pady=(0,5))
+        self.script_var = tk.StringVar()
+        self.script_combo = ttk.Combobox(self.menu_frame, textvariable=self.script_var, state="readonly")
+        self.script_combo.grid(row=0, column=1, sticky="ew", padx=(0, 5), pady=(0,5))
+        self.script_combo.bind("<<ComboboxSelected>>", self.on_script_select)
+        delete_button = ttk.Button(self.menu_frame, text="刪除選定", command=self.delete_selected_script)
+        delete_button.grid(row=0, column=2, padx=(0, 5), pady=(0,5))
+        self.populate_scripts_dropdown()
+
+        # Row 1: File selection
+        select_button = ttk.Button(self.menu_frame, text="選擇外部 .exe 檔案", command=self.select_external_exe)
+        select_button.grid(row=1, column=0, padx=(0, 5), pady=(0,5))
+        self.file_label = ttk.Label(self.menu_frame, text="尚未選擇檔案", anchor="w")
+        self.file_label.grid(row=1, column=1, columnspan=2, sticky="ew", padx=(0, 5), pady=(0,5))
+
+        # Row 2: Run button
+        self.run_button = ttk.Button(self.menu_frame, text="執行", command=self.run_exe, state=tk.DISABLED)
+        self.run_button.grid(row=2, column=0, columnspan=3, sticky="ew", pady=(0,5))
+        # --- End of Overlay Hover Menu ---
 
     def show_menu(self, event=None):
-        """Shows the control menu."""
+        """Shows the control menu as an overlay."""
         self.cancel_hide_menu()
-        self.menu_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        # Place the menu at the top of the parent frame (self.frame), spanning its width.
+        self.menu_frame.place(x=0, y=0, relwidth=1.0)
 
     def hide_menu(self, event=None):
-        """Hides the control menu."""
-        self.menu_frame.grid_remove()
+        """Hides the control menu overlay."""
+        self.menu_frame.place_forget()
 
     def schedule_hide_menu(self, event=None):
         """Schedules the menu to be hidden after a short delay."""
@@ -239,7 +219,7 @@ class ExeEmbedderModule(Module):
         """Open a file dialog to select an external .exe file."""
         filepath = filedialog.askopenfilename(
             title="選擇一個 .exe 檔案",
-            filetypes=[("Executable files", "*.exe"), ("All files", "*.*")],
+            filetypes=[("Executable files", "*.exe"), ("All files", "*.* ")],
             parent=self.frame
         )
         if not filepath:
