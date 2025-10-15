@@ -68,6 +68,7 @@ class PlotGUIModule(Module): # Changed class definition
         self.var_y_scale_mode = tk.StringVar(value='Linear')
         self.var_custom_title = tk.StringVar()
         self.var_show_legend = tk.BooleanVar(value=True)
+        self.var_line_width = tk.DoubleVar(value=1.0)
 
 
         self.fig, self.ax = plt.subplots(figsize=(6.4, 4.8)) # Keep this early for canvas
@@ -173,7 +174,9 @@ class PlotGUIModule(Module): # Changed class definition
         ttk.Entry(frame_style, textvariable=self.var_marker_size, width=8).grid(row=0, column=1, sticky='e')
         ttk.Checkbutton(frame_style, text="Draw Points", variable=self.var_draw_points).grid(row=1, column=0, columnspan=2, sticky='w')
         ttk.Checkbutton(frame_style, text="Draw Lines", variable=self.var_draw_lines).grid(row=2, column=0, columnspan=2, sticky='w')
-        ttk.Checkbutton(frame_style, text="Show Legend", variable=self.var_show_legend).grid(row=3, column=0, columnspan=2, sticky='w')
+        ttk.Label(frame_style, text="Line Width:").grid(row=3, column=0, sticky='w')
+        ttk.Entry(frame_style, textvariable=self.var_line_width, width=8).grid(row=3, column=1, sticky='e')
+        ttk.Checkbutton(frame_style, text="Show Legend", variable=self.var_show_legend).grid(row=4, column=0, columnspan=2, sticky='w')
 
         # --- Grid and Scale options (left, below style) ---
         frame_grid = ttk.LabelFrame(self.frame_left, text="Grid & Scale")
@@ -305,6 +308,7 @@ class PlotGUIModule(Module): # Changed class definition
         linestyle = '-' if self.var_draw_lines.get() else 'None'
         marker = 'o' if self.var_draw_points.get() else 'None'
         markersize = self.var_marker_size.get()
+        linewidth = self.var_line_width.get()
 
         for idx in sel:
             col = self.curve_cols[idx]
@@ -313,7 +317,8 @@ class PlotGUIModule(Module): # Changed class definition
                          label=col,
                          marker=marker,
                          markersize=markersize,
-                         linestyle=linestyle)
+                         linestyle=linestyle,
+                         linewidth=linewidth)
 
         # --- X axis label logic ---
         x_label_from_col_header = re.sub(r"\s*\(.*?\)", "", self.x_col).strip()
