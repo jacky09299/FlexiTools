@@ -66,6 +66,7 @@ class PlotGUIModule(Module): # Changed class definition
         self.var_show_grid = tk.BooleanVar(value=True) # Default from original code
         self.var_x_scale_mode = tk.StringVar(value='Linear')
         self.var_y_scale_mode = tk.StringVar(value='Linear')
+        self.var_custom_title = tk.StringVar()
 
 
         self.fig, self.ax = plt.subplots(figsize=(6.4, 4.8)) # Keep this early for canvas
@@ -73,12 +74,32 @@ class PlotGUIModule(Module): # Changed class definition
         self.create_ui() # Call create_ui
 
     def create_ui(self): # New method for UI creation
-        # --- Main layout frames ---
-        # self.frame is provided by the Module base class
-        self.frame_top = ttk.Frame(self.frame) # Parent to self.frame
+        # --- Create a canvas with scrollbars ---
+        canvas = tk.Canvas(self.frame)
+        scrollbar_y = ttk.Scrollbar(self.frame, orient="vertical", command=canvas.yview)
+        scrollbar_x = ttk.Scrollbar(self.frame, orient="horizontal", command=canvas.xview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
+
+        scrollbar_y.pack(side="right", fill="y")
+        scrollbar_x.pack(side="bottom", fill="x")
+        canvas.pack(side="left", fill="both", expand=True)
+
+
+        # --- Main layout frames (now inside scrollable_frame) ---
+        self.frame_top = ttk.Frame(scrollable_frame)
         self.frame_top.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
 
-        self.frame_center = ttk.Frame(self.frame) # Parent to self.frame
+        self.frame_center = ttk.Frame(scrollable_frame)
         self.frame_center.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         self.frame_left = ttk.Frame(self.frame_center)
@@ -87,7 +108,7 @@ class PlotGUIModule(Module): # Changed class definition
         self.frame_plot = ttk.Frame(self.frame_center)
         self.frame_plot.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        self.frame_bottom = ttk.Frame(self.frame) # Parent to self.frame
+        self.frame_bottom = ttk.Frame(scrollable_frame)
         self.frame_bottom.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
 
         # --- Top controls: Load (左), Plot (左下), 曲線選擇 (右) ---
@@ -104,10 +125,15 @@ class PlotGUIModule(Module): # Changed class definition
         self.btn_save.pack(side=tk.TOP, padx=2, pady=(2, 6), anchor='w')
 
 
-        frame_curve = ttk.Frame(self.frame_top)
-        frame_curve.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        ttk.Label(frame_curve, text="Select curves to plot:").pack(anchor='w', padx=2)
-        self.listbox = tk.Listbox(frame_curve, selectmode=tk.MULTIPLE, exportselection=False, height=4)
+        frame_right_top = ttk.Frame(self.frame_top)
+        frame_right_top.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5,0))
+
+        ttk.Label(frame_right_top, text="Custom Title:").pack(anchor='w', padx=2)
+        self.entry_title = ttk.Entry(frame_right_top, textvariable=self.var_custom_title)
+        self.entry_title.pack(fill=tk.X, padx=2, pady=(0, 5))
+
+        ttk.Label(frame_right_top, text="Select curves to plot:").pack(anchor='w', padx=2)
+        self.listbox = tk.Listbox(frame_right_top, selectmode=tk.MULTIPLE, exportselection=False, height=4)
         self.listbox.pack(fill=tk.X, padx=2, expand=True)
 
         # --- Y axis controls (left, vertically centered) ---
@@ -271,7 +297,13 @@ class PlotGUIModule(Module): # Changed class definition
         self.fig.clear()
         self.ax = self.fig.add_subplot(111)
 
-        x_data_column = self.df[self.x_col]
+        # --- Data Transformation for log10 data ---
+        x_scale_mode = self.var_x_scale_mode.get()
+        y_scale_mode = self.var_y_scale_mode.get()
+
+        x_data = self.df[self.x_col]
+        if x_scale_mode == 'Data is log10':
+            x_data = 10**x_data
 
         # --- Plotting logic with new style options ---
         linestyle = '-' if self.var_draw_lines.get() else 'None'
@@ -280,8 +312,10 @@ class PlotGUIModule(Module): # Changed class definition
 
         for idx in sel:
             col = self.curve_cols[idx]
-            y_data_column = self.df[col]
-            self.ax.plot(x_data_column, y_data_column,
+            y_data = self.df[col]
+            if y_scale_mode == 'Data is log10':
+                y_data = 10**y_data
+            self.ax.plot(x_data, y_data,
                          label=col,
                          marker=marker,
                          markersize=markersize,
@@ -367,34 +401,28 @@ class PlotGUIModule(Module): # Changed class definition
         else:
             self.ax.set_ylabel(f"${final_y_label_text}$")
 
+        # --- Title Logic ---
+        custom_title = self.var_custom_title.get().strip()
+        if custom_title:
+            self.ax.set_title(f"${custom_title}$")
+        else:
+            self.ax.set_title(f"${final_y_label_text}$ vs ${final_x_label_text}$")
 
-        self.ax.set_title(f"${final_y_label_text}$ vs ${final_x_label_text}$")
         self.ax.legend()
 
         # --- Grid and Scale Logic ---
-        def power_of_10_formatter(x, pos):
-            return f"$10^{{{int(x)}}}$"
-
-        # X-axis
-        x_scale_mode = self.var_x_scale_mode.get()
-        if x_scale_mode == 'Logarithmic Axis':
+        if x_scale_mode in ['Logarithmic Axis', 'Data is log10']:
             self.ax.set_xscale('log')
         else:
             self.ax.set_xscale('linear')
-            if x_scale_mode == 'Data is log10':
-                self.ax.xaxis.set_major_formatter(mticker.FuncFormatter(power_of_10_formatter))
 
-        # Y-axis
-        y_scale_mode = self.var_y_scale_mode.get()
-        if y_scale_mode == 'Logarithmic Axis':
+        if y_scale_mode in ['Logarithmic Axis', 'Data is log10']:
             self.ax.set_yscale('log')
         else:
             self.ax.set_yscale('linear')
-            if y_scale_mode == 'Data is log10':
-                self.ax.yaxis.set_major_formatter(mticker.FuncFormatter(power_of_10_formatter))
 
         if self.var_show_grid.get():
-            self.ax.grid(True, which='both', linestyle='--', alpha=0.7) # 'both' for major and minor ticks
+            self.ax.grid(True, which='both', linestyle='--', alpha=0.7)
         else:
             self.ax.grid(False)
 
