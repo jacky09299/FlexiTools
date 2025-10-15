@@ -67,6 +67,7 @@ class PlotGUIModule(Module): # Changed class definition
         self.var_x_scale_mode = tk.StringVar(value='Linear')
         self.var_y_scale_mode = tk.StringVar(value='Linear')
         self.var_custom_title = tk.StringVar()
+        self.var_show_legend = tk.BooleanVar(value=True)
 
 
         self.fig, self.ax = plt.subplots(figsize=(6.4, 4.8)) # Keep this early for canvas
@@ -172,12 +173,13 @@ class PlotGUIModule(Module): # Changed class definition
         ttk.Entry(frame_style, textvariable=self.var_marker_size, width=8).grid(row=0, column=1, sticky='e')
         ttk.Checkbutton(frame_style, text="Draw Points", variable=self.var_draw_points).grid(row=1, column=0, columnspan=2, sticky='w')
         ttk.Checkbutton(frame_style, text="Draw Lines", variable=self.var_draw_lines).grid(row=2, column=0, columnspan=2, sticky='w')
+        ttk.Checkbutton(frame_style, text="Show Legend", variable=self.var_show_legend).grid(row=3, column=0, columnspan=2, sticky='w')
 
         # --- Grid and Scale options (left, below style) ---
         frame_grid = ttk.LabelFrame(self.frame_left, text="Grid & Scale")
         frame_grid.pack(anchor='n', pady=5, fill=tk.X)
 
-        scale_modes = ['Linear', 'Logarithmic Axis', 'Data is log10']
+        scale_modes = ['Linear', 'Logarithmic Axis']
 
         ttk.Checkbutton(frame_grid, text="Show Grid", variable=self.var_show_grid).grid(row=0, column=0, columnspan=2, sticky='w')
 
@@ -297,13 +299,7 @@ class PlotGUIModule(Module): # Changed class definition
         self.fig.clear()
         self.ax = self.fig.add_subplot(111)
 
-        # --- Data Transformation for log10 data ---
-        x_scale_mode = self.var_x_scale_mode.get()
-        y_scale_mode = self.var_y_scale_mode.get()
-
         x_data = self.df[self.x_col]
-        if x_scale_mode == 'Data is log10':
-            x_data = 10**x_data
 
         # --- Plotting logic with new style options ---
         linestyle = '-' if self.var_draw_lines.get() else 'None'
@@ -313,8 +309,6 @@ class PlotGUIModule(Module): # Changed class definition
         for idx in sel:
             col = self.curve_cols[idx]
             y_data = self.df[col]
-            if y_scale_mode == 'Data is log10':
-                y_data = 10**y_data
             self.ax.plot(x_data, y_data,
                          label=col,
                          marker=marker,
@@ -408,15 +402,19 @@ class PlotGUIModule(Module): # Changed class definition
         else:
             self.ax.set_title(f"${final_y_label_text}$ vs ${final_x_label_text}$")
 
-        self.ax.legend()
+        if self.var_show_legend.get():
+            self.ax.legend()
 
         # --- Grid and Scale Logic ---
-        if x_scale_mode in ['Logarithmic Axis', 'Data is log10']:
+        x_scale_mode = self.var_x_scale_mode.get()
+        y_scale_mode = self.var_y_scale_mode.get()
+
+        if x_scale_mode == 'Logarithmic Axis':
             self.ax.set_xscale('log')
         else:
             self.ax.set_xscale('linear')
 
-        if y_scale_mode in ['Logarithmic Axis', 'Data is log10']:
+        if y_scale_mode == 'Logarithmic Axis':
             self.ax.set_yscale('log')
         else:
             self.ax.set_yscale('linear')
