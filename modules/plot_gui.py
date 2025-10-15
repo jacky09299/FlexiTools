@@ -355,7 +355,7 @@ class PlotGUIModule(Module): # Changed class definition
 
 
         if final_x_unit_text:
-            self.ax.set_xlabel(f"${final_x_label_text} \\, ({final_x_unit_text})$")
+            self.ax.set_xlabel(f"${final_x_label_text}$ $\\mathrm{{({final_x_unit_text})}}$")
         else:
             self.ax.set_xlabel(f"${final_x_label_text}$")
 
@@ -396,7 +396,7 @@ class PlotGUIModule(Module): # Changed class definition
 
 
         if final_y_unit_text:
-            self.ax.set_ylabel(f"${final_y_label_text} \\, ({final_y_unit_text})$")
+            self.ax.set_ylabel(f"${final_y_label_text}$ $\\mathrm{{({final_y_unit_text})}}$")
         else:
             self.ax.set_ylabel(f"${final_y_label_text}$")
 
