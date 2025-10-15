@@ -63,7 +63,7 @@ class PlotGUIModule(Module): # Changed class definition
         self.var_marker_size = tk.DoubleVar(value=5.0)
         self.var_draw_points = tk.BooleanVar(value=True)
         self.var_draw_lines = tk.BooleanVar(value=False)
-        self.var_show_grid = tk.BooleanVar(value=True) # Default from original code
+        self.var_show_grid = tk.BooleanVar(value=False) # Default from original code
         self.var_x_scale_mode = tk.StringVar(value='Linear')
         self.var_y_scale_mode = tk.StringVar(value='Linear')
         self.var_custom_title = tk.StringVar()
