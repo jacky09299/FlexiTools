@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import re
 from main import Module # Added import
@@ -30,6 +31,7 @@ quantity_units = {
     'Luminous Intensity': ['cd', 'mcd', 'μcd'],
     'Amount of Substance': ['mol', 'mmol', 'μmol', 'nmol'],
     'Data Size': ['bit', 'B', 'kB', 'MB', 'GB', 'TB'],
+    'Logarithmic': ['dB', 'dBm', 'dBW'],
     # 你可以根據需要繼續擴充
 }
 
@@ -62,8 +64,8 @@ class PlotGUIModule(Module): # Changed class definition
         self.var_draw_points = tk.BooleanVar(value=True)
         self.var_draw_lines = tk.BooleanVar(value=False)
         self.var_show_grid = tk.BooleanVar(value=True) # Default from original code
-        self.var_log_x = tk.BooleanVar(value=False)
-        self.var_log_y = tk.BooleanVar(value=False)
+        self.var_x_scale_mode = tk.StringVar(value='Linear')
+        self.var_y_scale_mode = tk.StringVar(value='Linear')
 
 
         self.fig, self.ax = plt.subplots(figsize=(6.4, 4.8)) # Keep this early for canvas
@@ -148,10 +150,20 @@ class PlotGUIModule(Module): # Changed class definition
         # --- Grid and Scale options (left, below style) ---
         frame_grid = ttk.LabelFrame(self.frame_left, text="Grid & Scale")
         frame_grid.pack(anchor='n', pady=5, fill=tk.X)
-        ttk.Checkbutton(frame_grid, text="Show Grid", variable=self.var_show_grid).grid(row=0, column=0, sticky='w')
-        ttk.Checkbutton(frame_grid, text="Log Scale X", variable=self.var_log_x).grid(row=1, column=0, sticky='w')
-        ttk.Checkbutton(frame_grid, text="Log Scale Y", variable=self.var_log_y).grid(row=2, column=0, sticky='w')
 
+        scale_modes = ['Linear', 'Logarithmic Axis', 'Data is log10']
+
+        ttk.Checkbutton(frame_grid, text="Show Grid", variable=self.var_show_grid).grid(row=0, column=0, columnspan=2, sticky='w')
+
+        ttk.Label(frame_grid, text="X Scale:").grid(row=1, column=0, sticky='w')
+        om_x_scale = ttk.OptionMenu(frame_grid, self.var_x_scale_mode, self.var_x_scale_mode.get(), *scale_modes)
+        om_x_scale.grid(row=1, column=1, sticky='ew')
+
+        ttk.Label(frame_grid, text="Y Scale:").grid(row=2, column=0, sticky='w')
+        om_y_scale = ttk.OptionMenu(frame_grid, self.var_y_scale_mode, self.var_y_scale_mode.get(), *scale_modes)
+        om_y_scale.grid(row=2, column=1, sticky='ew')
+
+        frame_grid.columnconfigure(1, weight=1)
 
         # --- Plot area (center) ---
         # self.fig, self.ax are initialized in __init__
@@ -360,18 +372,29 @@ class PlotGUIModule(Module): # Changed class definition
         self.ax.legend()
 
         # --- Grid and Scale Logic ---
-        if self.var_log_x.get():
+        def power_of_10_formatter(x, pos):
+            return f"$10^{{{int(x)}}}$"
+
+        # X-axis
+        x_scale_mode = self.var_x_scale_mode.get()
+        if x_scale_mode == 'Logarithmic Axis':
             self.ax.set_xscale('log')
         else:
             self.ax.set_xscale('linear')
+            if x_scale_mode == 'Data is log10':
+                self.ax.xaxis.set_major_formatter(mticker.FuncFormatter(power_of_10_formatter))
 
-        if self.var_log_y.get():
+        # Y-axis
+        y_scale_mode = self.var_y_scale_mode.get()
+        if y_scale_mode == 'Logarithmic Axis':
             self.ax.set_yscale('log')
         else:
             self.ax.set_yscale('linear')
+            if y_scale_mode == 'Data is log10':
+                self.ax.yaxis.set_major_formatter(mticker.FuncFormatter(power_of_10_formatter))
 
         if self.var_show_grid.get():
-            self.ax.grid(True, linestyle='--', alpha=0.7)
+            self.ax.grid(True, which='both', linestyle='--', alpha=0.7) # 'both' for major and minor ticks
         else:
             self.ax.grid(False)
 
