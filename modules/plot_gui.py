@@ -56,6 +56,16 @@ class PlotGUIModule(Module): # Changed class definition
         self.var_y_add_unit = tk.BooleanVar(value=True)
         self.var_y_replace_unit = tk.BooleanVar(value=False)
 
+        # New variables for plot style and saving
+        self.var_save_path = tk.StringVar(value="plot_figure.png")
+        self.var_marker_size = tk.DoubleVar(value=5.0)
+        self.var_draw_points = tk.BooleanVar(value=True)
+        self.var_draw_lines = tk.BooleanVar(value=False)
+        self.var_show_grid = tk.BooleanVar(value=True) # Default from original code
+        self.var_log_x = tk.BooleanVar(value=False)
+        self.var_log_y = tk.BooleanVar(value=False)
+
+
         self.fig, self.ax = plt.subplots(figsize=(6.4, 4.8)) # Keep this early for canvas
 
         self.create_ui() # Call create_ui
@@ -85,8 +95,12 @@ class PlotGUIModule(Module): # Changed class definition
         self.btn_load = ttk.Button(frame_left_top, text="Load Excel", command=self.load_excel)
         self.btn_load.pack(side=tk.TOP, padx=2, anchor='w')
 
-        self.btn_plot = ttk.Button(frame_left_top, text="Plot (Scatter)", command=self.plot_data)
-        self.btn_plot.pack(side=tk.TOP, padx=2, pady=(2, 6), anchor='w')
+        self.btn_plot = ttk.Button(frame_left_top, text="Plot", command=self.plot_data)
+        self.btn_plot.pack(side=tk.TOP, padx=2, pady=(2, 0), anchor='w')
+
+        self.btn_save = ttk.Button(frame_left_top, text="Save Plot", command=self.save_plot)
+        self.btn_save.pack(side=tk.TOP, padx=2, pady=(2, 6), anchor='w')
+
 
         frame_curve = ttk.Frame(self.frame_top)
         frame_curve.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -112,6 +126,32 @@ class PlotGUIModule(Module): # Changed class definition
         self.chk_y_add_unit.grid(row=4, column=0, columnspan=2, sticky='w')
         self.chk_y_replace_unit = ttk.Checkbutton(frame_y, text="取代單位", variable=self.var_y_replace_unit)
         self.chk_y_replace_unit.grid(row=5, column=0, columnspan=2, sticky='w')
+
+        # --- Save options (left, below Y axis) ---
+        frame_save = ttk.LabelFrame(self.frame_left, text="Save Options")
+        frame_save.pack(anchor='n', pady=5, fill=tk.X)
+        ttk.Label(frame_save, text="Path:").grid(row=0, column=0, sticky='w')
+        entry_save = ttk.Entry(frame_save, textvariable=self.var_save_path, width=20) # Reduced width
+        entry_save.grid(row=1, column=0, sticky='ew')
+        btn_browse = ttk.Button(frame_save, text="Browse...", command=self.select_save_path)
+        btn_browse.grid(row=1, column=1, sticky='w', padx=(2,0))
+        frame_save.columnconfigure(0, weight=1)
+
+        # --- Plot style options (left, below save) ---
+        frame_style = ttk.LabelFrame(self.frame_left, text="Plot Style")
+        frame_style.pack(anchor='n', pady=5, fill=tk.X)
+        ttk.Label(frame_style, text="Marker Size:").grid(row=0, column=0, sticky='w')
+        ttk.Entry(frame_style, textvariable=self.var_marker_size, width=8).grid(row=0, column=1, sticky='e')
+        ttk.Checkbutton(frame_style, text="Draw Points", variable=self.var_draw_points).grid(row=1, column=0, columnspan=2, sticky='w')
+        ttk.Checkbutton(frame_style, text="Draw Lines", variable=self.var_draw_lines).grid(row=2, column=0, columnspan=2, sticky='w')
+
+        # --- Grid and Scale options (left, below style) ---
+        frame_grid = ttk.LabelFrame(self.frame_left, text="Grid & Scale")
+        frame_grid.pack(anchor='n', pady=5, fill=tk.X)
+        ttk.Checkbutton(frame_grid, text="Show Grid", variable=self.var_show_grid).grid(row=0, column=0, sticky='w')
+        ttk.Checkbutton(frame_grid, text="Log Scale X", variable=self.var_log_x).grid(row=1, column=0, sticky='w')
+        ttk.Checkbutton(frame_grid, text="Log Scale Y", variable=self.var_log_y).grid(row=2, column=0, sticky='w')
+
 
         # --- Plot area (center) ---
         # self.fig, self.ax are initialized in __init__
@@ -221,10 +261,19 @@ class PlotGUIModule(Module): # Changed class definition
 
         x_data_column = self.df[self.x_col]
 
+        # --- Plotting logic with new style options ---
+        linestyle = '-' if self.var_draw_lines.get() else 'None'
+        marker = 'o' if self.var_draw_points.get() else 'None'
+        markersize = self.var_marker_size.get()
+
         for idx in sel:
             col = self.curve_cols[idx]
             y_data_column = self.df[col]
-            self.ax.scatter(x_data_column, y_data_column, label=col)
+            self.ax.plot(x_data_column, y_data_column,
+                         label=col,
+                         marker=marker,
+                         markersize=markersize,
+                         linestyle=linestyle)
 
         # --- X axis label logic ---
         x_label_from_col_header = re.sub(r"\s*\(.*?\)", "", self.x_col).strip()
@@ -309,12 +358,57 @@ class PlotGUIModule(Module): # Changed class definition
 
         self.ax.set_title(f"${final_y_label_text}$ vs ${final_x_label_text}$")
         self.ax.legend()
-        self.ax.grid(True, linestyle='--', alpha=0.7)
+
+        # --- Grid and Scale Logic ---
+        if self.var_log_x.get():
+            self.ax.set_xscale('log')
+        else:
+            self.ax.set_xscale('linear')
+
+        if self.var_log_y.get():
+            self.ax.set_yscale('log')
+        else:
+            self.ax.set_yscale('linear')
+
+        if self.var_show_grid.get():
+            self.ax.grid(True, linestyle='--', alpha=0.7)
+        else:
+            self.ax.grid(False)
+
         self.canvas.draw()
-        
+        # The savefig call is now removed from here and will be in save_plot
+
+    def select_save_path(self):
+        """Opens a file dialog to select the save path for the plot."""
+        # Suggest a filename and extension
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[
+                ("PNG files", "*.png"),
+                ("JPEG files", "*.jpg;*.jpeg"),
+                ("SVG files", "*.svg"),
+                ("PDF files", "*,pdf"),
+                ("All files", "*.*"),
+            ],
+            initialfile=self.var_save_path.get(),
+            title="Save Plot As"
+        )
+        if file_path:
+            self.var_save_path.set(file_path)
+
+    def save_plot(self):
+        """Saves the current plot to the path specified in the UI."""
+        save_path = self.var_save_path.get()
+        if not save_path:
+            messagebox.showerror("Save Error", "No save path specified.")
+            return
+
         try:
-            self.fig.savefig("plot_figure.png", dpi=150)
+            # Using a tight bbox is often good for saved figures.
+            self.fig.savefig(save_path, dpi=300, bbox_inches='tight')
+            messagebox.showinfo("Success", f"Plot saved successfully to:\n{save_path}")
         except Exception as e:
-            messagebox.showerror("Save Plot Error", f"Could not save plot: {e}")
+            messagebox.showerror("Save Plot Error", f"Could not save plot to '{save_path}':\n{e}")
+
 
 # Removed __main__ block
