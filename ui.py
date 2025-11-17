@@ -20,6 +20,7 @@ except ImportError:
 # Attempt to import update_manager and its components
 try:
     import update_manager
+    from update_manager import get_saves_dir
 except ImportError:
     print("ERROR: update_manager.py not found in ui.py. Update functionality will be disabled.")
     print(f"Current sys.path in ui.py: {sys.path}")
@@ -38,6 +39,12 @@ except ImportError:
         @staticmethod
         def check_for_updates(force_check=False): return update_manager.ERROR_CONFIG
         APP_NAME = "FlexiTools"
+    def get_saves_dir(app_name="FlexiTools"):
+        # Fallback implementation if update_manager is not found
+        import os
+        fallback_dir = os.path.join(os.getcwd(), "user_data", "saves")
+        os.makedirs(fallback_dir, exist_ok=True)
+        return fallback_dir
 
 
 from shared_state import SharedState
@@ -509,15 +516,7 @@ class ModularGUI:
         if self.shared_state:
             self.shared_state.set_log_callback(self.update_status_bar_log)
 
-        self.saves_dir = os.path.join("modules", "saves")
-        if not os.path.exists(self.saves_dir):
-            try:
-                os.makedirs(self.saves_dir)
-                self.shared_state.log(f"Created saves directory: {self.saves_dir}", "INFO")
-            except Exception as e_mkdir:
-                 self.shared_state.log(f"Failed to create saves_dir '{self.saves_dir}': {e_mkdir}", "ERROR")
-                 self.saves_dir = "."
-
+        self.saves_dir = get_saves_dir()
         self.shared_state.log(f"Application saves directory set to: {self.saves_dir}", "INFO")
 
         self.menu_frame = tk.Frame(self.content_frame, bg=COLOR_MENU_BAR_BG)

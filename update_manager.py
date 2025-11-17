@@ -17,18 +17,16 @@ if not logger.handlers:
 # --- Configuration ---
 APP_NAME = "FlexiTools"
 
-def get_user_writable_data_path(app_name: str = APP_NAME) -> Optional[str]:
+def get_saves_dir(app_name: str = APP_NAME) -> str:
     """
-    Returns a user-specific writable directory path for application data.
-    Creates the directory (app_name) and a 'saves' subdirectory within it if they don't exist.
-    Example: %LOCALAPPDATA%\\FlexiTools or ~/.local/share/FlexiTools
-    The 'saves' folder will be inside this path.
+    Returns a user-specific writable directory for application data.
+    Creates the directory if it doesn't exist.
+    Example: %LOCALAPPDATA%\\FlexiTools\\saves or ~/.local/share/FlexiTools/saves
     """
     base_dir = ""
     if os.name == 'nt':  # Windows
         base_dir = os.getenv('LOCALAPPDATA', '')
     else:  # Linux, macOS
-        # Use XDG Base Directory Specification if possible
         xdg_data_home = os.getenv('XDG_DATA_HOME')
         if xdg_data_home:
             base_dir = xdg_data_home
@@ -36,44 +34,27 @@ def get_user_writable_data_path(app_name: str = APP_NAME) -> Optional[str]:
             base_dir = os.path.join(os.path.expanduser('~'), '.local', 'share')
 
     if not base_dir:
-        logger.error(f"Could not determine base directory for user writable data.")
-        return None
+        logger.error("Could not determine base directory for user data. Using current directory as fallback.")
+        fallback_dir = os.path.join(os.getcwd(), "user_data", "saves")
+        os.makedirs(fallback_dir, exist_ok=True)
+        return fallback_dir
 
-    app_data_path = os.path.join(base_dir, app_name)
-    saves_path = os.path.join(app_data_path, "saves")
+    app_data_path = os.path.join(base_dir, app_name, "saves")
 
     try:
-        os.makedirs(saves_path, exist_ok=True)
-        logger.info(f"User writable saves path ensured: {saves_path}")
-        return saves_path # Return the full path to the "saves" directory
+        os.makedirs(app_data_path, exist_ok=True)
+        logger.info(f"User writable saves path ensured: {app_data_path}")
+        return app_data_path
     except OSError as e:
-        logger.error(f"Error creating user writable saves directory {saves_path}: {e}")
-        return None
-
-SAVES_DIR = get_user_writable_data_path()
-
-if SAVES_DIR is None:
-    logger.critical("CRITICAL: User-specific SAVES_DIR could not be determined or created. Application settings and updates might not persist correctly.")
-    # Define a fallback to current directory for critical failure, though this is not ideal for deployed app
-    # This fallback is mainly for cases where system calls to get user dirs fail unexpectedly.
-    fallback_saves_dir = os.path.join(os.getcwd(), "fallback_saves_data", "saves")
-    logger.warning(f"Attempting to use fallback saves directory: {fallback_saves_dir}")
-    try:
-        os.makedirs(fallback_saves_dir, exist_ok=True)
-        SAVES_DIR = fallback_saves_dir
-    except Exception as e:
-        logger.error(f"Failed to create fallback SAVES_DIR in current directory: {e}")
-        SAVES_DIR = os.path.join(".", "saves") # Absolute last resort, likely problematic
-        try:
-            os.makedirs(SAVES_DIR, exist_ok=True)
-        except:
-             logger.error(f"Failed even to create ./saves. Update info persistence will fail.")
-             SAVES_DIR = None
+        logger.error(f"Error creating user writable saves directory {app_data_path}: {e}")
+        fallback_dir = os.path.join(os.getcwd(), "user_data", "saves")
+        os.makedirs(fallback_dir, exist_ok=True)
+        return fallback_dir
 
 
+SAVES_DIR = get_saves_dir()
 UPDATE_INFO_FILENAME = "update_info.json"
-# UPDATE_INFO_PATH will be None if SAVES_DIR is None
-UPDATE_INFO_PATH = os.path.join(SAVES_DIR, UPDATE_INFO_FILENAME) if SAVES_DIR else None
+UPDATE_INFO_PATH = os.path.join(SAVES_DIR, UPDATE_INFO_FILENAME)
 
 
 # version.txt is expected to be in the root of the installation, alongside the .exe
@@ -255,105 +236,6 @@ def is_time_to_check(hours_interval=24) -> bool:
         logger.info(f"Not time to check yet. Last check: {elapsed_seconds / 3600:.2f} hours ago (Interval: {hours_interval}h).")
         return False
 
-# Example usage (for testing this module directly)
-if __name__ == "__main__":
-    import sys # Required for getattr(sys, 'frozen', False) etc. in get_app_data_dir
-
-    # --- Test version.txt handling ---
-    print(f"Attempting to read version from: {VERSION_FILE_PATH}")
-    # Create a dummy version.txt for testing if it doesn't exist
-    if not os.path.exists(VERSION_FILE_PATH):
-        print(f"Creating dummy {VERSION_FILENAME} for testing...")
-        save_installed_version("1.0.0-test")
-
-    current_version = get_current_version()
-    print(f"Current version: {current_version}")
-
-    # Test saving a new version
-    # save_installed_version("1.0.1-test-update")
-    # current_version = get_current_version()
-    # print(f"Updated version: {current_version}")
-
-
-    # --- Test update_info.json handling ---
-    print(f"\nAttempting to read/write update_info from/to: {UPDATE_INFO_PATH}")
-    if not UPDATE_INFO_PATH:
-        print("UPDATE_INFO_PATH is not set, skipping update_info tests.")
-    else:
-        # Initial read
-        info = get_update_info()
-        print(f"Initial update info: {info}")
-
-        # Test saving timestamp
-        save_update_info(last_check_timestamp=time.time())
-        info = get_update_info()
-        print(f"Info after saving timestamp: {info}")
-
-        # Test saving available update
-        new_update_data = {"version": "1.2.0-test", "url": "http://example.com/update.exe"}
-        save_update_info(available_update_data=new_update_data)
-        info = get_update_info()
-        print(f"Info after saving new update data: {info}")
-
-        # Test clearing available update
-        save_update_info(available_update_data=None) # Explicitly clear
-        info = get_update_info()
-        print(f"Info after clearing update data: {info}")
-
-        # Test time_to_check
-        print(f"\nIs it time to check (24h interval)? {is_time_to_check(24)}")
-
-        # Simulate time passing (by setting an old timestamp)
-        one_day_ago = time.time() - (25 * 60 * 60) # 25 hours ago
-        save_update_info(last_check_timestamp=one_day_ago)
-        info = get_update_info()
-        print(f"Info after setting timestamp to 1 day ago: {info}")
-        print(f"Is it time to check now (24h interval)? {is_time_to_check(24)}")
-
-        # Clean up dummy update_info.json if created
-        # if os.path.exists(UPDATE_INFO_PATH):
-        #     os.remove(UPDATE_INFO_PATH)
-        #     print(f"Cleaned up {UPDATE_INFO_PATH}")
-
-    # Clean up dummy version.txt
-    # if "test" in current_version and os.path.exists(VERSION_FILE_PATH):
-    #    os.remove(VERSION_FILE_PATH)
-    #    print(f"Cleaned up dummy {VERSION_FILENAME}")
-
-    print("\nNote: For bundled app, paths might resolve differently. Test within bundled app.")
-    print(f"VERSION_FILE_PATH resolved to: {VERSION_FILE_PATH}")
-    print(f"UPDATE_INFO_PATH resolved to: {UPDATE_INFO_PATH}")
-    print(f"SAVES_DIR resolved to: {SAVES_DIR}")
-    print(f"APP_ROOT_PATH resolved to: {APP_ROOT_PATH}")
-
-    # Test get_app_data_dir directly
-    class MockSys:
-        pass
-
-    mock_sys_dev = MockSys()
-    setattr(mock_sys_dev, 'frozen', False)
-
-    # Temporarily replace sys for testing get_app_data_dir logic
-    real_sys = sys
-    sys = mock_sys_dev
-    print(f"\nSAVES_DIR (dev mode emulated): {get_app_data_dir()}")
-
-    mock_sys_frozen = MockSys()
-    setattr(mock_sys_frozen, 'frozen', True)
-    setattr(mock_sys_frozen, '_MEIPASS', "/tmp/_MEIPASS_dummy") # Dummy MEIPASS
-    # Need to mock os.getcwd for frozen mode as main.py changes it
-    real_getcwd = os.getcwd
-    os.getcwd = lambda: getattr(sys, '_MEIPASS', real_getcwd())
-    sys.executable = "/tmp/FlexiTools/FlexiTools.exe" # Dummy executable path
-
-    sys = mock_sys_frozen
-    print(f"SAVES_DIR (frozen mode emulated with CWD as MEIPASS): {get_app_data_dir()}")
-    print(f"APP_ROOT_PATH (frozen mode emulated): {get_executable_path()}")
-    print(f"VERSION_FILE_PATH (frozen mode emulated): {os.path.join(get_executable_path(), VERSION_FILENAME)}")
-
-    os.getcwd = real_getcwd # Restore
-    sys = real_sys # Restore
-
 # --- GitHub API Interaction ---
 GITHUB_API_URL = "https://api.github.com/repos/jacky09299/FlexiTools/releases/latest"
 INSTALLER_ASSET_NAME = "FlexiToolsInstaller.exe"
@@ -409,49 +291,6 @@ def fetch_latest_release_info(api_url: str = GITHUB_API_URL) -> Optional[dict]:
     except Exception as e:
         logger.error(f"An unexpected error occurred while fetching release info: {e}")
         return None
-
-if __name__ == "__main__":
-    # ... (previous __main__ content)
-
-    # --- Test GitHub API Interaction ---
-    print("\n--- Testing GitHub API Interaction ---")
-    # Ensure requests is installed if you run this directly for testing
-    # You might need to pip install requests in your environment
-    # release_info = fetch_latest_release_info() # Test this carefully to avoid hitting API limits
-    # if release_info:
-    # print(f"Successfully fetched release info: {release_info}")
-    # else:
-    # print("Failed to fetch release info. Check logs for details.")
-    # pass # Pass for now to avoid accidental API calls during repeated testing
-
-    print("\n--- Testing Version Comparison ---")
-    print(f"compare_versions('1.0.0', '1.0.1'): {compare_versions('1.0.0', '1.0.1')} (Expected: -1)")
-    print(f"compare_versions('1.0.1', '1.0.0'): {compare_versions('1.0.1', '1.0.0')} (Expected: 1)")
-    print(f"compare_versions('1.0.0', '1.0.0'): {compare_versions('1.0.0', '1.0.0')} (Expected: 0)")
-    print(f"compare_versions('v1.2.0', '1.2.0'): {compare_versions('v1.2.0', '1.2.0')} (Expected: 0)")
-    print(f"compare_versions('1.2.0', 'v1.2.1'): {compare_versions('1.2.0', 'v1.2.1')} (Expected: -1)")
-    print(f"compare_versions('1.10.0', '1.2.0'): {compare_versions('1.10.0', '1.2.0')} (Expected: 1)")
-    print(f"compare_versions('1.2.3', '1.2.3'): {compare_versions('1.2.3', '1.2.3')} (Expected: 0)")
-    print(f"compare_versions('1.0', '1.0.0'): {compare_versions('1.0', '1.0.0')} (Expected: -1)")
-    print(f"compare_versions('1.0.0', '1.0'): {compare_versions('1.0.0', '1.0')} (Expected: 1)")
-    print(f"compare_versions('2.0', '1.9.9'): {compare_versions('2.0', '1.9.9')} (Expected: 1)")
-    print(f"compare_versions('v0.9.0', '0.10.0'): {compare_versions('v0.9.0', '0.10.0')} (Expected: -1)")
-
-
-    print("\n--- Testing Update Check Logic ---")
-    # Mocking dependencies for check_for_updates would be ideal for robust testing.
-    # For now, we can test parts or run it carefully.
-    # print("Initial check_for_updates(force_check=True) run:")
-    # status = check_for_updates(force_check=True) # Use force_check to bypass time limit for testing
-    # print(f"Status: {status}")
-    # print(f"Update info: {get_update_info()}")
-
-    # print("\nSecond check_for_updates() run (should be rate limited if not forced):")
-    # status_rate_limited = check_for_updates()
-    # print(f"Status (rate limited): {status_rate_limited}")
-
-
-    print("\nNote: For bundled app, paths might resolve differently. Test within bundled app.")
 
 # --- Update Check Logic ---
 
@@ -581,3 +420,143 @@ def check_for_updates(force_check: bool = False) -> str:
         # Clear any previously stored available_update if current is up-to-date or newer
         save_update_info(last_check_timestamp=timestamp_now, available_update_data=None)
         return NO_UPDATE_FOUND
+
+# Example usage (for testing this module directly)
+if __name__ == "__main__":
+    import sys # Required for getattr(sys, 'frozen', False) etc. in get_app_data_dir
+
+    # --- Test version.txt handling ---
+    print(f"Attempting to read version from: {VERSION_FILE_PATH}")
+    # Create a dummy version.txt for testing if it doesn't exist
+    if not os.path.exists(VERSION_FILE_PATH):
+        print(f"Creating dummy {VERSION_FILENAME} for testing...")
+        with open(VERSION_FILE_PATH, "w") as f:
+            f.write("1.0.0-test")
+
+    current_version = get_current_version()
+    print(f"Current version: {current_version}")
+
+    # Test saving a new version
+    save_installed_version("1.0.1-test-update")
+    current_version = get_current_version()
+    print(f"Updated version: {current_version}")
+
+
+    # --- Test update_info.json handling ---
+    print(f"\nAttempting to read/write update_info from/to: {UPDATE_INFO_PATH}")
+    if not UPDATE_INFO_PATH:
+        print("UPDATE_INFO_PATH is not set, skipping update_info tests.")
+    else:
+        # Initial read
+        info = get_update_info()
+        print(f"Initial update info: {info}")
+
+        # Test saving timestamp
+        save_update_info(last_check_timestamp=time.time())
+        info = get_update_info()
+        print(f"Info after saving timestamp: {info}")
+
+        # Test saving available update
+        new_update_data = {"version": "1.2.0-test", "url": "http://example.com/update.exe"}
+        save_update_info(available_update_data=new_update_data)
+        info = get_update_info()
+        print(f"Info after saving new update data: {info}")
+
+        # Test clearing available update
+        save_update_info(available_update_data=None) # Explicitly clear
+        info = get_update_info()
+        print(f"Info after clearing update data: {info}")
+
+        # Test time_to_check
+        print(f"\nIs it time to check (24h interval)? {is_time_to_check(24)}")
+
+        # Simulate time passing (by setting an old timestamp)
+        one_day_ago = time.time() - (25 * 60 * 60) # 25 hours ago
+        save_update_info(last_check_timestamp=one_day_ago)
+        info = get_update_info()
+        print(f"Info after setting timestamp to 1 day ago: {info}")
+        print(f"Is it time to check now (24h interval)? {is_time_to_check(24)}")
+
+        # Clean up dummy update_info.json if created
+        # if os.path.exists(UPDATE_INFO_PATH):
+        #     os.remove(UPDATE_INFO_PATH)
+        #     print(f"Cleaned up {UPDATE_INFO_PATH}")
+
+    # Clean up dummy version.txt
+    # if "test" in current_version and os.path.exists(VERSION_FILE_PATH):
+    #    os.remove(VERSION_FILE_PATH)
+    #    print(f"Cleaned up dummy {VERSION_FILENAME}")
+
+    print("\nNote: For bundled app, paths might resolve differently. Test within bundled app.")
+    print(f"VERSION_FILE_PATH resolved to: {VERSION_FILE_PATH}")
+    print(f"UPDATE_INFO_PATH resolved to: {UPDATE_INFO_PATH}")
+    print(f"SAVES_DIR resolved to: {SAVES_DIR}")
+    print(f"APP_ROOT_PATH resolved to: {APP_ROOT_PATH}")
+
+    # Test get_app_data_dir directly
+    class MockSys:
+        pass
+
+    mock_sys_dev = MockSys()
+    setattr(mock_sys_dev, 'frozen', False)
+
+    # Temporarily replace sys for testing get_app_data_dir logic
+    real_sys = sys
+    sys = mock_sys_dev
+    print(f"\nSAVES_DIR (dev mode emulated): {get_saves_dir()}")
+
+    mock_sys_frozen = MockSys()
+    setattr(mock_sys_frozen, 'frozen', True)
+    setattr(mock_sys_frozen, '_MEIPASS', "/tmp/_MEIPASS_dummy") # Dummy MEIPASS
+    # Need to mock os.getcwd for frozen mode as main.py changes it
+    real_getcwd = os.getcwd
+    os.getcwd = lambda: getattr(sys, '_MEIPASS', real_getcwd())
+    setattr(mock_sys_frozen, 'executable', "/tmp/FlexiTools/FlexiTools.exe") # Dummy executable path
+
+    sys = mock_sys_frozen
+    print(f"SAVES_DIR (frozen mode emulated with CWD as MEIPASS): {get_saves_dir()}")
+    print(f"APP_ROOT_PATH (frozen mode emulated): {get_executable_path()}")
+    print(f"VERSION_FILE_PATH (frozen mode emulated): {os.path.join(get_executable_path(), VERSION_FILENAME)}")
+
+    os.getcwd = real_getcwd # Restore
+    sys = real_sys # Restore
+
+    # --- Test GitHub API Interaction ---
+    print("\n--- Testing GitHub API Interaction ---")
+    # Ensure requests is installed if you run this directly for testing
+    # You might need to pip install requests in your environment
+    # release_info = fetch_latest_release_info() # Test this carefully to avoid hitting API limits
+    # if release_info:
+    # print(f"Successfully fetched release info: {release_info}")
+    # else:
+    # print("Failed to fetch release info. Check logs for details.")
+    # pass # Pass for now to avoid accidental API calls during repeated testing
+
+    print("\n--- Testing Version Comparison ---")
+    print(f"compare_versions('1.0.0', '1.0.1'): {compare_versions('1.0.0', '1.0.1')} (Expected: -1)")
+    print(f"compare_versions('1.0.1', '1.0.0'): {compare_versions('1.0.1', '1.0.0')} (Expected: 1)")
+    print(f"compare_versions('1.0.0', '1.0.0'): {compare_versions('1.0.0', '1.0.0')} (Expected: 0)")
+    print(f"compare_versions('v1.2.0', '1.2.0'): {compare_versions('v1.2.0', '1.2.0')} (Expected: 0)")
+    print(f"compare_versions('1.2.0', 'v1.2.1'): {compare_versions('1.2.0', 'v1.2.1')} (Expected: -1)")
+    print(f"compare_versions('1.10.0', '1.2.0'): {compare_versions('1.10.0', '1.2.0')} (Expected: 1)")
+    print(f"compare_versions('1.2.3', '1.2.3'): {compare_versions('1.2.3', '1.2.3')} (Expected: 0)")
+    print(f"compare_versions('1.0', '1.0.0'): {compare_versions('1.0', '1.0.0')} (Expected: -1)")
+    print(f"compare_versions('1.0.0', '1.0'): {compare_versions('1.0.0', '1.0')} (Expected: 1)")
+    print(f"compare_versions('2.0', '1.9.9'): {compare_versions('2.0', '1.9.9')} (Expected: 1)")
+    print(f"compare_versions('v0.9.0', '0.10.0'): {compare_versions('v0.9.0', '0.10.0')} (Expected: -1)")
+
+
+    print("\n--- Testing Update Check Logic ---")
+    # Mocking dependencies for check_for_updates would be ideal for robust testing.
+    # For now, we can test parts or run it carefully.
+    # print("Initial check_for_updates(force_check=True) run:")
+    # status = check_for_updates(force_check=True) # Use force_check to bypass time limit for testing
+    # print(f"Status: {status}")
+    # print(f"Update info: {get_update_info()}")
+
+    # print("\nSecond check_for_updates() run (should be rate limited if not forced):")
+    # status_rate_limited = check_for_updates()
+    # print(f"Status (rate limited): {status_rate_limited}")
+
+
+    print("\nNote: For bundled app, paths might resolve differently. Test within bundled app.")
