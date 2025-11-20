@@ -479,6 +479,34 @@
                 groups[file].push(cls);
             });
 
+            // --- Global Filters ---
+            const filtersDiv = document.createElement('div');
+            filtersDiv.className = 'mb-3 pb-2 border-bottom border-secondary';
+
+            // Toggle Modules Folder
+            const btnToggleModules = document.createElement('button');
+            btnToggleModules.className = 'btn btn-sm btn-outline-info w-100 mb-1';
+            btnToggleModules.innerHTML = '<i class="bi bi-folder-x"></i> 隱藏/顯示 modules 資料夾';
+            btnToggleModules.onclick = () => {
+                const isAnyVisible = Object.keys(groups)
+                    .filter(f => f.startsWith('modules/'))
+                    .some(f => groups[f].some(c => state.nodes[c.id].visible));
+
+                const newState = !isAnyVisible;
+
+                Object.keys(groups).forEach(file => {
+                    if (file.startsWith('modules/')) {
+                        // Toggle Group Checkbox
+                        const groupCheck = document.getElementById(`group-check-${file}`); // Need to add ID to group check
+                        if (groupCheck) groupCheck.checked = newState;
+
+                        groups[file].forEach(cls => toggleNode(cls.id, newState));
+                    }
+                });
+            };
+            filtersDiv.appendChild(btnToggleModules);
+            container.appendChild(filtersDiv);
+
             // Sort files
             const sortedFiles = Object.keys(groups).sort();
 
@@ -504,6 +532,7 @@
                 check.type = 'checkbox';
                 check.className = 'form-check-input';
                 check.checked = true;
+                check.id = `group-check-${file}`;
                 check.onclick = (e) => {
                     const isChecked = e.target.checked;
                     groups[file].forEach(cls => toggleNode(cls.id, isChecked));
