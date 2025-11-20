@@ -31,8 +31,100 @@
         #main-content {
             flex-grow: 1;
             position: relative;
-            overflow: hidden; /* The canvas container */
+            display: flex;
+            overflow: hidden;
             background-color: var(--background-color);
+        }
+
+        #sidebar {
+            width: 300px;
+            background-color: var(--surface-color);
+            border-right: 1px solid var(--box-border);
+            display: flex;
+            flex-direction: column;
+            z-index: 60; /* Above canvas */
+            transition: transform 0.3s ease;
+        }
+
+        #sidebar.collapsed {
+            transform: translateX(-300px);
+            margin-right: -300px;
+        }
+
+        #sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--box-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #sidebar-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .module-group {
+            margin-bottom: 15px;
+        }
+
+        .module-header {
+            padding: 5px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .module-header:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .module-classes {
+            margin-left: 25px;
+            display: block;
+        }
+
+        .module-classes.hidden-list {
+            display: none;
+        }
+
+        .class-item {
+            display: flex;
+            align-items: center;
+            padding: 3px 0;
+            font-size: 0.9em;
+            color: var(--muted-text-color);
+        }
+
+        .class-item:hover {
+            color: var(--text-color);
+        }
+
+        .form-check-input {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        #sidebar-toggle {
+            position: absolute;
+            top: 15px;
+            left: 315px;
+            z-index: 70;
+            transition: left 0.3s ease;
+        }
+
+        #sidebar.collapsed + #canvas-wrapper #sidebar-toggle {
+            left: 15px;
+        }
+
+        #canvas-wrapper {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
         }
 
         #canvas-container {
@@ -68,9 +160,13 @@
             min-width: 200px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             z-index: 1;
-            transition: box-shadow 0.2s;
+            transition: box-shadow 0.2s, opacity 0.3s;
             user-select: none;
             color: var(--text-color);
+        }
+
+        .uml-class.hidden {
+            display: none;
         }
 
         .uml-class:hover {
@@ -88,6 +184,22 @@
             border-top-left-radius: 3px;
             border-top-right-radius: 3px;
             border-bottom: 1px solid var(--box-border);
+            position: relative;
+        }
+
+        .toggle-node-btn {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            cursor: pointer;
+            font-size: 0.8em;
+            opacity: 0.6;
+            color: var(--text-color);
+        }
+
+        .toggle-node-btn:hover {
+            opacity: 1;
+            color: #ff6b6b;
         }
 
         .class-type {
@@ -193,38 +305,62 @@
     </nav>
 
     <div id="main-content">
-        <div id="loading-overlay">
-            <div class="spinner-border text-primary mb-3" role="status">
-                <span class="visually-hidden">Loading...</span>
+        <div id="sidebar">
+            <div id="sidebar-header">
+                <h5 class="m-0 text-light"><i class="bi bi-filter-square"></i> 類別篩選</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleSidebar()"><i class="bi bi-chevron-left"></i></button>
             </div>
-            <h4 class="text-light">正在讀取架構圖資料...</h4>
-            <p class="text-muted mt-2">如果卡住，請確認您是透過伺服器開啟此網頁。</p>
-        </div>
-
-        <div id="controls">
-            <h5 class="mb-3 text-light"><i class="bi bi-diagram-3"></i> UML 控制面板</h5>
-            <div class="d-grid gap-2">
-                <button class="btn btn-sm btn-outline-light" onclick="resetView()"><i class="bi bi-arrows-fullscreen"></i> 重置視角</button>
-                <button class="btn btn-sm btn-outline-primary" onclick="layoutEngine.run()"><i class="bi bi-magic"></i> 重新排版</button>
-            </div>
-            <hr class="border-secondary my-3">
-            <div style="font-size: 0.85em; color: #aaa;">
-                <div class="d-flex align-items-center mb-1">
-                    <span style="display:inline-block; width:20px; height:2px; background:#666; margin-right:5px;"></span>
-                    <span style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 10px solid #666; margin-bottom: -5px;"></span>
-                    <span class="ms-2">繼承 (Inheritance)</span>
-                </div>
-                <div class="d-flex align-items-center">
-                    <span style="display:inline-block; width:20px; height:0; border-top:2px dashed #666; margin-right:5px;"></span>
-                    <span style="display:inline-block; width: 0; height: 0; border-top: 3px solid transparent; border-bottom: 3px solid transparent; border-left: 6px solid #666;"></span>
-                    <span class="ms-2">關聯 (Association)</span>
-                </div>
+            <div id="sidebar-content">
+                <!-- Dynamically populated -->
             </div>
         </div>
 
-        <div id="canvas-container">
-            <svg id="connections"></svg>
-            <div id="nodes-container"></div>
+        <div id="canvas-wrapper">
+            <button id="sidebar-toggle" class="btn btn-sm btn-outline-secondary" onclick="toggleSidebar()" style="display:none; position:absolute; top:15px; left:15px; z-index:101;"><i class="bi bi-list"></i></button>
+
+            <div id="loading-overlay">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h4 class="text-light">正在讀取架構圖資料...</h4>
+                <p class="text-muted mt-2">如果卡住，請確認您是透過伺服器開啟此網頁。</p>
+            </div>
+
+            <div id="controls">
+                <h5 class="mb-3 text-light"><i class="bi bi-diagram-3"></i> UML 控制面板</h5>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-sm btn-outline-light" onclick="resetView()"><i class="bi bi-arrows-fullscreen"></i> 重置視角</button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="layoutEngine.run()"><i class="bi bi-magic"></i> 重新排版</button>
+                </div>
+                <hr class="border-secondary my-3">
+                <div style="font-size: 0.85em; color: #aaa;">
+                    <div class="d-flex align-items-center mb-1">
+                        <span style="display:inline-block; width:20px; height:2px; background:#666; margin-right:5px;"></span>
+                        <span style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 10px solid #666; margin-bottom: -5px;"></span>
+                        <span class="ms-2">繼承 (Inheritance)</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-1">
+                        <span style="display:inline-block; width:20px; height:0; border-top:2px dashed #666; margin-right:5px;"></span>
+                        <span style="display:inline-block; width: 0; height: 0; border-top: 3px solid transparent; border-bottom: 3px solid transparent; border-left: 6px solid #666;"></span>
+                        <span class="ms-2">依賴 (Dependency)</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-1">
+                        <span style="display:inline-block; width:20px; height:2px; background:#666; margin-right:5px;"></span>
+                        <span style="display:inline-block; width:8px; height:8px; background:#2d2d2d; border:1px solid #666; transform:rotate(45deg); margin-right:5px;"></span>
+                        <span class="ms-2">聚合 (Aggregation)</span>
+                    </div>
+                     <div class="d-flex align-items-center">
+                        <span style="display:inline-block; width:20px; height:2px; background:#666; margin-right:5px;"></span>
+                        <span style="display:inline-block; width:8px; height:8px; background:#666; border:1px solid #666; transform:rotate(45deg); margin-right:5px;"></span>
+                        <span class="ms-2">組合 (Composition)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="canvas-container">
+                <svg id="connections"></svg>
+                <div id="nodes-container"></div>
+            </div>
         </div>
     </div>
 
@@ -311,37 +447,182 @@
         let state = {
             classes: [],
             relationships: [],
-            nodes: {}, // id -> domElement & data
+            nodes: {}, // id -> data, x, y, w, h, visible
             zoom: 1,
             pan: { x: 0, y: 0 }
         };
 
+        // --- Sidebar Logic ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('sidebar-toggle');
+            sidebar.classList.toggle('collapsed');
+            if (sidebar.classList.contains('collapsed')) {
+                toggleBtn.style.display = 'block';
+                // Wait for transition then show button properly
+                setTimeout(() => toggleBtn.style.left = '15px', 50);
+            } else {
+                toggleBtn.style.display = 'none';
+                toggleBtn.style.left = '315px';
+            }
+        }
+
+        function renderSidebar(classes) {
+            const container = document.getElementById('sidebar-content');
+            container.innerHTML = '';
+
+            // Group by file
+            const groups = {};
+            classes.forEach(cls => {
+                const file = cls.file || 'Unknown';
+                if (!groups[file]) groups[file] = [];
+                groups[file].push(cls);
+            });
+
+            // Sort files
+            const sortedFiles = Object.keys(groups).sort();
+
+            sortedFiles.forEach(file => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'module-group';
+
+                // Header
+                const header = document.createElement('div');
+                header.className = 'module-header';
+                header.onclick = (e) => {
+                    // Don't toggle list if clicking checkbox
+                    if(e.target.type !== 'checkbox') {
+                         const list = groupDiv.querySelector('.module-classes');
+                         list.classList.toggle('hidden-list');
+                         const icon = header.querySelector('.toggle-icon');
+                         icon.className = list.classList.contains('hidden-list') ? 'bi bi-chevron-right toggle-icon' : 'bi bi-chevron-down toggle-icon';
+                    }
+                };
+
+                // Group Checkbox
+                const check = document.createElement('input');
+                check.type = 'checkbox';
+                check.className = 'form-check-input';
+                check.checked = true;
+                check.onclick = (e) => {
+                    const isChecked = e.target.checked;
+                    groups[file].forEach(cls => toggleNode(cls.id, isChecked));
+                };
+
+                // Label
+                const label = document.createElement('span');
+                label.className = 'ms-2 text-light small text-truncate';
+                label.innerText = file;
+                label.title = file;
+                label.style.flexGrow = 1;
+
+                // Icon
+                const icon = document.createElement('i');
+                icon.className = 'bi bi-chevron-down toggle-icon ms-2 text-secondary';
+                icon.style.fontSize = '0.8em';
+
+                header.appendChild(check);
+                header.appendChild(label);
+                header.appendChild(icon);
+                groupDiv.appendChild(header);
+
+                // List
+                const list = document.createElement('div');
+                list.className = 'module-classes';
+
+                groups[file].forEach(cls => {
+                    const item = document.createElement('div');
+                    item.className = 'class-item';
+
+                    const itemCheck = document.createElement('input');
+                    itemCheck.type = 'checkbox';
+                    itemCheck.className = 'form-check-input';
+                    itemCheck.checked = true;
+                    itemCheck.id = `check-${cls.id}`;
+                    itemCheck.onclick = (e) => toggleNode(cls.id, e.target.checked);
+
+                    const itemLabel = document.createElement('label');
+                    itemLabel.className = 'text-truncate cursor-pointer';
+                    itemLabel.htmlFor = `check-${cls.id}`;
+                    itemLabel.innerText = cls.name;
+                    itemLabel.title = cls.name;
+                    itemLabel.style.cursor = 'pointer';
+
+                    item.appendChild(itemCheck);
+                    item.appendChild(itemLabel);
+                    list.appendChild(item);
+                });
+
+                groupDiv.appendChild(list);
+                container.appendChild(groupDiv);
+            });
+        }
+
+        function toggleNode(nodeId, isVisible) {
+            if (!state.nodes[nodeId]) return;
+            state.nodes[nodeId].visible = isVisible;
+
+            // Update Sidebar Checkbox
+            const check = document.getElementById(`check-${nodeId}`);
+            if (check) check.checked = isVisible;
+
+            // Update DOM
+            const el = document.getElementById(`node-${nodeId}`);
+            if (el) {
+                if (isVisible) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            }
+
+            // Update Connections Visibility (by re-drawing or just hiding)
+            // Re-drawing is safer to ensure paths are removed
+            layoutEngine.drawConnections(state.nodes);
+        }
+
         // --- Layout Engine ---
         const layoutEngine = {
             run: async function() {
-                const { classes, relationships } = state;
+                // Filter visible nodes only for layout
+                const visibleNodes = Object.values(state.nodes).filter(n => n.visible);
 
-                // 1. Initial Layered Layout (Start Point)
-                this.initialLayeredLayout(classes, relationships);
+                // We need to treat "classes" as the list of visible classes for initial layout
+                // But initialLayout resets everything.
+                // If we want to keep positions of visible nodes and just re-optimize...
+                // The user said: "Re-layout will use displayed ones".
 
-                // 2. Get Dimensions
+                // Let's extract the visible subset
+                const visibleClasses = visibleNodes.map(n => n.data);
+                const visibleIds = new Set(visibleClasses.map(c => c.id));
+
+                // Filter relationships where both ends are visible
+                const visibleRels = state.relationships.filter(r => visibleIds.has(r.source) && visibleIds.has(r.target));
+
+                // 1. Initial Layered Layout (Start Point for visible nodes)
+                // Note: This resets positions. If we want to keep existing positions as starting point,
+                // we should skip this or make it optional. But "Re-layout" usually implies full reset.
+                this.initialLayeredLayout(visibleClasses, visibleRels);
+
+                // 2. Get Dimensions (only for visible)
                 this.updateNodeDimensions();
 
                 // 3. Optimize Layout
-                await this.optimizeLayout(1500); // Iterations
+                await this.optimizeLayout(1500, visibleNodes, visibleRels);
 
                 // 4. Render
-                this.applyPositions(state.nodes);
+                this.applyPositions(state.nodes); // Apply to all (hidden ones won't change much or matter)
                 this.drawConnections(state.nodes);
             },
 
             initialLayeredLayout: function(classes, relationships) {
-                const nodes = {};
+                // Only affect passed (visible) classes
+                // We need to update state.nodes[id].x/y/rank
+
+                // Reset ranks for these nodes
+                const nodesMap = {};
                 classes.forEach(cls => {
-                    nodes[cls.id] = {
-                        id: cls.id, data: cls,
-                        rank: -1, x: 0, y: 0, w: 220, h: 100 // Default size
-                    };
+                    if(state.nodes[cls.id]) {
+                        state.nodes[cls.id].rank = -1;
+                        nodesMap[cls.id] = state.nodes[cls.id];
+                    }
                 });
 
                 // Assign Ranks based on inheritance
@@ -349,7 +630,7 @@
                 function assignRank(nodeId, currentRank) {
                     if (visited.has(nodeId + "_" + currentRank)) return;
                     visited.add(nodeId + "_" + currentRank);
-                    const node = nodes[nodeId];
+                    const node = nodesMap[nodeId];
                     if (!node) return;
                     if (currentRank > node.rank) node.rank = currentRank;
 
@@ -370,12 +651,12 @@
                     if (!isSubclass) potentialRoots.add(cls.id);
                 });
                 potentialRoots.forEach(id => assignRank(id, 0));
-                Object.values(nodes).forEach(n => { if(n.rank === -1) n.rank = 1; });
+                Object.values(nodesMap).forEach(n => { if(n.rank === -1) n.rank = 1; });
 
                 // Initial grid position
                 const ranks = {};
                 let maxRank = 0;
-                Object.values(nodes).forEach(n => {
+                Object.values(nodesMap).forEach(n => {
                     if(!ranks[n.rank]) ranks[n.rank] = [];
                     ranks[n.rank].push(n);
                     maxRank = Math.max(maxRank, n.rank);
@@ -391,7 +672,6 @@
                         n.y = 50 + r * NODE_SPACING_Y;
                     });
                 }
-                state.nodes = nodes;
             },
 
             updateNodeDimensions: function() {
@@ -405,11 +685,12 @@
             },
 
             // Simulated Annealing Optimization
-            optimizeLayout: async function(iterations) {
-                const nodes = Object.values(state.nodes);
-                const rels = state.relationships;
+            optimizeLayout: async function(iterations, nodes, rels) {
+                // nodes and rels are the visible subset
                 let temp = 1000.0; // Higher initial temperature
                 const coolingRate = 0.99; // Slower cooling
+
+                if (nodes.length === 0) return;
 
                 for (let i = 0; i < iterations; i++) {
                     // Pick a random node
@@ -580,35 +861,36 @@
                 // Re-define markers (since we cleared innerHTML)
                 const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
 
-                // Association Arrow
-                const markerArrow = document.createElementNS("http://www.w3.org/2000/svg", "marker");
-                markerArrow.setAttribute("id", "arrow");
-                markerArrow.setAttribute("markerWidth", "10");
-                markerArrow.setAttribute("markerHeight", "7");
-                markerArrow.setAttribute("refX", "10");
-                markerArrow.setAttribute("refY", "3.5");
-                markerArrow.setAttribute("orient", "auto");
-                const pathArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                pathArrow.setAttribute("d", "M0,0 L10,3.5 L0,7");
-                pathArrow.setAttribute("fill", "none");
-                pathArrow.setAttribute("stroke", "#666");
-                markerArrow.appendChild(pathArrow);
-                defs.appendChild(markerArrow);
+                const createMarker = (id, d, fill="#666", stroke="#666", refX=10) => {
+                    const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+                    marker.setAttribute("id", id);
+                    marker.setAttribute("markerWidth", "14");
+                    marker.setAttribute("markerHeight", "14");
+                    marker.setAttribute("refX", refX);
+                    marker.setAttribute("refY", "7");
+                    marker.setAttribute("orient", "auto");
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("d", d);
+                    path.setAttribute("fill", fill);
+                    path.setAttribute("stroke", stroke);
+                    marker.appendChild(path);
+                    defs.appendChild(marker);
+                };
 
-                // Inheritance Triangle
-                const markerTri = document.createElementNS("http://www.w3.org/2000/svg", "marker");
-                markerTri.setAttribute("id", "triangle");
-                markerTri.setAttribute("markerWidth", "12");
-                markerTri.setAttribute("markerHeight", "12");
-                markerTri.setAttribute("refX", "12");
-                markerTri.setAttribute("refY", "6");
-                markerTri.setAttribute("orient", "auto");
-                const pathTri = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                pathTri.setAttribute("d", "M0,0 L12,6 L0,12 Z");
-                pathTri.setAttribute("fill", "#2d2d2d");
-                pathTri.setAttribute("stroke", "#666");
-                markerTri.appendChild(pathTri);
-                defs.appendChild(markerTri);
+                // 1. Inheritance (Empty Triangle) - Target
+                createMarker("triangle", "M0,1 L12,7 L0,13 Z", "#2d2d2d", "#666", 12);
+
+                // 2. Association / Dependency (Open Arrow) - Target
+                createMarker("arrow-open", "M0,1 L12,7 L0,13", "none", "#666", 12);
+
+                // 3. Composition (Filled Diamond) - Source
+                // Note: For marker-start, the orientation is reversed relative to the line?
+                // "orient=auto" rotates it.
+                // We need the diamond centered.
+                createMarker("diamond-filled", "M0,7 L7,0 L14,7 L7,14 Z", "#666", "#666", 0);
+
+                // 4. Aggregation (Empty Diamond) - Source
+                createMarker("diamond-empty", "M0,7 L7,0 L14,7 L7,14 Z", "#2d2d2d", "#666", 0);
 
                 svg.appendChild(defs);
 
@@ -616,6 +898,9 @@
                     const src = nodes[rel.source];
                     const tgt = nodes[rel.target];
                     if (!src || !tgt) return;
+
+                    // Visibility Check
+                    if (!src.visible || !tgt.visible) return;
 
                     const srcEl = document.getElementById(`node-${rel.source}`);
                     const tgtEl = document.getElementById(`node-${rel.target}`);
@@ -728,9 +1013,19 @@
 
                     if (rel.type === 'inheritance') {
                         path.setAttribute("marker-end", "url(#triangle)");
-                    } else {
-                        path.setAttribute("marker-end", "url(#arrow)");
+                    } else if (rel.type === 'composition') {
+                        path.setAttribute("marker-start", "url(#diamond-filled)");
+                        // Start point should be adjusted so marker doesn't overlap node?
+                        // SVG markers usually handle this if refX is correct.
+                        // We set refX=0 for start marker, so it attaches at the very beginning of the line.
+                    } else if (rel.type === 'aggregation') {
+                        path.setAttribute("marker-start", "url(#diamond-empty)");
+                    } else if (rel.type === 'dependency') {
+                        path.setAttribute("marker-end", "url(#arrow-open)");
                         path.setAttribute("stroke-dasharray", "5,5");
+                    } else {
+                        // Association or others
+                        path.setAttribute("marker-end", "url(#arrow-open)");
                     }
 
                     svg.appendChild(path);
@@ -837,6 +1132,7 @@
                     <div class="class-header">
                         <span class="class-name">${cls.name}</span>
                         <span class="class-type">&laquo;${cls.type}&raquo;</span>
+                        <i class="bi bi-eye-slash toggle-node-btn" title="Hide this class" onclick="toggleNode('${cls.id}', false); event.stopPropagation();"></i>
                     </div>
                     <div class="class-body">
                 `;
@@ -912,9 +1208,22 @@
                 state.classes = data.classes;
                 state.relationships = data.relationships;
 
+                // Initialize Nodes State
+                state.nodes = {};
+                state.classes.forEach(cls => {
+                    state.nodes[cls.id] = {
+                        id: cls.id,
+                        data: cls,
+                        x: 0, y: 0, w: 220, h: 100,
+                        visible: true,
+                        rank: -1
+                    };
+                });
+
                 document.getElementById('loading-overlay').style.display = 'none';
 
                 renderNodes(state.classes);
+                renderSidebar(state.classes);
 
                 // Wait for DOM render to get sizes
                 setTimeout(() => {
