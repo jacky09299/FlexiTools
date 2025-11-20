@@ -15,6 +15,7 @@
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
+!include "Sections.nsh"
 
 ; 設定安裝檔案屬性
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -44,7 +45,16 @@ SilentInstall normal
 ; 選擇安裝目錄頁面
 !insertmacro MUI_PAGE_DIRECTORY
 
-; 選擇元件頁面
+; --- Page 1: Shortcuts and Core ---
+!define MUI_PAGE_HEADER_TEXT "Select Components"
+!define MUI_PAGE_HEADER_SUBTEXT "Choose which features of ${PRODUCT_NAME} you want to install."
+!define MUI_PAGE_CUSTOMFUNCTION_PRE PrePageShortcuts
+!insertmacro MUI_PAGE_COMPONENTS
+
+; --- Page 2: Modules ---
+!define MUI_PAGE_HEADER_TEXT "Select Modules"
+!define MUI_PAGE_HEADER_SUBTEXT "Choose which modules you want to include."
+!define MUI_PAGE_CUSTOMFUNCTION_PRE PrePageModules
 !insertmacro MUI_PAGE_COMPONENTS
 
 ; 安裝頁面
@@ -164,6 +174,22 @@ SectionEnd
 ; <<GENERATED_MODULE_DESCRIPTIONS>>
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
+; <<GENERATED_VISIBILITY_FUNCTIONS>>
+
+Function PrePageShortcuts
+  ; Hide Modules, Show Shortcuts
+  Call HideModuleSections
+  SectionSetText ${SEC02} "Desktop Shortcut"
+  SectionSetText ${SEC03} "Quick Launch Shortcut"
+FunctionEnd
+
+Function PrePageModules
+  ; Show Modules, Hide Shortcuts
+  Call ShowModuleSections
+  SectionSetText ${SEC02} ""
+  SectionSetText ${SEC03} ""
+FunctionEnd
+
 ; 安裝後處理
 Section -AdditionalIcons
   ; 只在非更新模式時建立網站連結
@@ -228,7 +254,8 @@ Function .onInit
   ${GetOptions} $CMDLINE "/UPDATE" $R0
   IfErrors +3 0
     StrCpy $IsUpdateMode "1"
-    SetSilent silent
+    ; Note: SetSilent removed/commented out to allow interactive update as requested
+    ; SetSilent silent
   
   ; 檢查是否已安裝
   ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"
@@ -239,6 +266,8 @@ Function .onInit
   
   ; 如果是更新模式，直接繼續安裝
   ${If} $IsUpdateMode == "1"
+    ; Call module detection logic
+    Call InitModuleSelection
     Goto done
   ${EndIf}
   

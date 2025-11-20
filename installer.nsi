@@ -15,6 +15,7 @@
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
+!include "Sections.nsh"
 
 ; 設定安裝檔案屬性
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -44,7 +45,16 @@ SilentInstall normal
 ; 選擇安裝目錄頁面
 !insertmacro MUI_PAGE_DIRECTORY
 
-; 選擇元件頁面
+; --- Page 1: Shortcuts and Core ---
+!define MUI_PAGE_HEADER_TEXT "Select Components"
+!define MUI_PAGE_HEADER_SUBTEXT "Choose which features of ${PRODUCT_NAME} you want to install."
+!define MUI_PAGE_CUSTOMFUNCTION_PRE PrePageShortcuts
+!insertmacro MUI_PAGE_COMPONENTS
+
+; --- Page 2: Modules ---
+!define MUI_PAGE_HEADER_TEXT "Select Modules"
+!define MUI_PAGE_HEADER_SUBTEXT "Choose which modules you want to include."
+!define MUI_PAGE_CUSTOMFUNCTION_PRE PrePageModules
 !insertmacro MUI_PAGE_COMPONENTS
 
 ; 安裝頁面
@@ -337,6 +347,258 @@ SectionEnd
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_24} "Install youtube_downloader module"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
+
+Function ShowModuleSections
+  SectionSetText ${SEC_MOD_0} "Fitter"
+  SectionSetText ${SEC_MOD_1} "browser"
+  SectionSetText ${SEC_MOD_2} "clock"
+  SectionSetText ${SEC_MOD_3} "color_palette"
+  SectionSetText ${SEC_MOD_4} "draw"
+  SectionSetText ${SEC_MOD_5} "exe_embedder"
+  SectionSetText ${SEC_MOD_6} "gui_cmd"
+  SectionSetText ${SEC_MOD_7} "image_editor"
+  SectionSetText ${SEC_MOD_8} "mp4_processor"
+  SectionSetText ${SEC_MOD_9} "notepad"
+  SectionSetText ${SEC_MOD_10} "pdf_processor"
+  SectionSetText ${SEC_MOD_11} "pdf_viewer"
+  SectionSetText ${SEC_MOD_12} "plot_gui"
+  SectionSetText ${SEC_MOD_13} "py_gui_runner"
+  SectionSetText ${SEC_MOD_14} "recipe_wheel"
+  SectionSetText ${SEC_MOD_15} "report"
+  SectionSetText ${SEC_MOD_16} "split_para"
+  SectionSetText ${SEC_MOD_17} "sudoku_studio"
+  SectionSetText ${SEC_MOD_18} "system_info"
+  SectionSetText ${SEC_MOD_19} "template_module"
+  SectionSetText ${SEC_MOD_20} "todo_list"
+  SectionSetText ${SEC_MOD_21} "translator"
+  SectionSetText ${SEC_MOD_22} "unit_converter"
+  SectionSetText ${SEC_MOD_23} "video"
+  SectionSetText ${SEC_MOD_24} "youtube_downloader"
+FunctionEnd
+
+Function HideModuleSections
+  SectionSetText ${SEC_MOD_0} ""
+  SectionSetText ${SEC_MOD_1} ""
+  SectionSetText ${SEC_MOD_2} ""
+  SectionSetText ${SEC_MOD_3} ""
+  SectionSetText ${SEC_MOD_4} ""
+  SectionSetText ${SEC_MOD_5} ""
+  SectionSetText ${SEC_MOD_6} ""
+  SectionSetText ${SEC_MOD_7} ""
+  SectionSetText ${SEC_MOD_8} ""
+  SectionSetText ${SEC_MOD_9} ""
+  SectionSetText ${SEC_MOD_10} ""
+  SectionSetText ${SEC_MOD_11} ""
+  SectionSetText ${SEC_MOD_12} ""
+  SectionSetText ${SEC_MOD_13} ""
+  SectionSetText ${SEC_MOD_14} ""
+  SectionSetText ${SEC_MOD_15} ""
+  SectionSetText ${SEC_MOD_16} ""
+  SectionSetText ${SEC_MOD_17} ""
+  SectionSetText ${SEC_MOD_18} ""
+  SectionSetText ${SEC_MOD_19} ""
+  SectionSetText ${SEC_MOD_20} ""
+  SectionSetText ${SEC_MOD_21} ""
+  SectionSetText ${SEC_MOD_22} ""
+  SectionSetText ${SEC_MOD_23} ""
+  SectionSetText ${SEC_MOD_24} ""
+FunctionEnd
+
+Function InitModuleSelection
+  ; Initialize module selection based on existing files in update mode
+  ; First unselect all to be safe? The loop handles both 0 and 1 cases.
+
+  ; Check Fitter
+  IfFileExists "$INSTDIR\_internal\modules\Fitter.py" 0 +3
+    SectionSetFlags ${SEC_MOD_0} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_0} 0
+
+
+  ; Check browser
+  IfFileExists "$INSTDIR\_internal\modules\browser.py" 0 +3
+    SectionSetFlags ${SEC_MOD_1} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_1} 0
+
+
+  ; Check clock
+  IfFileExists "$INSTDIR\_internal\modules\clock.py" 0 +3
+    SectionSetFlags ${SEC_MOD_2} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_2} 0
+
+
+  ; Check color_palette
+  IfFileExists "$INSTDIR\_internal\modules\color_palette.py" 0 +3
+    SectionSetFlags ${SEC_MOD_3} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_3} 0
+
+
+  ; Check draw
+  IfFileExists "$INSTDIR\_internal\modules\draw.py" 0 +3
+    SectionSetFlags ${SEC_MOD_4} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_4} 0
+
+
+  ; Check exe_embedder
+  IfFileExists "$INSTDIR\_internal\modules\exe_embedder.py" 0 +3
+    SectionSetFlags ${SEC_MOD_5} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_5} 0
+
+
+  ; Check gui_cmd
+  IfFileExists "$INSTDIR\_internal\modules\gui_cmd.py" 0 +3
+    SectionSetFlags ${SEC_MOD_6} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_6} 0
+
+
+  ; Check image_editor
+  IfFileExists "$INSTDIR\_internal\modules\image_editor.py" 0 +3
+    SectionSetFlags ${SEC_MOD_7} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_7} 0
+
+
+  ; Check mp4_processor
+  IfFileExists "$INSTDIR\_internal\modules\mp4_processor.py" 0 +3
+    SectionSetFlags ${SEC_MOD_8} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_8} 0
+
+
+  ; Check notepad
+  IfFileExists "$INSTDIR\_internal\modules\notepad.py" 0 +3
+    SectionSetFlags ${SEC_MOD_9} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_9} 0
+
+
+  ; Check pdf_processor
+  IfFileExists "$INSTDIR\_internal\modules\pdf_processor.py" 0 +3
+    SectionSetFlags ${SEC_MOD_10} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_10} 0
+
+
+  ; Check pdf_viewer
+  IfFileExists "$INSTDIR\_internal\modules\pdf_viewer.py" 0 +3
+    SectionSetFlags ${SEC_MOD_11} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_11} 0
+
+
+  ; Check plot_gui
+  IfFileExists "$INSTDIR\_internal\modules\plot_gui.py" 0 +3
+    SectionSetFlags ${SEC_MOD_12} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_12} 0
+
+
+  ; Check py_gui_runner
+  IfFileExists "$INSTDIR\_internal\modules\py_gui_runner.py" 0 +3
+    SectionSetFlags ${SEC_MOD_13} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_13} 0
+
+
+  ; Check recipe_wheel
+  IfFileExists "$INSTDIR\_internal\modules\recipe_wheel.py" 0 +3
+    SectionSetFlags ${SEC_MOD_14} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_14} 0
+
+
+  ; Check report
+  IfFileExists "$INSTDIR\_internal\modules\report.py" 0 +3
+    SectionSetFlags ${SEC_MOD_15} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_15} 0
+
+
+  ; Check split_para
+  IfFileExists "$INSTDIR\_internal\modules\split_para.py" 0 +3
+    SectionSetFlags ${SEC_MOD_16} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_16} 0
+
+
+  ; Check sudoku_studio
+  IfFileExists "$INSTDIR\_internal\modules\sudoku_studio.py" 0 +3
+    SectionSetFlags ${SEC_MOD_17} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_17} 0
+
+
+  ; Check system_info
+  IfFileExists "$INSTDIR\_internal\modules\system_info.py" 0 +3
+    SectionSetFlags ${SEC_MOD_18} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_18} 0
+
+
+  ; Check template_module
+  IfFileExists "$INSTDIR\_internal\modules\template_module.py" 0 +3
+    SectionSetFlags ${SEC_MOD_19} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_19} 0
+
+
+  ; Check todo_list
+  IfFileExists "$INSTDIR\_internal\modules\todo_list.py" 0 +3
+    SectionSetFlags ${SEC_MOD_20} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_20} 0
+
+
+  ; Check translator
+  IfFileExists "$INSTDIR\_internal\modules\translator.py" 0 +3
+    SectionSetFlags ${SEC_MOD_21} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_21} 0
+
+
+  ; Check unit_converter
+  IfFileExists "$INSTDIR\_internal\modules\unit_converter.py" 0 +3
+    SectionSetFlags ${SEC_MOD_22} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_22} 0
+
+
+  ; Check video
+  IfFileExists "$INSTDIR\_internal\modules\video.py" 0 +3
+    SectionSetFlags ${SEC_MOD_23} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_23} 0
+
+
+  ; Check youtube_downloader
+  IfFileExists "$INSTDIR\_internal\modules\youtube_downloader.py" 0 +3
+    SectionSetFlags ${SEC_MOD_24} 1
+    Goto +2
+    SectionSetFlags ${SEC_MOD_24} 0
+
+FunctionEnd
+
+
+Function PrePageShortcuts
+  ; Hide Modules, Show Shortcuts
+  Call HideModuleSections
+  SectionSetText ${SEC02} "Desktop Shortcut"
+  SectionSetText ${SEC03} "Quick Launch Shortcut"
+FunctionEnd
+
+Function PrePageModules
+  ; Show Modules, Hide Shortcuts
+  Call ShowModuleSections
+  SectionSetText ${SEC02} ""
+  SectionSetText ${SEC03} ""
+FunctionEnd
+
 ; 安裝後處理
 Section -AdditionalIcons
   ; 只在非更新模式時建立網站連結
@@ -401,7 +663,8 @@ Function .onInit
   ${GetOptions} $CMDLINE "/UPDATE" $R0
   IfErrors +3 0
     StrCpy $IsUpdateMode "1"
-    SetSilent silent
+    ; Note: SetSilent removed/commented out to allow interactive update as requested
+    ; SetSilent silent
 
   ; 檢查是否已安裝
   ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"
@@ -412,6 +675,8 @@ Function .onInit
 
   ; 如果是更新模式，直接繼續安裝
   ${If} $IsUpdateMode == "1"
+    ; Call module detection logic
+    Call InitModuleSelection
     Goto done
   ${EndIf}
 

@@ -715,7 +715,7 @@ class ModularGUI:
         timeout /t 3 /nobreak > NUL
 
         echo Running installer in silent mode...
-        start /wait "" "{installer_path}" /UPDATE /S
+        start /wait "" "{installer_path}" /UPDATE
 
         echo Installer finished.
         timeout /t 2 /nobreak > NUL
@@ -1227,8 +1227,30 @@ class ModularGUI:
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        canvas.pack(side="left", fill="both", expand=True)
+        # Pack scrollbar first so it sticks to the right
         scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        def _on_dialog_mousewheel(event):
+            if hasattr(event, 'num') and event.num == 4:
+                canvas.yview_scroll(-1, "units")
+            elif hasattr(event, 'num') and event.num == 5:
+                canvas.yview_scroll(1, "units")
+            elif hasattr(event, 'delta'):
+                canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        # Bind mousewheel to the dialog (replacing global binding temporarily)
+        dialog.bind_all("<MouseWheel>", _on_dialog_mousewheel)
+        dialog.bind_all("<Button-4>", _on_dialog_mousewheel)
+        dialog.bind_all("<Button-5>", _on_dialog_mousewheel)
+
+        def _restore_global_binding(event=None):
+            if self.root.winfo_exists():
+                self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+                self.canvas.bind_all("<Button-4>", self._on_mousewheel)
+                self.canvas.bind_all("<Button-5>", self._on_mousewheel)
+
+        dialog.bind("<Destroy>", _restore_global_binding)
 
         # Dictionary to hold BooleanVars for each module
         self.module_vars = {}
