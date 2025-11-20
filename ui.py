@@ -432,6 +432,7 @@ class CustomLayoutManager(AnimatedCanvas):
 
 class ModularGUI:
     CONFIG_FILE = "layout_config.json"
+    VISIBILITY_CONFIG_FILE = "module_visibility.json"
     PROFILE_PREFIX = "layout_profile_"
     PROFILE_SUFFIX = ".json"
 
@@ -546,6 +547,7 @@ class ModularGUI:
                                              relief="flat", padx=10, pady=5)
         self.help_menubutton.pack(side="left")
         self.help_menubutton.bind("<Button-1>", lambda e: self.help_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
+        self.help_menu.add_command(label="Manage Modules...", command=self.manage_modules_dialog)
         self.help_menu.add_command(label="Check for Updates...", command=self.ui_check_for_updates_manual)
 
         self.shared_state.log("ModularGUI initialized.")
@@ -615,11 +617,9 @@ class ModularGUI:
         self.discover_modules()
         self.shared_state.update_splash_progress(80) # Progress after discovering modules
 
-        for module_name in sorted(self.available_module_classes.keys()):
-            self.modules_menu.add_command(
-                label=f"Add {module_name}",
-                command=lambda mn=module_name: self.add_module_from_menu(mn)
-            )
+        self.hidden_modules = self.load_module_visibility()
+
+        self.refresh_modules_menu()
 
         self.shared_state.log("Setting up layout...")
         self.setup_default_layout()
@@ -1169,6 +1169,97 @@ class ModularGUI:
         if not os.path.exists(self.saves_dir): return []
         files = os.listdir(self.saves_dir)
         return [f[len(self.PROFILE_PREFIX):-len(self.PROFILE_SUFFIX)] for f in files if f.startswith(self.PROFILE_PREFIX) and f.endswith(self.PROFILE_SUFFIX)]
+
+    def load_module_visibility(self):
+        """Load module visibility preferences."""
+        config_path = os.path.join(self.saves_dir, self.VISIBILITY_CONFIG_FILE)
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    return set(data.get("hidden_modules", []))
+            except Exception as e:
+                self.shared_state.log(f"Failed to load module visibility: {e}", "ERROR")
+        return set()
+
+    def save_module_visibility(self):
+        """Save module visibility preferences."""
+        config_path = os.path.join(self.saves_dir, self.VISIBILITY_CONFIG_FILE)
+        try:
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump({"hidden_modules": list(self.hidden_modules)}, f, indent=2)
+            self.shared_state.log("Module visibility settings saved.", "DEBUG")
+        except Exception as e:
+            self.shared_state.log(f"Failed to save module visibility: {e}", "ERROR")
+
+    def refresh_modules_menu(self):
+        """Rebuild the modules menu based on visibility settings."""
+        self.modules_menu.delete(0, tk.END)
+        for module_name in sorted(self.available_module_classes.keys()):
+            if module_name not in self.hidden_modules:
+                self.modules_menu.add_command(
+                    label=f"Add {module_name}",
+                    command=lambda mn=module_name: self.add_module_from_menu(mn)
+                )
+
+    def manage_modules_dialog(self):
+        """Dialog to manage module visibility in the Add menu."""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Manage Modules")
+        dialog.geometry("400x500")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        tk.Label(dialog, text="Select modules to show in the 'Modules' menu:").pack(pady=10)
+
+        canvas_frame = ttk.Frame(dialog)
+        canvas_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        canvas = tk.Canvas(canvas_frame)
+        scrollbar = ttk.Scrollbar(canvas_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Dictionary to hold BooleanVars for each module
+        self.module_vars = {}
+
+        all_modules = sorted(self.available_module_classes.keys())
+
+        if not all_modules:
+             tk.Label(scrollable_frame, text="No modules found.").pack(pady=20)
+
+        for module_name in all_modules:
+            var = tk.BooleanVar(value=(module_name not in self.hidden_modules))
+            self.module_vars[module_name] = var
+            ttk.Checkbutton(scrollable_frame, text=module_name, variable=var).pack(anchor="w", padx=5, pady=2)
+
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill="x", pady=10, padx=10)
+
+        def on_save():
+            new_hidden = set()
+            for module_name, var in self.module_vars.items():
+                if not var.get():
+                    new_hidden.add(module_name)
+
+            self.hidden_modules = new_hidden
+            self.save_module_visibility()
+            self.refresh_modules_menu()
+            self.shared_state.log(f"Updated module visibility. Hidden: {self.hidden_modules}")
+            dialog.destroy()
+
+        ttk.Button(btn_frame, text="Save", command=on_save).pack(side="right", padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side="right", padx=5)
 
     def _get_current_layout_config(self):
         if not self.loaded_modules: return {"modules": [], "maximized_module_name": self.maximized_module_name, "module_order": []}

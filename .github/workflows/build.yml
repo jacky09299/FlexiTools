@@ -50,6 +50,10 @@ jobs:
         shell: powershell
         run: conda run -n tools pyinstaller main.spec
 
+      - name: Generate NSIS Installer Script
+        shell: powershell
+        run: conda run -n tools python tools/generate_nsis.py
+
       - name: Build NSIS installer
         shell: powershell
         run: '& "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi'

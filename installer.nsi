@@ -79,9 +79,10 @@ Var SavesBackupPath
 
 ; 主要安裝區段
 Section "Main Program" SEC01
+  SectionIn RO ; Read-Only, cannot be unselected
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  
+
   ; 檢查是否為更新模式，如果是則備份 saves 資料夾
   ${If} $IsUpdateMode == "1"
     DetailPrint "Update mode detected, backing up user data..."
@@ -90,18 +91,35 @@ Section "Main Program" SEC01
       CopyFiles /SILENT "$INSTDIR\_internal\modules\saves\*.*" "$TEMP\FlexiTools_Backup"
       StrCpy $SavesBackupPath "$TEMP\FlexiTools_Backup"
   ${EndIf}
-  
+
   ; 複製主程式檔案
   File "dist\FlexiTools\FlexiTools.exe"
-  
+
   ; 建立版本檔案
   FileOpen $0 "$INSTDIR\version.txt" w
   FileWrite $0 "v${PRODUCT_VERSION}"
   FileClose $0
-  
-  ; 複製 _internal 目錄及其所有內容
-  File /r "dist\FlexiTools\_internal"
-  
+
+  ; 複製 _internal 目錄及其所有內容，但排除 modules
+  ; NSIS File /r /x copies recursively excluding pattern.
+  ; We want to copy everything in _internal EXCEPT the modules content
+  ; Because PyInstaller puts modules in _internal\modules
+
+  SetOutPath "$INSTDIR\_internal"
+  File /r /x "modules" "dist\FlexiTools\_internal\*.*"
+
+  ; Create modules directory structure but don't copy all py files yet
+  CreateDirectory "$INSTDIR\_internal\modules"
+  SetOutPath "$INSTDIR\_internal\modules"
+
+  ; Copy __init__.py or other critical files if they exist and are not optional modules
+  ; For now we assume .py files in modules root are the optional ones
+  ; But subdirectories (like saves) need to be handled?
+  ; saves is user data.
+
+  ; Copy non-python files in modules just in case (e.g. assets inside modules folder?)
+  File /r /x "*.py" "dist\FlexiTools\_internal\modules\*.*"
+
   ; 如果是更新模式，恢復 saves 資料夾
   ${If} $IsUpdateMode == "1"
     ${AndIf} $SavesBackupPath != ""
@@ -110,7 +128,7 @@ Section "Main Program" SEC01
       CopyFiles /SILENT "$SavesBackupPath\*.*" "$INSTDIR\_internal\modules\saves"
       RMDir /r "$SavesBackupPath"
   ${EndIf}
-  
+
   ; 只在首次安裝或手動安裝時建立捷徑
   ${If} $IsUpdateMode != "1"
     ; 建立開始功能表捷徑
@@ -119,6 +137,157 @@ Section "Main Program" SEC01
     CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\卸載 ${PRODUCT_NAME}.lnk" "$INSTDIR\uninst.exe"
   ${EndIf}
 SectionEnd
+
+
+Section "Fitter" SEC_MOD_0
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\Fitter.py"
+SectionEnd
+
+
+Section "browser" SEC_MOD_1
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\browser.py"
+SectionEnd
+
+
+Section "clock" SEC_MOD_2
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\clock.py"
+SectionEnd
+
+
+Section "color_palette" SEC_MOD_3
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\color_palette.py"
+SectionEnd
+
+
+Section "draw" SEC_MOD_4
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\draw.py"
+SectionEnd
+
+
+Section "exe_embedder" SEC_MOD_5
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\exe_embedder.py"
+SectionEnd
+
+
+Section "gui_cmd" SEC_MOD_6
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\gui_cmd.py"
+SectionEnd
+
+
+Section "image_editor" SEC_MOD_7
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\image_editor.py"
+SectionEnd
+
+
+Section "mp4_processor" SEC_MOD_8
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\mp4_processor.py"
+SectionEnd
+
+
+Section "notepad" SEC_MOD_9
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\notepad.py"
+SectionEnd
+
+
+Section "pdf_processor" SEC_MOD_10
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\pdf_processor.py"
+SectionEnd
+
+
+Section "pdf_viewer" SEC_MOD_11
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\pdf_viewer.py"
+SectionEnd
+
+
+Section "plot_gui" SEC_MOD_12
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\plot_gui.py"
+SectionEnd
+
+
+Section "py_gui_runner" SEC_MOD_13
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\py_gui_runner.py"
+SectionEnd
+
+
+Section "recipe_wheel" SEC_MOD_14
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\recipe_wheel.py"
+SectionEnd
+
+
+Section "report" SEC_MOD_15
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\report.py"
+SectionEnd
+
+
+Section "split_para" SEC_MOD_16
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\split_para.py"
+SectionEnd
+
+
+Section "sudoku_studio" SEC_MOD_17
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\sudoku_studio.py"
+SectionEnd
+
+
+Section "system_info" SEC_MOD_18
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\system_info.py"
+SectionEnd
+
+
+Section "template_module" SEC_MOD_19
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\template_module.py"
+SectionEnd
+
+
+Section "todo_list" SEC_MOD_20
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\todo_list.py"
+SectionEnd
+
+
+Section "translator" SEC_MOD_21
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\translator.py"
+SectionEnd
+
+
+Section "unit_converter" SEC_MOD_22
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\unit_converter.py"
+SectionEnd
+
+
+Section "video" SEC_MOD_23
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\video.py"
+SectionEnd
+
+
+Section "youtube_downloader" SEC_MOD_24
+  SetOutPath "$INSTDIR\_internal\modules"
+  File "dist\FlexiTools\_internal\modules\youtube_downloader.py"
+SectionEnd
+
 
 ; 桌面捷徑區段（可選）
 Section "Desktop Shortcut" SEC02
@@ -141,6 +310,31 @@ SectionEnd
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC01} "Install the main program files of ${PRODUCT_NAME}"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC02} "Create a ${PRODUCT_NAME} shortcut on the desktop"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC03} "Create a ${PRODUCT_NAME} shortcut in the Quick Launch bar"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_0} "Install Fitter module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_1} "Install browser module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_2} "Install clock module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_3} "Install color_palette module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_4} "Install draw module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_5} "Install exe_embedder module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_6} "Install gui_cmd module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_7} "Install image_editor module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_8} "Install mp4_processor module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_9} "Install notepad module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_10} "Install pdf_processor module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_11} "Install pdf_viewer module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_12} "Install plot_gui module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_13} "Install py_gui_runner module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_14} "Install recipe_wheel module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_15} "Install report module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_16} "Install split_para module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_17} "Install sudoku_studio module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_18} "Install system_info module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_19} "Install template_module module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_20} "Install todo_list module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_21} "Install translator module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_22} "Install unit_converter module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_23} "Install video module"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_MOD_24} "Install youtube_downloader module"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ; 安裝後處理
@@ -170,29 +364,29 @@ Section Uninstall
   Delete "$INSTDIR\uninst.exe"
   Delete "$INSTDIR\FlexiTools.exe"
   Delete "$INSTDIR\version.txt"
-  
+
   ; 刪除 _internal 目錄
   RMDir /r "$INSTDIR\_internal"
-  
+
   ; 刪除開始功能表項目
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\卸載 ${PRODUCT_NAME}.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\官方網站.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk"
   RMDir "$SMPROGRAMS\${PRODUCT_NAME}"
-  
+
   ; 刪除桌面捷徑
   Delete "$DESKTOP\${PRODUCT_NAME}.lnk"
-  
+
   ; 刪除快速啟動捷徑
   Delete "$QUICKLAUNCH\${PRODUCT_NAME}.lnk"
-  
+
   ; 刪除註冊表項目
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
-  
+
   ; 刪除安裝目錄（如果為空）
   RMDir "$INSTDIR"
-  
+
   SetAutoClose true
 SectionEnd
 
@@ -202,44 +396,44 @@ Function .onInit
   StrCpy $IsUpdateMode "0"
   StrCpy $IsFirstInstall "1"
   StrCpy $SavesBackupPath ""
-  
+
   ; 檢查命令列參數是否包含 /UPDATE
   ${GetOptions} $CMDLINE "/UPDATE" $R0
   IfErrors +3 0
     StrCpy $IsUpdateMode "1"
     SetSilent silent
-  
+
   ; 檢查是否已安裝
   ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"
   StrCmp $R0 "" first_install
-  
+
   ; 已安裝，設定為非首次安裝
   StrCpy $IsFirstInstall "0"
-  
+
   ; 如果是更新模式，直接繼續安裝
   ${If} $IsUpdateMode == "1"
     Goto done
   ${EndIf}
-  
+
   ; 手動安裝模式：詢問是否卸載舊版
   MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
   "${PRODUCT_NAME} is already installed.$\n$\nClick OK to remove the previous version or Cancel to cancel this installation." \
   /SD IDOK IDOK uninst
   Abort
-  
+
 uninst:
   ClearErrors
   ExecWait '$R0 _?=$INSTDIR'
-  
+
   IfErrors no_remove_uninstaller done
     no_remove_uninstaller:
-    
+
   Goto done
-  
+
 first_install:
   ; 首次安裝
   StrCpy $IsFirstInstall "1"
-  
+
 done:
 FunctionEnd
 
