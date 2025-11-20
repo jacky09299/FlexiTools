@@ -1,54 +1,53 @@
-name: Sync UML Data to gh-pages
+name: Sync UML JSON to gh-pages
 
 on:
   push:
     branches:
       - develop
+    paths:
+      - 'docs/uml_data.json'  # 關鍵：只有當這個檔案改變時，Workflow 才會跑
 
 jobs:
-  sync-uml:
+  sync-file:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 必須設定：允許 Action 推送程式碼回倉庫
 
     steps:
-      - name: Checkout develop branch
+      # 1. 先 Checkout develop 分支 (這是觸發 Action 的分支)
+      - name: Checkout develop
         uses: actions/checkout@v4
         with:
           ref: develop
-          path: develop
-          fetch-depth: 0
+          path: develop-branch  # 將 develop 下載到特定資料夾
 
-      - name: Check if uml_data.json changed
-        id: diffcheck
-        working-directory: develop
-        run: |
-          if git diff --name-only HEAD~1 HEAD | grep "uml_data.json"; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Stop if no changes
-        if: steps.diffcheck.outputs.changed == 'false'
-        run: echo "uml_data.json 沒有變更，跳過部署流程"
-
-      - name: Checkout gh-pages branch
-        if: steps.diffcheck.outputs.changed == 'true'
+      # 2. 再 Checkout gh-pages 分支 (這是我們要修改的目標)
+      - name: Checkout gh-pages
         uses: actions/checkout@v4
         with:
           ref: gh-pages
-          path: gh-pages
-          fetch-depth: 0
+          path: gh-pages-branch # 將 gh-pages 下載到特定資料夾
 
-      - name: Copy updated uml_data.json to gh-pages/docs
-        if: steps.diffcheck.outputs.changed == 'true'
+      # 3. 複製檔案並推送
+      - name: Copy file and Push
         run: |
-          mkdir -p gh-pages/docs
-          cp develop/uml_data.json gh-pages/docs/uml_data.json
+          # 設定 Git 機器人身分
+          cd gh-pages-branch
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Commit & Push to gh-pages
-        if: steps.diffcheck.outputs.changed == 'true'
-        working-directory: gh-pages
-        run: |
-          git add docs/uml_data.json
-          git commit -m "Update uml_data.json from develop" || echo "No changes to commit"
-          git push origin gh-pages
+          # 確保目標資料夾存在 (預防 gh-pages 還沒有 docs 資料夾)
+          mkdir -p docs
+
+          # 從 develop 資料夾複製 json 到 gh-pages 資料夾 (覆蓋)
+          cp -f ../develop-branch/docs/uml_data.json docs/uml_data.json
+
+          # 檢查是否有變更 (git status)
+          if [[ -n $(git status -s) ]]; then
+            echo "Changes detected. Pushing to gh-pages..."
+            git add docs/uml_data.json
+            git commit -m "Update uml_data.json from develop branch"
+            git push origin gh-pages
+          else
+            echo "No changes detected (content is identical)."
+          fi
