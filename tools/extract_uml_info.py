@@ -294,6 +294,9 @@ class RelationshipVisitor(ast.NodeVisitor):
 # --- Main Execution ---
 
 def main():
+    # Use current working directory as root
+    root_dir = os.getcwd()
+
     files = get_all_python_files()
     all_classes_info = {}
     all_imports = {}
@@ -362,7 +365,20 @@ def main():
         "relationships": cleaned_relationships
     }
 
-    print(json.dumps(output, indent=2, ensure_ascii=False))
+    # Output handling: Write directly to docs/uml_data.json
+    output_path = os.path.join(root_dir, 'docs', 'uml_data.json')
+
+    try:
+        # Ensure docs directory exists
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(output, f, indent=2, ensure_ascii=False)
+        print(f"Successfully generated UML data to: {output_path}")
+    except Exception as e:
+        print(f"Error writing output file: {e}")
+        # Fallback to stdout just in case
+        print(json.dumps(output, indent=2, ensure_ascii=False))
 
 if __name__ == '__main__':
     main()

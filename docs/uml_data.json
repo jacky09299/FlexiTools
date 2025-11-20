@@ -17,11 +17,11 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "observers",
         "splash_progress_callback",
-        "variables",
+        "splash_log_callback",
         "log_callback",
-        "splash_log_callback"
+        "variables",
+        "observers"
       ],
       "methods": [
         "__init__",
@@ -96,22 +96,22 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "title_bar_frame",
-        "close_button",
-        "master",
-        "resize_start_width",
-        "resize_start_x",
-        "resize_handle",
-        "resize_start_height",
-        "resize_start_y",
-        "gui_manager",
-        "shared_state",
-        "drag_handle_label",
         "title_label",
-        "is_maximized",
+        "resize_handle",
         "maximize_button",
+        "drag_handle_label",
+        "close_button",
+        "resize_start_x",
+        "resize_start_width",
         "module_name",
-        "frame"
+        "gui_manager",
+        "resize_start_y",
+        "is_maximized",
+        "resize_start_height",
+        "shared_state",
+        "title_bar_frame",
+        "frame",
+        "master"
       ],
       "methods": [
         "__init__",
@@ -133,11 +133,11 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "last_calculated_content_width",
         "modules",
-        "last_calculated_content_height",
+        "last_calculated_content_width",
+        "current_canvas_width",
         "canvas_parent",
-        "current_canvas_width"
+        "last_calculated_content_height"
       ],
       "methods": [
         "__init__",
@@ -163,60 +163,60 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "resize_mode",
-        "content_frame",
-        "dragged_module_name",
-        "help_menubutton",
-        "hidden_modules",
-        "min_btn",
-        "resize_start_x",
-        "main_frame",
-        "modules_dir",
-        "ghost_canvas_window_id",
-        "module_instance_counters",
-        "resize_debounce_delay",
-        "resize_start_y",
-        "title_bar",
-        "max_btn",
-        "shared_state",
-        "is_maximized",
-        "modules_menubutton",
-        "root_maxsize_backup",
-        "loaded_modules",
-        "is_module_resizing",
-        "controls_frame",
-        "drag_start_y",
-        "ghost_module_frame",
-        "v_scrollbar",
-        "menu_frame",
-        "profile_menu",
-        "drag_start_widget",
-        "root",
-        "last_preview_target_module_name",
-        "drop_target_module_frame_wrapper",
-        "modules_menu",
-        "context_menu",
-        "canvas",
         "title_label",
-        "profile_menubutton",
-        "close_btn",
-        "window_geometry_before_module_resize",
-        "status_bar",
-        "main_layout_manager",
-        "available_module_classes",
-        "normal_geometry",
-        "window_size_fixed_after_init",
-        "canvas_container",
-        "resize_debounce_timer",
-        "original_dragged_module_relief",
         "_pre_maximize_layout",
-        "drag_start_x",
+        "modules_dir",
+        "profile_menubutton",
+        "loaded_modules",
+        "profile_menu",
+        "hidden_modules",
+        "dragged_module_name",
+        "root",
+        "drop_target_module_frame_wrapper",
+        "controls_frame",
+        "shared_state",
         "maximized_module_name",
-        "help_menu",
+        "modules_menubutton",
+        "ghost_module_frame",
+        "resize_mode",
+        "canvas_container",
+        "root_maxsize_backup",
+        "title_bar",
+        "main_frame",
+        "min_btn",
+        "drag_start_y",
+        "is_module_resizing",
+        "canvas",
+        "status_bar",
+        "ghost_canvas_window_id",
+        "window_size_fixed_after_init",
         "saves_dir",
+        "main_layout_manager",
+        "resize_debounce_timer",
         "main_layout_manager_window_id",
+        "help_menu",
+        "is_maximized",
+        "drag_start_widget",
+        "drag_start_x",
+        "normal_geometry",
+        "v_scrollbar",
+        "available_module_classes",
+        "help_menubutton",
+        "close_btn",
+        "content_frame",
+        "menu_frame",
+        "module_instance_counters",
+        "window_geometry_before_module_resize",
+        "context_menu",
+        "resize_start_x",
+        "resize_debounce_delay",
+        "max_btn",
+        "modules_menu",
         "status_label",
-        "map_event_handled"
+        "map_event_handled",
+        "resize_start_y",
+        "last_preview_target_module_name",
+        "original_dragged_module_relief"
       ],
       "methods": [
         "__init__",
@@ -289,11 +289,11 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "closing_tabs",
-        "tabs",
         "bookmarks",
         "history",
-        "current_tab"
+        "current_tab",
+        "tabs",
+        "closing_tabs"
       ],
       "methods": [
         "__init__",
@@ -340,12 +340,12 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
+        "browser",
         "title",
         "closing",
-        "browser_app",
-        "browser",
         "url_var",
-        "is_loading"
+        "is_loading",
+        "browser_app"
       ],
       "methods": [
         "__init__",
@@ -418,14 +418,14 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "wheel_label",
-        "ingredients_text",
-        "spin_after_id",
-        "steps_text",
-        "spin_count",
+        "current_spin_recipe_idx",
         "recipe_name_label",
+        "spin_after_id",
+        "ingredients_text",
+        "wheel_label",
         "recipes",
-        "current_spin_recipe_idx"
+        "steps_text",
+        "spin_count"
       ],
       "methods": [
         "__init__",
@@ -446,11 +446,11 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "dataframe",
-        "excel_filepath",
+        "tree",
         "sheet_names",
         "current_sheet_name",
-        "tree"
+        "excel_filepath",
+        "dataframe"
       ],
       "methods": [
         "__init__",
@@ -502,15 +502,15 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "drag_start_x",
-        "drag_start_y",
-        "click_monitor_thread",
-        "dragging",
-        "window",
         "parent",
         "is_monitoring_clicks",
-        "mouse_inside_window",
-        "click_timer"
+        "click_timer",
+        "window",
+        "click_monitor_thread",
+        "drag_start_x",
+        "drag_start_y",
+        "dragging",
+        "mouse_inside_window"
       ],
       "methods": [
         "__init__",
@@ -535,12 +535,12 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "last_text",
         "is_translating",
-        "keyboard_listener",
+        "font_size",
         "executor",
+        "keyboard_listener",
         "floating_window",
-        "font_size"
+        "last_text"
       ],
       "methods": [
         "__init__",
@@ -587,11 +587,11 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "folder_path",
+        "current_mode",
         "listbox",
         "initial_playlist",
-        "current_mode",
         "pending_insert_index",
+        "folder_path",
         "master_player"
       ],
       "methods": [
@@ -620,18 +620,18 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "denoise_var",
+        "eq_mode_var",
         "result",
-        "mic_var",
+        "denoise_var",
         "eq_canvas",
-        "pos_var",
         "eq_menu",
-        "eq_image",
+        "pos_var",
         "env_var",
-        "settings",
         "parent_player",
+        "settings",
         "aec_var",
-        "eq_mode_var"
+        "eq_image",
+        "mic_var"
       ],
       "methods": [
         "__init__",
@@ -650,44 +650,44 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "video_duration",
-        "audio_path",
-        "frames_processed_count",
-        "stop_processing",
-        "video_height",
-        "after_id",
+        "start_time",
+        "frame_buffer",
         "fps",
+        "last_known_canvas_size",
+        "total_frames",
+        "temp_cache_dir",
+        "video_duration",
+        "buffer_size",
+        "processing_queue",
+        "seek_request_frame",
+        "video_path",
         "canvas_size_lock",
         "max_workers",
-        "temp_cache_dir",
-        "temp_audio_path",
-        "pause_time",
-        "frame_buffer",
-        "is_paused",
-        "buffer_size",
-        "seek_request_frame",
-        "seeking",
-        "history_indices",
-        "video_width",
-        "current_frame_idx",
-        "processing_queue",
-        "window_width",
-        "volume_var",
-        "last_known_canvas_size",
-        "audio_effects_settings",
-        "current_folder_path",
-        "total_frames",
-        "start_time",
-        "unplayed_indices",
-        "is_playing",
-        "processing_thread",
-        "play_mode_var",
-        "current_playlist_index",
-        "frame_reader_thread",
-        "video_path",
-        "window_height",
         "playlist",
-        "seek_lock"
+        "audio_effects_settings",
+        "is_playing",
+        "seeking",
+        "volume_var",
+        "audio_path",
+        "pause_time",
+        "frame_reader_thread",
+        "current_folder_path",
+        "current_frame_idx",
+        "window_width",
+        "video_width",
+        "seek_lock",
+        "play_mode_var",
+        "video_height",
+        "unplayed_indices",
+        "frames_processed_count",
+        "temp_audio_path",
+        "after_id",
+        "history_indices",
+        "stop_processing",
+        "processing_thread",
+        "window_height",
+        "is_paused",
+        "current_playlist_index"
       ],
       "methods": [
         "__init__",
@@ -760,17 +760,17 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "category_selector",
+        "conversion_selector",
+        "input_var",
+        "conversion_types",
         "input_entry",
         "conversion_var",
-        "output_var",
-        "conversion_types",
-        "category_var",
-        "conversion_selector",
+        "input_unit_label",
         "output_label",
+        "output_var",
         "output_unit_label",
-        "input_var",
-        "input_unit_label"
+        "category_var",
+        "category_selector"
       ],
       "methods": [
         "__init__",
@@ -793,14 +793,14 @@
       "description": "No description available.",
       "attributes": [
         "parent",
-        "processing_mode_var",
-        "output_path_var",
+        "input_path_var",
         "fps_var",
+        "processing_mode_var",
         "merge_output_filename_var",
+        "output_path_var",
         "segments_to_save_var",
-        "input_type_var",
         "merge_file_list",
-        "input_path_var"
+        "input_type_var"
       ],
       "methods": [
         "__init__",
@@ -837,8 +837,8 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "current_file_path",
-        "text_area"
+        "text_area",
+        "current_file_path"
       ],
       "methods": [
         "__init__",
@@ -872,12 +872,12 @@
       "type": "class",
       "description": "A module to select and embed an external EXE's GUI into a scrollable tkinter frame.",
       "attributes": [
-        "target_file",
-        "process",
+        "hide_menu_timer",
         "is_external_script",
-        "scripts_dir",
+        "process",
         "embedded_hwnd",
-        "hide_menu_timer"
+        "scripts_dir",
+        "target_file"
       ],
       "methods": [
         "__init__",
@@ -909,8 +909,8 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "current_output_dir",
-        "current_input_pdf_path"
+        "current_input_pdf_path",
+        "current_output_dir"
       ],
       "methods": [
         "__init__",
@@ -949,8 +949,8 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "tasks",
         "task_listbox",
+        "tasks",
         "task_entry"
       ],
       "methods": [
@@ -973,15 +973,15 @@
       "type": "class",
       "description": "Class for analyzing resonator data with both magnitude and phase fitting.\nProvides modular functions for data processing, fitting, and visualization.",
       "attributes": [
-        "tau",
-        "Q",
         "magnitude_result",
-        "alpha",
-        "a",
-        "phi",
         "circle_result",
+        "Q",
+        "tau",
+        "alpha",
         "plot_dir",
-        "f_r"
+        "phi",
+        "f_r",
+        "a"
       ],
       "methods": [
         "__init__",
@@ -1008,14 +1008,14 @@
       "description": "No description available.",
       "attributes": [
         "file_path",
-        "right_freq",
         "output_dir",
+        "right_freq",
+        "plot_canvases",
+        "current_dir",
+        "figures",
         "left_freq",
         "check_only",
-        "plot_canvases",
-        "analyzer",
-        "current_dir",
-        "figures"
+        "analyzer"
       ],
       "methods": [
         "__init__",
@@ -1044,13 +1044,13 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
+        "output_queue",
+        "is_running",
+        "process",
+        "selected_env",
         "envs",
         "command_history",
-        "history_index",
-        "process",
-        "is_running",
-        "output_queue",
-        "selected_env"
+        "history_index"
       ],
       "methods": [
         "__init__",
@@ -1088,16 +1088,16 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "scale_g",
+        "scale_b",
+        "palette_frames",
+        "num_palettes",
+        "hex_entry",
+        "_prevent_slider_recursion",
         "palette_colors_hex",
+        "scale_g",
         "selected_palette_index",
         "scale_r",
-        "hex_entry_var",
-        "num_palettes",
-        "palette_frames",
-        "scale_b",
-        "hex_entry",
-        "_prevent_slider_recursion"
+        "hex_entry_var"
       ],
       "methods": [
         "__init__",
@@ -1127,11 +1127,11 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "grid_entries",
-        "solution",
         "initial_puzzle",
+        "grid_vars",
         "predefined_puzzles",
-        "grid_vars"
+        "solution",
+        "grid_entries"
       ],
       "methods": [
         "__init__",
@@ -1154,8 +1154,8 @@
       "description": "No description available.",
       "attributes": [
         "mem_label",
-        "after_id",
-        "cpu_label"
+        "cpu_label",
+        "after_id"
       ],
       "methods": [
         "__init__",
@@ -1174,31 +1174,31 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "var_draw_points",
-        "var_y_qty",
-        "curve_cols",
-        "shared_state",
-        "var_x_qty",
-        "var_y_unit",
-        "var_y_replace_unit",
-        "df",
-        "var_y_add_unit",
-        "var_custom_title",
-        "var_draw_lines",
-        "var_show_legend",
-        "var_x_unit",
-        "var_x_replace_unit",
-        "x_col",
-        "gui_manager",
-        "var_save_path",
-        "var_show_grid",
         "var_marker_size",
-        "var_x_add_unit",
-        "var_y_scale_mode",
         "var_y_use_qty",
-        "var_x_scale_mode",
+        "x_col",
+        "curve_cols",
+        "var_y_scale_mode",
+        "shared_state",
+        "var_x_add_unit",
+        "var_draw_lines",
+        "var_y_qty",
+        "var_x_replace_unit",
+        "var_custom_title",
+        "gui_manager",
+        "var_x_qty",
+        "var_y_add_unit",
         "var_line_width",
-        "var_x_use_qty"
+        "df",
+        "var_y_replace_unit",
+        "var_x_unit",
+        "var_show_legend",
+        "var_draw_points",
+        "var_save_path",
+        "var_x_use_qty",
+        "var_y_unit",
+        "var_x_scale_mode",
+        "var_show_grid"
       ],
       "methods": [
         "__init__",
@@ -1221,10 +1221,10 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
+        "target_file",
         "is_external_script",
-        "input_widgets",
         "scripts_dir",
-        "target_file"
+        "input_widgets"
       ],
       "methods": [
         "__init__",
@@ -1254,19 +1254,19 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "pdf_document",
-        "view_history",
-        "initial_fit_done",
-        "current_image",
         "current_crop_rect",
-        "current_pil_image",
         "is_selecting",
-        "current_page",
-        "max_history",
-        "start_y",
+        "initial_fit_done",
+        "start_x",
         "zoom_level",
+        "view_history",
+        "current_image",
+        "start_y",
         "rect_id",
-        "start_x"
+        "current_pil_image",
+        "pdf_document",
+        "max_history",
+        "current_page"
       ],
       "methods": [
         "__init__",
@@ -1298,37 +1298,37 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "edit_button",
-        "drawing_color",
-        "canvas_image_x",
-        "draw_start_coords",
-        "drawing_tools_frame",
-        "original_image",
-        "pan_view_start_x",
-        "canvas_image_y",
-        "crop_button",
-        "current_image_pil",
-        "zoom_factor",
-        "image_draw_layer",
-        "canvas",
-        "pan_view_start_y",
-        "pan_start_x",
-        "crop_start_coords",
-        "save_button",
-        "crop_rect_id",
-        "active_drawing_item_id",
         "cancel_button",
-        "drawn_items",
-        "edit_mode_active",
-        "displayed_image_tk",
-        "crop_mode_active",
-        "pan_start_y",
         "status_bar_label",
-        "edit_buffer_image",
-        "current_drawing_tool",
-        "open_button",
+        "current_image_pil",
         "image_path",
-        "rotate_button"
+        "crop_rect_id",
+        "draw_start_coords",
+        "original_image",
+        "drawing_color",
+        "crop_start_coords",
+        "edit_mode_active",
+        "image_draw_layer",
+        "save_button",
+        "canvas",
+        "crop_mode_active",
+        "displayed_image_tk",
+        "pan_view_start_y",
+        "rotate_button",
+        "pan_start_x",
+        "canvas_image_y",
+        "pan_view_start_x",
+        "open_button",
+        "crop_button",
+        "pan_start_y",
+        "current_drawing_tool",
+        "edit_buffer_image",
+        "edit_button",
+        "drawing_tools_frame",
+        "active_drawing_item_id",
+        "zoom_factor",
+        "drawn_items",
+        "canvas_image_x"
       ],
       "methods": [
         "__init__",
@@ -1384,16 +1384,16 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "total_urls",
-        "current_url_index",
-        "current_ydl",
-        "progress_bar",
-        "download_thread",
-        "download_dir",
         "url_text",
         "status_label",
+        "progress_bar",
+        "total_urls",
+        "current_url_index",
+        "download_thread",
+        "current_ydl",
+        "skip_current",
         "stop_download",
-        "skip_current"
+        "download_dir"
       ],
       "methods": [
         "__init__",
@@ -1424,14 +1424,14 @@
       "description": "No description available.",
       "attributes": [
         "suffix_var",
-        "split_values",
+        "output_dir_var",
         "split_param_var",
         "input_file_var",
-        "output_dir_var",
-        "prefix_var",
         "selected_values",
-        "status_var",
-        "split_param_label_var"
+        "split_param_label_var",
+        "split_values",
+        "prefix_var",
+        "status_var"
       ],
       "methods": [
         "__init__",
@@ -1472,9 +1472,9 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
+        "pen_width",
         "pen_color",
-        "canvas",
-        "pen_width"
+        "canvas"
       ],
       "methods": [
         "__init__",
@@ -1497,8 +1497,8 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "time_label",
-        "after_id"
+        "after_id",
+        "time_label"
       ],
       "methods": [
         "__init__",
@@ -1513,205 +1513,13 @@
   ],
   "relationships": [
     {
-      "source": "TranslatorModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "PlotGUIModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "PDFViewerModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "VideoPlayerModule",
-      "target": "JumpToWindow",
-      "type": "dependency",
-      "label": "uses"
-    },
-    {
-      "source": "Tab",
-      "target": "LifespanHandler",
-      "type": "dependency",
-      "label": "uses"
-    },
-    {
-      "source": "VideoPlayerModule",
-      "target": "PlaylistEditor",
-      "type": "dependency",
-      "label": "uses"
-    },
-    {
-      "source": "CustomLayoutManager",
-      "target": "AnimatedCanvas",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "ChromeBrowser",
-      "target": "Tab",
-      "type": "dependency",
-      "label": "uses"
-    },
-    {
-      "source": "FitterModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "CMDModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "YoutubeDownloaderModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "TranslatorModule",
-      "target": "FloatingWindow",
-      "type": "composition",
-      "label": "composed-of"
-    },
-    {
-      "source": "ModularGUI",
-      "target": "SharedState",
-      "type": "aggregation",
-      "label": "has-a (param)"
-    },
-    {
-      "source": "VideoPlayerModule",
-      "target": "EffectsSettingsWindow",
-      "type": "dependency",
-      "label": "uses"
-    },
-    {
-      "source": "VideoPlayerModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "ImageEditorModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "PyGuiRunner",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "MP4Processor",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "FitterModule",
-      "target": "ResonatorAnalyzer",
-      "type": "dependency",
-      "label": "uses"
-    },
-    {
-      "source": "SudokuStudioModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "DrawingPadModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "Module",
-      "target": "SharedState",
-      "type": "aggregation",
-      "label": "has-a (arg)"
-    },
-    {
-      "source": "UnitConverterModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "SystemInfoModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "ColorPaletteModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "PlotGUIModule",
-      "target": "SharedState",
-      "type": "aggregation",
-      "label": "has-a (arg)"
-    },
-    {
       "source": "NotepadModule",
       "target": "Module",
       "type": "inheritance",
       "label": "extends"
     },
     {
-      "source": "RecipeWheelModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "Tab",
-      "target": "ClientHandler",
-      "type": "dependency",
-      "label": "uses"
-    },
-    {
       "source": "ReportModule",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "ExeEmbedderModule",
-      "target": "RECT",
-      "type": "dependency",
-      "label": "uses"
-    },
-    {
-      "source": "CSVProcessorApp",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "ModularGUI",
-      "target": "CustomLayoutManager",
-      "type": "composition",
-      "label": "composed-of"
-    },
-    {
-      "source": "PdfProcessorModule",
       "target": "Module",
       "type": "inheritance",
       "label": "extends"
@@ -1723,40 +1531,22 @@
       "label": "extends"
     },
     {
-      "source": "TemplateModule",
+      "source": "Tab",
+      "target": "LifespanHandler",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "PDFViewerModule",
       "target": "Module",
       "type": "inheritance",
       "label": "extends"
     },
     {
-      "source": "LifespanHandler",
-      "target": "Tab",
-      "type": "aggregation",
-      "label": "has-a (arg)"
-    },
-    {
-      "source": "PlaylistEditor",
-      "target": "VideoPlayerModule",
-      "type": "aggregation",
-      "label": "has-a (arg)"
-    },
-    {
-      "source": "ClockModule",
+      "source": "YoutubeDownloaderModule",
       "target": "Module",
       "type": "inheritance",
       "label": "extends"
-    },
-    {
-      "source": "ChromeBrowser",
-      "target": "Module",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "JumpToWindow",
-      "target": "VideoPlayerModule",
-      "type": "aggregation",
-      "label": "has-a (arg)"
     },
     {
       "source": "ClientHandler",
@@ -1771,7 +1561,217 @@
       "label": "has-a (param)"
     },
     {
+      "source": "VideoPlayerModule",
+      "target": "EffectsSettingsWindow",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "ChromeBrowser",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "VideoPlayerModule",
+      "target": "PlaylistEditor",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "TemplateModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "FitterModule",
+      "target": "ResonatorAnalyzer",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "ClockModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "Tab",
+      "target": "ClientHandler",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "TranslatorModule",
+      "target": "FloatingWindow",
+      "type": "composition",
+      "label": "composed-of"
+    },
+    {
+      "source": "JumpToWindow",
+      "target": "VideoPlayerModule",
+      "type": "aggregation",
+      "label": "has-a (arg)"
+    },
+    {
+      "source": "ImageEditorModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "VideoPlayerModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "MP4Processor",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "DrawingPadModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "CSVProcessorApp",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "ModularGUI",
+      "target": "SharedState",
+      "type": "aggregation",
+      "label": "has-a (param)"
+    },
+    {
+      "source": "SystemInfoModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "UnitConverterModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "ModularGUI",
+      "target": "CustomLayoutManager",
+      "type": "composition",
+      "label": "composed-of"
+    },
+    {
+      "source": "ChromeBrowser",
+      "target": "Tab",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "CMDModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "PyGuiRunner",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "TranslatorModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "SudokuStudioModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "PlotGUIModule",
+      "target": "SharedState",
+      "type": "aggregation",
+      "label": "has-a (arg)"
+    },
+    {
+      "source": "PdfProcessorModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "RecipeWheelModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "ColorPaletteModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
       "source": "ExeEmbedderModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "VideoPlayerModule",
+      "target": "JumpToWindow",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "Module",
+      "target": "SharedState",
+      "type": "aggregation",
+      "label": "has-a (arg)"
+    },
+    {
+      "source": "ExeEmbedderModule",
+      "target": "RECT",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "FitterModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "PlaylistEditor",
+      "target": "VideoPlayerModule",
+      "type": "aggregation",
+      "label": "has-a (arg)"
+    },
+    {
+      "source": "LifespanHandler",
+      "target": "Tab",
+      "type": "aggregation",
+      "label": "has-a (arg)"
+    },
+    {
+      "source": "CustomLayoutManager",
+      "target": "AnimatedCanvas",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "PlotGUIModule",
       "target": "Module",
       "type": "inheritance",
       "label": "extends"
