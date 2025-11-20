@@ -206,3 +206,12 @@ footer {
     border-top: 1px solid var(--border-color);
     color: var(--muted-text-color);
 }
+
+/* Collapse toggle animation */
+.collapse-toggle .bi-chevron-down {
+    transition: transform 0.3s ease;
+}
+
+.collapse-toggle[aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
+}

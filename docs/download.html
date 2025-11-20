@@ -60,12 +60,40 @@
             const list = document.getElementById('version-list');
             versions.forEach((v, idx) => {
                 const isLatest = idx === 0;
+                const hasChangelog = v.changelog && v.changelog.length > 0;
+                const collapseId = `collapse-${idx}`;
                 const li = document.createElement('li');
                 li.className = 'list-group-item' + (isLatest ? ' list-group-item-success' : '');
+
+                let changelogHtml = '';
+                let toggleButton = '';
+
+                if (hasChangelog) {
+                    const listItems = v.changelog.map(item => `<li>${item}</li>`).join('');
+                    changelogHtml = `
+                        <div class="collapse mt-3" id="${collapseId}">
+                            <div class="card card-body bg-transparent border-secondary p-3">
+                                <h6 class="text-muted mb-2">更新內容：</h6>
+                                <ul class="mb-0 ps-3 text-light">
+                                    ${listItems}
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                    toggleButton = `
+                        <button class="btn btn-link btn-sm text-decoration-none ms-2 collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}" style="color: var(--primary-color);">
+                            <i class="bi bi-chevron-down"></i> 顯示詳情
+                        </button>
+                    `;
+                }
+
                 li.innerHTML = `
                     <div class="d-flex w-100 justify-content-between align-items-center">
                         <div>
-                            <h5 class="mb-1">版本 ${v.version}</h5>
+                            <div class="d-flex align-items-center">
+                                <h5 class="mb-1">版本 ${v.version}</h5>
+                                ${toggleButton}
+                            </div>
                             <p class="mb-1 text-muted">發佈於 ${v.date}</p>
                         </div>
                         <div class="text-end">
@@ -75,6 +103,7 @@
                             </a>
                         </div>
                     </div>
+                    ${changelogHtml}
                 `;
                 list.appendChild(li);
             });
