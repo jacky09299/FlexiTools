@@ -21,14 +21,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set NSIS version number
-        if: startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/tags/')
-        shell: powershell
-        run: |
-          $version = "${{ github.ref }}" -replace 'refs/heads/release/v', '' -replace 'refs/tags/v', ''
-          Write-Host "Setting NSIS version to $version"
-          (Get-Content installer.nsi) -replace '(!define PRODUCT_VERSION\s+)"[^"]+"', "`$1 `"$version`"" | Set-Content installer.nsi
-
       - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -53,6 +45,14 @@ jobs:
       - name: Generate NSIS Installer Script
         shell: powershell
         run: conda run -n tools python tools/generate_nsis.py
+
+      - name: Set NSIS version number
+        if: startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/tags/')
+        shell: powershell
+        run: |
+          $version = "${{ github.ref }}" -replace 'refs/heads/release/v', '' -replace 'refs/tags/v', ''
+          Write-Host "Setting NSIS version to $version"
+          (Get-Content installer.nsi) -replace '(!define PRODUCT_VERSION\s+)"[^"]+"', "`$1 `"$version`"" | Set-Content installer.nsi
 
       - name: Build NSIS installer
         shell: powershell
