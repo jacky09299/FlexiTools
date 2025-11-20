@@ -891,11 +891,8 @@
                 const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
 
                 const createMarker = (id, d, fill="#666", stroke="#666", refX=10) => {
-                    // Create a marker with explicit viewBox and user-space units so positioning and fill behave reliably.
                     const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
                     marker.setAttribute("id", id);
-                    marker.setAttribute("markerUnits", "userSpaceOnUse"); // use px coordinates for refX/refY
-                    marker.setAttribute("viewBox", "0 0 14 14");
                     marker.setAttribute("markerWidth", "14");
                     marker.setAttribute("markerHeight", "14");
                     marker.setAttribute("refX", refX);
@@ -905,9 +902,6 @@
                     path.setAttribute("d", d);
                     path.setAttribute("fill", fill);
                     path.setAttribute("stroke", stroke);
-                    // If fill is 'none' (open arrow), avoid stroke-width zero; otherwise 1 px stroke helps visibility.
-                    path.setAttribute("stroke-width", (fill === 'none') ? "1" : "1");
-                    path.setAttribute("stroke-linejoin", "miter");
                     marker.appendChild(path);
                     defs.appendChild(marker);
                 };
@@ -919,11 +913,13 @@
                 createMarker("arrow-open", "M0,1 L12,7 L0,13", "none", "#666", 12);
 
                 // 3. Composition (Filled Diamond) - Source
-                // Use refX ~7 to center the diamond on the line start and ensure fill is visible
-                createMarker("diamond-filled", "M0,7 L7,0 L14,7 L7,14 Z", "#666", "#666", 7);
+                // Note: For marker-start, the orientation is reversed relative to the line?
+                // "orient=auto" rotates it.
+                // We need the diamond centered.
+                createMarker("diamond-filled", "M0,7 L7,0 L14,7 L7,14 Z", "#666", "#666", 0);
 
                 // 4. Aggregation (Empty Diamond) - Source
-                createMarker("diamond-empty", "M0,7 L7,0 L14,7 L7,14 Z", "#2d2d2d", "#666", 7);
+                createMarker("diamond-empty", "M0,7 L7,0 L14,7 L7,14 Z", "#2d2d2d", "#666", 0);
 
                 svg.appendChild(defs);
 
