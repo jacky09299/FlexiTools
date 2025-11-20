@@ -1,41 +1,62 @@
-name: Sync uml_data.json to gh-pages
+name: Sync UML Data to gh-pages
 
 on:
   push:
     branches:
       - develop
     paths:
-      - 'docs/uml_data.json'
+      - 'docs/uml_data.json' # 關鍵：只有這個檔案改變時才觸發，節省資源
+
+permissions:
+  contents: write # 必須開啟寫入權限才能 push
 
 jobs:
-  sync-file:
+  copy-file:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout develop branch
+      # 1. 檢出來源分支 (develop) 到 source_code 資料夾
+      - name: Checkout source (develop)
         uses: actions/checkout@v4
         with:
           ref: develop
-          fetch-depth: 0
-      
-      - name: Configure Git
+          path: source_code
+          sparse-checkout: |
+            docs/uml_data.json
+          sparse-checkout-cone-mode: false
+
+      # 2. 檢出目標分支 (gh-pages) 到 target_branch 資料夾
+      - name: Checkout target (gh-pages)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: target_branch
+
+      # 3. 執行複製操作
+      - name: Copy uml_data.json
         run: |
+          # 確保目標目錄存在
+          mkdir -p target_branch/docs
+          
+          # 複製檔案 (強制覆蓋)
+          cp source_code/docs/uml_data.json target_branch/docs/uml_data.json
+          
+          echo "File copied successfully."
+
+      # 4. 提交並推送變更到 gh-pages
+      - name: Commit and Push to gh-pages
+        working-directory: target_branch
+        run: |
+          # 設定 Git 使用者 (使用 GitHub Actions Bot)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      
-      - name: Save uml_data.json from develop
-        run: |
-          cp docs/uml_data.json /tmp/uml_data.json
-      
-      - name: Checkout gh-pages branch
-        run: |
-          git fetch origin gh-pages:gh-pages
-          git checkout gh-pages
-      
-      - name: Copy and commit file
-        run: |
-          mkdir -p docs
-          cp /tmp/uml_data.json docs/uml_data.json
+          
+          # 加入變更
           git add docs/uml_data.json
-          git commit -m "Update uml_data.json from develop branch" || echo "No changes to commit"
-          git push origin gh-pages
+          
+          # 檢查是否有變更需要提交 (避免空 commit 報錯)
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Update docs/uml_data.json from develop branch"
+            git push origin gh-pages
+          fi
