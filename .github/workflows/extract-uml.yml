@@ -1,0 +1,59 @@
+name: Extract UML Info on Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  run-extract-script:
+    # 兩個條件必須同時成立：
+    # 1. PR 確實被合併了 (而不是被關閉/拒絕)
+    # 2. 來源分支 (head) 必須是 develop
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop'
+    runs-on: ubuntu-latest
+    
+    # 給予 Action 寫入權限以便 Push 程式碼
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout develop branch
+        uses: actions/checkout@v4
+        with:
+          ref: develop      # 明確指定切換到 develop 分支
+          fetch-depth: 0    # 獲取完整歷史記錄，避免 Push 時出現問題
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10' # 請根據您的專案需求調整版本
+
+      # 如果您的腳本依賴特定的 library，請取消下面註解並安裝
+      # - name: Install dependencies
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     pip install -r requirements.txt
+
+      - name: Run Extraction Script
+        run: python tools/extract_uml_info.py
+
+      - name: Commit and Push changes
+        run: |
+          # 設定 Git 使用者 (使用 GitHub Actions Bot)
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 加入所有變更
+          git add .
+          
+          # 檢查是否有變更需要 Commit
+          if git diff-index --quiet HEAD; then
+            echo "No changes detected. Skipping push."
+          else
+            echo "Changes detected. Committing and pushing..."
+            # [skip ci] 可以避免這次 Push 再次觸發 develop 分支上的其他 CI 流程
+            git commit -m "chore: auto-generate UML info after merge to main [skip ci]"
+            git push origin develop
+          fi
