@@ -1,6 +1,5 @@
 name: Extract UML Info on Main Push
 
-# 改為監聽 main 分支的 push 事件
 on:
   push:
     branches:
@@ -9,16 +8,14 @@ on:
 jobs:
   update-develop-uml:
     runs-on: ubuntu-latest
-    # 給予寫入權限以允許 push
-    permissions:
-      contents: write
-
     steps:
       - name: Checkout develop branch
         uses: actions/checkout@v4
         with:
-          ref: develop      # 1. 鎖定操作 develop 分支
-          fetch-depth: 0    # 2. 抓取完整歷史以便進行 merge
+          ref: develop
+          fetch-depth: 0
+          # 【關鍵修改】使用 PAT，這樣 Push 才能觸發其他 Action
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -27,20 +24,14 @@ jobs:
 
       - name: Configure Git
         run: |
+          # 這裡依然可以用 bot 的名字，不影響觸發機制
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Sync main into develop
-        # 關鍵步驟：
-        # 因為你是直接 push main，Action 執行當下 origin/develop 可能還在舊版本。
-        # 我們必須先把剛 push 到 main 的東西 merge 回 develop，確保腳本跑到的是新程式碼。
         run: |
-          echo "Merging origin/main into develop to ensure code is up-to-date..."
+          echo "Merging origin/main into develop..."
           git merge origin/main --no-edit
-
-      # 如有依賴套件請解除註解
-      # - name: Install dependencies
-      #   run: pip install -r requirements.txt
 
       - name: Run Extraction Script
         run: python tools/extract_uml_info.py
@@ -48,12 +39,14 @@ jobs:
       - name: Commit and Push changes
         run: |
           git add .
-          
-          # 檢查是否有變更
           if git diff-index --quiet HEAD; then
-            echo "No changes detected from script. Skipping push."
+            echo "No changes detected. Skipping push."
           else
-            echo "UML info updated. Pushing to develop..."
+            echo "Changes detected. Pushing to develop..."
+            
+            # 【關鍵修改】移除了 [skip ci]，並且因為上方用了 PAT，
+            # 這裡的 push 會被 GitHub 視為有效事件，觸發 develop 的其他 action。
             git commit -m "chore: auto-generate UML info after main update"
+            
             git push origin develop
           fi
