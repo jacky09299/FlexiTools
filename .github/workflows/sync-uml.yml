@@ -10,14 +10,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 在 develop 分支檢查變更
       - name: Checkout develop branch
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          ref: develop
+          path: develop
+          fetch-depth: 0
 
       - name: Check if uml_data.json changed
         id: diffcheck
+        working-directory: develop
         run: |
           if git diff --name-only HEAD~1 HEAD | grep "uml_data.json"; then
             echo "changed=true" >> $GITHUB_OUTPUT
@@ -25,42 +27,28 @@ jobs:
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
-      # 2. 如果有變更，先上傳檔案 (Upload Artifact)
-      - name: Upload uml_data.json artifact
-        if: steps.diffcheck.outputs.changed == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: uml-data
-          path: uml_data.json
+      - name: Stop if no changes
+        if: steps.diffcheck.outputs.changed == 'false'
+        run: echo "uml_data.json 沒有變更，跳過部署流程"
 
-      # 3. 切換到 gh-pages 分支
       - name: Checkout gh-pages branch
         if: steps.diffcheck.outputs.changed == 'true'
         uses: actions/checkout@v4
         with:
           ref: gh-pages
+          path: gh-pages
           fetch-depth: 0
 
-      # 4. 下載檔案 (Download Artifact) - 不需要 git checkout 指令了
-      - name: Download uml_data.json artifact
-        if: steps.diffcheck.outputs.changed == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: uml-data
-          path: temp_download # 先下載到暫存資料夾
-
-      # 5. 提交變更
-      - name: Commit & Push to gh-pages
+      - name: Copy updated uml_data.json to gh-pages/docs
         if: steps.diffcheck.outputs.changed == 'true'
         run: |
-          mkdir -p docs
-          # 從暫存資料夾複製過去
-          cp temp_download/uml_data.json docs/uml_data.json
-          
-          # 設定 Git 使用者身份 (必須設定，否則 commit 會失敗)
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+          mkdir -p gh-pages/docs
+          cp develop/uml_data.json gh-pages/docs/uml_data.json
+
+      - name: Commit & Push to gh-pages
+        if: steps.diffcheck.outputs.changed == 'true'
+        working-directory: gh-pages
+        run: |
           git add docs/uml_data.json
-          git commit -m "Update uml_data.json from develop"
+          git commit -m "Update uml_data.json from develop" || echo "No changes to commit"
           git push origin gh-pages
