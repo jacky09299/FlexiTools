@@ -239,8 +239,8 @@
         // --- Configuration ---
         const DATA_URL = 'uml_data.json';
         const NODE_WIDTH = 220;
-        const LEVEL_HEIGHT = 250; // Vertical gap between ranks
-        const NODE_SPACING = 280; // Horizontal gap
+        const LEVEL_HEIGHT = 350; // Vertical gap between ranks (Increased for better spacing)
+        const NODE_SPACING = 400; // Horizontal gap (Increased for better spacing)
 
         // --- State ---
         let state = {
@@ -446,11 +446,13 @@
 
                     let d = "";
                     if (rel.type === 'inheritance') {
-                         // Vertical curve
-                         d = `M ${start.x} ${start.y} C ${start.x} ${start.y - 50}, ${end.x} ${end.y + 50}, ${end.x} ${end.y}`;
+                         // Vertical curve - make it wider to avoid hitting nodes directly above
+                         d = `M ${start.x} ${start.y} C ${start.x} ${start.y - 80}, ${end.x} ${end.y + 80}, ${end.x} ${end.y}`;
                     } else {
-                         // Horizontal curve
-                         d = `M ${start.x} ${start.y} C ${start.x + 50} ${start.y}, ${end.x - 50} ${end.y}, ${end.x} ${end.y}`;
+                         // Horizontal curve - loop wider
+                         const dist = Math.abs(end.x - start.x);
+                         const controlPointOffset = Math.min(150, dist / 2);
+                         d = `M ${start.x} ${start.y} C ${start.x + controlPointOffset} ${start.y}, ${end.x - controlPointOffset} ${end.y}, ${end.x} ${end.y}`;
                     }
 
                     path.setAttribute("d", d);
