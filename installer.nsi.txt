@@ -1,22 +1,22 @@
-; ¤p¤u¨ã²Õ NSIS ¦w¸Ë¸}¥»
-; ½s½X: UTF-8
-; ¤ä´©: ­º¦¸¦w¸Ë¡BÀRÀq§ó·s¡B¤â°Ê­«½Æ¦w¸Ë
+; å°å·¥å…·çµ„ NSIS å®‰è£è…³æœ¬
+; ç·¨ç¢¼: UTF-8
+; æ”¯æ´: é¦–æ¬¡å®‰è£ã€éœé»˜æ›´æ–°ã€æ‰‹å‹•é‡è¤‡å®‰è£
 
-; °ò¥»³]©w
+; åŸºæœ¬è¨­å®š
 !define PRODUCT_NAME "FlexiTools"
 !define PRODUCT_VERSION "1.0.0"
-!define PRODUCT_PUBLISHER "§õÓT¦t"
+!define PRODUCT_PUBLISHER "æç´˜å®‡"
 !define PRODUCT_WEB_SITE "https://github.com/jacky09299/FlexiTools"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\FlexiTools.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-; ¥]§t²{¥N UI
+; åŒ…å«ç¾ä»£ UI
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
 
-; ³]©w¦w¸ËÀÉ®×Äİ©Ê
+; è¨­å®šå®‰è£æª”æ¡ˆå±¬æ€§
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "FlexiToolsInstaller.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT_NAME}"
@@ -24,65 +24,65 @@ InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
 
-; ­n¨DºŞ²z­ûÅv­­
+; è¦æ±‚ç®¡ç†å“¡æ¬Šé™
 RequestExecutionLevel admin
 
-; ÀRÀq¦w¸Ë¤ä´©
+; éœé»˜å®‰è£æ”¯æ´
 SilentInstall normal
 
-; ¤¶­±³]©w
+; ä»‹é¢è¨­å®š
 !define MUI_ABORTWARNING
 !define MUI_ICON "tools.ico"
 !define MUI_UNICON "tools.ico"
 
-; Åwªï­¶­±
+; æ­¡è¿é é¢
 !insertmacro MUI_PAGE_WELCOME
 
-; ±ÂÅv¨óÄ³­¶­±¡]¥i¿ï¡^
+; æˆæ¬Šå”è­°é é¢ï¼ˆå¯é¸ï¼‰
 ; !insertmacro MUI_PAGE_LICENSE "license.txt"
 
-; ¿ï¾Ü¦w¸Ë¥Ø¿ı­¶­±
+; é¸æ“‡å®‰è£ç›®éŒ„é é¢
 !insertmacro MUI_PAGE_DIRECTORY
 
-; ¿ï¾Ü¤¸¥ó­¶­±
+; é¸æ“‡å…ƒä»¶é é¢
 !insertmacro MUI_PAGE_COMPONENTS
 
-; ¦w¸Ë­¶­±
+; å®‰è£é é¢
 !insertmacro MUI_PAGE_INSTFILES
 
-; §¹¦¨­¶­±
+; å®Œæˆé é¢
 !define MUI_FINISHPAGE_RUN "$INSTDIR\FlexiTools.exe"
 !insertmacro MUI_PAGE_FINISH
 
-; ¨ø¸ü­¶­±
+; å¸è¼‰é é¢
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 
-; »y¨¥³]©w
+; èªè¨€è¨­å®š
 !insertmacro MUI_LANGUAGE "TradChinese"
 
-; ª©¥»¸ê°T
+; ç‰ˆæœ¬è³‡è¨Š
 VIProductVersion "1.0.0.0"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "ProductName" "${PRODUCT_NAME}"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "Comments" "FlexiToolsInstaller"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "CompanyName" "${PRODUCT_PUBLISHER}"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "LegalTrademarks" ""
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "LegalCopyright" "c ${PRODUCT_PUBLISHER}"
-VIAddVersionKey /LANG=${LANG_TRADCHINESE} "FileDescription" "${PRODUCT_NAME} ¦w¸Ëµ{¦¡"
+VIAddVersionKey /LANG=${LANG_TRADCHINESE} "FileDescription" "${PRODUCT_NAME} å®‰è£ç¨‹å¼"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "FileVersion" "${PRODUCT_VERSION}"
 VIAddVersionKey /LANG=${LANG_TRADCHINESE} "ProductVersion" "${PRODUCT_VERSION}"
 
-; ¥ş°ìÅÜ¼Æ
+; å…¨åŸŸè®Šæ•¸
 Var IsUpdateMode
 Var IsFirstInstall
 Var SavesBackupPath
 
-; ¥D­n¦w¸Ë°Ï¬q
+; ä¸»è¦å®‰è£å€æ®µ
 Section "Main Program" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
   
-  ; ÀË¬d¬O§_¬°§ó·s¼Ò¦¡¡A¦pªG¬O«h³Æ¥÷ saves ¸ê®Æ§¨
+  ; æª¢æŸ¥æ˜¯å¦ç‚ºæ›´æ–°æ¨¡å¼ï¼Œå¦‚æœæ˜¯å‰‡å‚™ä»½ saves è³‡æ–™å¤¾
   ${If} $IsUpdateMode == "1"
     DetailPrint "Update mode detected, backing up user data..."
     IfFileExists "$INSTDIR\_internal\modules\saves\*.*" 0 +3
@@ -91,18 +91,18 @@ Section "Main Program" SEC01
       StrCpy $SavesBackupPath "$TEMP\FlexiTools_Backup"
   ${EndIf}
   
-  ; ½Æ»s¥Dµ{¦¡ÀÉ®×
+  ; è¤‡è£½ä¸»ç¨‹å¼æª”æ¡ˆ
   File "dist\FlexiTools\FlexiTools.exe"
   
-  ; «Ø¥ßª©¥»ÀÉ®×
+  ; å»ºç«‹ç‰ˆæœ¬æª”æ¡ˆ
   FileOpen $0 "$INSTDIR\version.txt" w
   FileWrite $0 "v${PRODUCT_VERSION}"
   FileClose $0
   
-  ; ½Æ»s _internal ¥Ø¿ı¤Î¨ä©Ò¦³¤º®e
+  ; è¤‡è£½ _internal ç›®éŒ„åŠå…¶æ‰€æœ‰å…§å®¹
   File /r "dist\FlexiTools\_internal"
   
-  ; ¦pªG¬O§ó·s¼Ò¦¡¡A«ì´_ saves ¸ê®Æ§¨
+  ; å¦‚æœæ˜¯æ›´æ–°æ¨¡å¼ï¼Œæ¢å¾© saves è³‡æ–™å¤¾
   ${If} $IsUpdateMode == "1"
     ${AndIf} $SavesBackupPath != ""
       DetailPrint "Restoring user data..."
@@ -111,44 +111,44 @@ Section "Main Program" SEC01
       RMDir /r "$SavesBackupPath"
   ${EndIf}
   
-  ; ¥u¦b­º¦¸¦w¸Ë©Î¤â°Ê¦w¸Ë®É«Ø¥ß±¶®|
+  ; åªåœ¨é¦–æ¬¡å®‰è£æˆ–æ‰‹å‹•å®‰è£æ™‚å»ºç«‹æ·å¾‘
   ${If} $IsUpdateMode != "1"
-    ; «Ø¥ß¶}©l¥\¯àªí±¶®|
+    ; å»ºç«‹é–‹å§‹åŠŸèƒ½è¡¨æ·å¾‘
     CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
     CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
-    CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\¨ø¸ü ${PRODUCT_NAME}.lnk" "$INSTDIR\uninst.exe"
+    CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\å¸è¼‰ ${PRODUCT_NAME}.lnk" "$INSTDIR\uninst.exe"
   ${EndIf}
 SectionEnd
 
-; ®à­±±¶®|°Ï¬q¡]¥i¿ï¡^
+; æ¡Œé¢æ·å¾‘å€æ®µï¼ˆå¯é¸ï¼‰
 Section "Desktop Shortcut" SEC02
-  ; ¥u¦b«D§ó·s¼Ò¦¡®É«Ø¥ß®à­±±¶®|
+  ; åªåœ¨éæ›´æ–°æ¨¡å¼æ™‚å»ºç«‹æ¡Œé¢æ·å¾‘
   ${If} $IsUpdateMode != "1"
     CreateShortCut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
   ${EndIf}
 SectionEnd
 
-; §Ö³t±Ò°Ê±¶®|°Ï¬q¡]¥i¿ï¡^
+; å¿«é€Ÿå•Ÿå‹•æ·å¾‘å€æ®µï¼ˆå¯é¸ï¼‰
 Section "Quick Launch Shortcut" SEC03
-  ; ¥u¦b«D§ó·s¼Ò¦¡®É«Ø¥ß§Ö³t±Ò°Ê±¶®|
+  ; åªåœ¨éæ›´æ–°æ¨¡å¼æ™‚å»ºç«‹å¿«é€Ÿå•Ÿå‹•æ·å¾‘
   ${If} $IsUpdateMode != "1"
     CreateShortCut "$QUICKLAUNCH\${PRODUCT_NAME}.lnk" "$INSTDIR\FlexiTools.exe"
   ${EndIf}
 SectionEnd
 
-; °Ï¬q´y­z
+; å€æ®µæè¿°
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC01} "Install the main program files of ${PRODUCT_NAME}"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC02} "Create a ${PRODUCT_NAME} shortcut on the desktop"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC03} "Create a ${PRODUCT_NAME} shortcut in the Quick Launch bar"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
-; ¦w¸Ë«á³B²z
+; å®‰è£å¾Œè™•ç†
 Section -AdditionalIcons
-  ; ¥u¦b«D§ó·s¼Ò¦¡®É«Ø¥ßºô¯¸³sµ²
+  ; åªåœ¨éæ›´æ–°æ¨¡å¼æ™‚å»ºç«‹ç¶²ç«™é€£çµ
   ${If} $IsUpdateMode != "1"
     WriteIniStr "$INSTDIR\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
-    CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\©x¤èºô¯¸.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
+    CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\å®˜æ–¹ç¶²ç«™.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
   ${EndIf}
 SectionEnd
 
@@ -163,65 +163,65 @@ Section -Post
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
 SectionEnd
 
-; ¨ø¸ü°Ï¬q
+; å¸è¼‰å€æ®µ
 Section Uninstall
-  ; §R°£ÀÉ®×©M¥Ø¿ı
+  ; åˆªé™¤æª”æ¡ˆå’Œç›®éŒ„
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
   Delete "$INSTDIR\uninst.exe"
   Delete "$INSTDIR\FlexiTools.exe"
   Delete "$INSTDIR\version.txt"
   
-  ; §R°£ _internal ¥Ø¿ı
+  ; åˆªé™¤ _internal ç›®éŒ„
   RMDir /r "$INSTDIR\_internal"
   
-  ; §R°£¶}©l¥\¯àªí¶µ¥Ø
-  Delete "$SMPROGRAMS\${PRODUCT_NAME}\¨ø¸ü ${PRODUCT_NAME}.lnk"
-  Delete "$SMPROGRAMS\${PRODUCT_NAME}\©x¤èºô¯¸.lnk"
+  ; åˆªé™¤é–‹å§‹åŠŸèƒ½è¡¨é …ç›®
+  Delete "$SMPROGRAMS\${PRODUCT_NAME}\å¸è¼‰ ${PRODUCT_NAME}.lnk"
+  Delete "$SMPROGRAMS\${PRODUCT_NAME}\å®˜æ–¹ç¶²ç«™.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk"
   RMDir "$SMPROGRAMS\${PRODUCT_NAME}"
   
-  ; §R°£®à­±±¶®|
+  ; åˆªé™¤æ¡Œé¢æ·å¾‘
   Delete "$DESKTOP\${PRODUCT_NAME}.lnk"
   
-  ; §R°£§Ö³t±Ò°Ê±¶®|
+  ; åˆªé™¤å¿«é€Ÿå•Ÿå‹•æ·å¾‘
   Delete "$QUICKLAUNCH\${PRODUCT_NAME}.lnk"
   
-  ; §R°£µù¥Uªí¶µ¥Ø
+  ; åˆªé™¤è¨»å†Šè¡¨é …ç›®
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
   
-  ; §R°£¦w¸Ë¥Ø¿ı¡]¦pªG¬°ªÅ¡^
+  ; åˆªé™¤å®‰è£ç›®éŒ„ï¼ˆå¦‚æœç‚ºç©ºï¼‰
   RMDir "$INSTDIR"
   
   SetAutoClose true
 SectionEnd
 
-; ¦w¸Ë«eÀË¬d
+; å®‰è£å‰æª¢æŸ¥
 Function .onInit
-  ; ªì©l¤ÆÅÜ¼Æ
+  ; åˆå§‹åŒ–è®Šæ•¸
   StrCpy $IsUpdateMode "0"
   StrCpy $IsFirstInstall "1"
   StrCpy $SavesBackupPath ""
   
-  ; ÀË¬d©R¥O¦C°Ñ¼Æ¬O§_¥]§t /UPDATE
+  ; æª¢æŸ¥å‘½ä»¤åˆ—åƒæ•¸æ˜¯å¦åŒ…å« /UPDATE
   ${GetOptions} $CMDLINE "/UPDATE" $R0
   IfErrors +3 0
     StrCpy $IsUpdateMode "1"
     SetSilent silent
   
-  ; ÀË¬d¬O§_¤w¦w¸Ë
+  ; æª¢æŸ¥æ˜¯å¦å·²å®‰è£
   ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"
   StrCmp $R0 "" first_install
   
-  ; ¤w¦w¸Ë¡A³]©w¬°«D­º¦¸¦w¸Ë
+  ; å·²å®‰è£ï¼Œè¨­å®šç‚ºéé¦–æ¬¡å®‰è£
   StrCpy $IsFirstInstall "0"
   
-  ; ¦pªG¬O§ó·s¼Ò¦¡¡Aª½±µÄ~Äò¦w¸Ë
+  ; å¦‚æœæ˜¯æ›´æ–°æ¨¡å¼ï¼Œç›´æ¥ç¹¼çºŒå®‰è£
   ${If} $IsUpdateMode == "1"
     Goto done
   ${EndIf}
   
-  ; ¤â°Ê¦w¸Ë¼Ò¦¡¡G¸ß°İ¬O§_¨ø¸üÂÂª©
+  ; æ‰‹å‹•å®‰è£æ¨¡å¼ï¼šè©¢å•æ˜¯å¦å¸è¼‰èˆŠç‰ˆ
   MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
   "${PRODUCT_NAME} is already installed.$\n$\nClick OK to remove the previous version or Cancel to cancel this installation." \
   /SD IDOK IDOK uninst
@@ -237,13 +237,13 @@ uninst:
   Goto done
   
 first_install:
-  ; ­º¦¸¦w¸Ë
+  ; é¦–æ¬¡å®‰è£
   StrCpy $IsFirstInstall "1"
   
 done:
 FunctionEnd
 
-; ¨ø¸ü«e½T»{
+; å¸è¼‰å‰ç¢ºèª
 Function un.onInit
   MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "Are you sure you want to completely remove ${PRODUCT_NAME} and all of its components?" /SD IDYES IDYES +2
   Abort
