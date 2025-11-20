@@ -1,0 +1,1780 @@
+{
+  "classes": [
+    {
+      "id": "DummyModule",
+      "name": "DummyModule",
+      "file": "profile_layout.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [],
+      "methods": [
+        "__init__",
+        "create_ui"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "MockSys",
+      "name": "MockSys",
+      "file": "update_manager.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [],
+      "methods": [],
+      "bases": []
+    },
+    {
+      "id": "SharedState",
+      "name": "SharedState",
+      "file": "shared_state.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "observers",
+        "splash_progress_callback",
+        "variables",
+        "log_callback",
+        "splash_log_callback"
+      ],
+      "methods": [
+        "__init__",
+        "set_log_callback",
+        "set_splash_log_callback",
+        "clear_splash_log_callback",
+        "set_splash_progress_callback",
+        "clear_splash_progress_callback",
+        "update_splash_progress",
+        "_setup_logging",
+        "get",
+        "set",
+        "log",
+        "add_observer",
+        "remove_observer",
+        "notify_observers"
+      ],
+      "bases": []
+    },
+    {
+      "id": "update_manager",
+      "name": "update_manager",
+      "file": "ui.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [],
+      "methods": [
+        "get_current_version",
+        "get_update_info",
+        "check_for_updates"
+      ],
+      "bases": []
+    },
+    {
+      "id": "AnimatedCanvas",
+      "name": "AnimatedCanvas",
+      "file": "ui.py",
+      "type": "class",
+      "description": "一個具有動態漸變背景和閃爍星星的畫布。",
+      "attributes": [
+        "stars"
+      ],
+      "methods": [
+        "__init__",
+        "_hex_to_rgb",
+        "_rgb_to_hex",
+        "_on_resize"
+      ],
+      "bases": [
+        "tk.Canvas"
+      ]
+    },
+    {
+      "id": "Module",
+      "name": "Module",
+      "file": "ui.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "module_name",
+        "resize_start_x",
+        "resize_start_width",
+        "resize_start_height",
+        "title_bar_frame",
+        "master",
+        "drag_handle_label",
+        "title_label",
+        "close_button",
+        "is_maximized",
+        "gui_manager",
+        "resize_handle",
+        "frame",
+        "maximize_button",
+        "shared_state",
+        "resize_start_y"
+      ],
+      "methods": [
+        "__init__",
+        "close_module_action",
+        "toggle_maximize_action",
+        "_on_resize_start",
+        "_on_resize_motion",
+        "_on_resize_release",
+        "get_frame",
+        "create_ui",
+        "on_destroy"
+      ],
+      "bases": []
+    },
+    {
+      "id": "CustomLayoutManager",
+      "name": "CustomLayoutManager",
+      "file": "ui.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "canvas_parent",
+        "last_calculated_content_width",
+        "last_calculated_content_height",
+        "current_canvas_width",
+        "modules"
+      ],
+      "methods": [
+        "__init__",
+        "add_module",
+        "remove_module",
+        "resize_module",
+        "_is_overlapping",
+        "reflow_layout",
+        "scale_modules",
+        "get_max_module_width",
+        "move_module_before",
+        "get_layout_data",
+        "get_module_info"
+      ],
+      "bases": [
+        "AnimatedCanvas"
+      ]
+    },
+    {
+      "id": "ModularGUI",
+      "name": "ModularGUI",
+      "file": "ui.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "last_preview_target_module_name",
+        "drag_start_x",
+        "title_bar",
+        "controls_frame",
+        "is_maximized",
+        "modules_menubutton",
+        "dragged_module_name",
+        "window_size_fixed_after_init",
+        "context_menu",
+        "v_scrollbar",
+        "help_menubutton",
+        "hidden_modules",
+        "modules_dir",
+        "close_btn",
+        "module_instance_counters",
+        "drop_target_module_frame_wrapper",
+        "ghost_canvas_window_id",
+        "maximized_module_name",
+        "main_frame",
+        "canvas",
+        "modules_menu",
+        "original_dragged_module_relief",
+        "main_layout_manager_window_id",
+        "root",
+        "content_frame",
+        "ghost_module_frame",
+        "is_module_resizing",
+        "max_btn",
+        "menu_frame",
+        "root_maxsize_backup",
+        "resize_debounce_delay",
+        "saves_dir",
+        "resize_mode",
+        "help_menu",
+        "_pre_maximize_layout",
+        "resize_start_x",
+        "drag_start_widget",
+        "resize_debounce_timer",
+        "status_bar",
+        "min_btn",
+        "shared_state",
+        "normal_geometry",
+        "main_layout_manager",
+        "map_event_handled",
+        "canvas_container",
+        "available_module_classes",
+        "profile_menubutton",
+        "title_label",
+        "window_geometry_before_module_resize",
+        "drag_start_y",
+        "loaded_modules",
+        "status_label",
+        "resize_start_y",
+        "profile_menu"
+      ],
+      "methods": [
+        "__init__",
+        "update_status_bar_log",
+        "_start_download_in_thread",
+        "_download_installer_and_launch_update",
+        "_launch_update_helper",
+        "_initiate_update_download_and_install",
+        "_handle_update_check_result",
+        "_perform_update_check_threaded",
+        "setup_bindings",
+        "ui_check_for_updates_startup",
+        "ui_check_for_updates_manual",
+        "_finalize_initial_window_state",
+        "_on_mousewheel",
+        "update_layout_scrollregion",
+        "update_layout_manager_canvas_item_config",
+        "on_canvas_configure",
+        "_handle_canvas_resize_debounced",
+        "update_min_window_size",
+        "_generate_instance_id",
+        "add_module_from_menu",
+        "discover_modules",
+        "instantiate_module",
+        "setup_default_layout",
+        "save_layout_config",
+        "load_layout_config",
+        "save_profile_dialog",
+        "load_profile_dialog",
+        "manage_profiles_dialog",
+        "_choose_profile_dialog",
+        "_list_profiles",
+        "load_module_visibility",
+        "save_module_visibility",
+        "refresh_modules_menu",
+        "manage_modules_dialog",
+        "_get_current_layout_config",
+        "_load_layout_config_from_file",
+        "on_closing",
+        "show_context_menu",
+        "toggle_module_visibility",
+        "hide_module",
+        "start_drag",
+        "on_drag",
+        "end_drag",
+        "maximize_module",
+        "restore_modules",
+        "get_resize_cursor",
+        "on_mouse_motion",
+        "on_mouse_down",
+        "on_mouse_drag",
+        "on_mouse_up",
+        "start_move",
+        "do_move",
+        "toggle_maximize",
+        "maximize_window_custom",
+        "restore_window_custom",
+        "close_window",
+        "show_on_taskbar",
+        "minimize_window",
+        "restore_window",
+        "_finish_restore"
+      ],
+      "bases": []
+    },
+    {
+      "id": "NotepadModule",
+      "name": "NotepadModule",
+      "file": "modules/notepad.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "text_area",
+        "current_file_path"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "_update_title",
+        "open_file",
+        "save_file",
+        "save_file_as",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "SystemInfoModule",
+      "name": "SystemInfoModule",
+      "file": "modules/system_info.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "after_id",
+        "cpu_label",
+        "mem_label"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "update_info",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "SudokuStudioModule",
+      "name": "SudokuStudioModule",
+      "file": "modules/sudoku_studio.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "grid_entries",
+        "initial_puzzle",
+        "solution",
+        "grid_vars",
+        "predefined_puzzles"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "validate_input",
+        "load_new_game",
+        "reset_puzzle",
+        "check_solution",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "PlotGUIModule",
+      "name": "PlotGUIModule",
+      "file": "modules/plot_gui.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "var_y_replace_unit",
+        "var_line_width",
+        "var_y_add_unit",
+        "var_x_unit",
+        "x_col",
+        "var_save_path",
+        "var_x_scale_mode",
+        "var_draw_lines",
+        "var_marker_size",
+        "var_x_replace_unit",
+        "df",
+        "var_x_add_unit",
+        "var_y_qty",
+        "var_y_use_qty",
+        "var_show_grid",
+        "var_x_qty",
+        "gui_manager",
+        "var_y_unit",
+        "shared_state",
+        "var_show_legend",
+        "var_draw_points",
+        "curve_cols",
+        "var_y_scale_mode",
+        "var_custom_title",
+        "var_x_use_qty"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "load_excel",
+        "update_x_units",
+        "update_y_units",
+        "plot_data",
+        "select_save_path",
+        "save_plot"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "TemplateModule",
+      "name": "TemplateModule",
+      "file": "modules/template_module.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "show_message",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "ResonatorAnalyzer",
+      "name": "ResonatorAnalyzer",
+      "file": "modules/Fitter.py",
+      "type": "class",
+      "description": "Class for analyzing resonator data with both magnitude and phase fitting.\nProvides modular functions for data processing, fitting, and visualization.",
+      "attributes": [
+        "phi",
+        "alpha",
+        "tau",
+        "a",
+        "Q",
+        "magnitude_result",
+        "plot_dir",
+        "f_r",
+        "circle_result"
+      ],
+      "methods": [
+        "__init__",
+        "load_data",
+        "resonator_model_abs",
+        "circle_model",
+        "circle_fit_func",
+        "find_sharpest_peak_range",
+        "create_full_magnitude_plot",
+        "perform_magnitude_fit",
+        "create_magnitude_fit_plot",
+        "perform_circle_fit",
+        "calculate_circle_center",
+        "create_circle_fit_plot",
+        "get_final_report"
+      ],
+      "bases": []
+    },
+    {
+      "id": "FitterModule",
+      "name": "FitterModule",
+      "file": "modules/Fitter.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "output_dir",
+        "plot_canvases",
+        "figures",
+        "current_dir",
+        "file_path",
+        "right_freq",
+        "left_freq",
+        "check_only",
+        "analyzer"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "on_destroy",
+        "browse_file",
+        "run_analysis",
+        "clear_frequency_boundaries",
+        "run_analysis_thread",
+        "create_and_display_full_spectrum",
+        "create_and_display_magnitude_fit",
+        "create_and_display_circle_fit",
+        "display_plot",
+        "clear_plots",
+        "log_message",
+        "show_help"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "ImageEditorModule",
+      "name": "ImageEditorModule",
+      "file": "modules/image_editor.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "original_image",
+        "drawing_color",
+        "canvas_image_y",
+        "displayed_image_tk",
+        "rotate_button",
+        "current_drawing_tool",
+        "canvas_image_x",
+        "active_drawing_item_id",
+        "current_image_pil",
+        "canvas",
+        "drawn_items",
+        "pan_view_start_x",
+        "image_path",
+        "edit_buffer_image",
+        "draw_start_coords",
+        "image_draw_layer",
+        "cancel_button",
+        "crop_button",
+        "crop_rect_id",
+        "crop_start_coords",
+        "zoom_factor",
+        "pan_view_start_y",
+        "open_button",
+        "save_button",
+        "pan_start_x",
+        "status_bar_label",
+        "edit_button",
+        "edit_mode_active",
+        "drawing_tools_frame",
+        "pan_start_y",
+        "crop_mode_active"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "update_button_states",
+        "set_status",
+        "open_image_action",
+        "_unbind_zoom_pan",
+        "toggle_edit_mode_action",
+        "rotate_action",
+        "toggle_crop_mode_action",
+        "save_action",
+        "cancel_action",
+        "_display_image_on_canvas",
+        "_set_drawing_tool",
+        "_choose_drawing_color",
+        "_edit_on_press",
+        "_edit_on_drag",
+        "_edit_on_release",
+        "_crop_on_press",
+        "_crop_on_drag",
+        "_crop_on_release",
+        "_on_mouse_wheel",
+        "_on_pan_start",
+        "_on_pan_motion",
+        "_on_pan_end",
+        "_bind_pan_events",
+        "_unbind_pan_events",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "MockGUIManager",
+      "name": "MockGUIManager",
+      "file": "modules/image_editor.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [],
+      "methods": [
+        "hide_module",
+        "maximize_module",
+        "restore_modules"
+      ],
+      "bases": []
+    },
+    {
+      "id": "TodoListModule",
+      "name": "TodoListModule",
+      "file": "modules/todo_list.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "task_listbox",
+        "tasks",
+        "task_entry"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "add_task_event",
+        "remove_task",
+        "clear_all_tasks",
+        "refresh_task_list",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "UnitConverterModule",
+      "name": "UnitConverterModule",
+      "file": "modules/unit_converter.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "category_selector",
+        "category_var",
+        "output_unit_label",
+        "conversion_selector",
+        "conversion_types",
+        "input_entry",
+        "output_var",
+        "input_unit_label",
+        "output_label",
+        "input_var",
+        "conversion_var"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "on_category_selected",
+        "on_conversion_selected",
+        "_update_unit_labels",
+        "perform_conversion",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "ClockModule",
+      "name": "ClockModule",
+      "file": "modules/clock.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "after_id",
+        "time_label"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "update_time",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "MainModule",
+      "name": "MainModule",
+      "file": "modules/report.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [],
+      "methods": [
+        "__init__",
+        "get_frame",
+        "create_ui",
+        "on_destroy"
+      ],
+      "bases": []
+    },
+    {
+      "id": "MockSharedState",
+      "name": "MockSharedState",
+      "file": "modules/video.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [],
+      "methods": [
+        "log",
+        "get",
+        "set"
+      ],
+      "bases": []
+    },
+    {
+      "id": "ReportModule",
+      "name": "ReportModule",
+      "file": "modules/report.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "dataframe",
+        "current_sheet_name",
+        "excel_filepath",
+        "tree",
+        "sheet_names"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "load_excel_file_dialog",
+        "on_sheet_selected",
+        "load_sheet_data",
+        "clear_treeview",
+        "populate_treeview",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "PDFViewerModule",
+      "name": "PDFViewerModule",
+      "file": "modules/pdf_viewer.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "max_history",
+        "initial_fit_done",
+        "pdf_document",
+        "current_image",
+        "current_crop_rect",
+        "view_history",
+        "is_selecting",
+        "start_x",
+        "zoom_level",
+        "start_y",
+        "current_page",
+        "rect_id",
+        "current_pil_image"
+      ],
+      "methods": [
+        "__init__",
+        "setup_ui",
+        "fit_page_to_canvas",
+        "open_pdf",
+        "initial_fit_page",
+        "display_page",
+        "prev_page",
+        "next_page",
+        "start_selection",
+        "update_selection",
+        "end_selection",
+        "add_to_history",
+        "update_history_label",
+        "go_back_steps",
+        "go_back",
+        "reset_view",
+        "key_pressed"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "CMDModule",
+      "name": "CMDModule",
+      "file": "modules/gui_cmd.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "selected_env",
+        "process",
+        "command_history",
+        "output_queue",
+        "envs",
+        "is_running",
+        "history_index"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "init_cmd_process",
+        "start_output_threads",
+        "read_output",
+        "process_output",
+        "clean_output",
+        "append_output",
+        "execute_command",
+        "restart_cmd_process",
+        "history_up",
+        "history_down",
+        "conda_deactivate",
+        "conda_activate_base",
+        "detect_conda_envs",
+        "conda_activate_selected",
+        "change_directory",
+        "open_create_env_dialog",
+        "create_conda_env",
+        "run_python_file",
+        "force_terminate_command",
+        "_refresh_prompt",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "RECT",
+      "name": "RECT",
+      "file": "modules/exe_embedder.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [],
+      "methods": [],
+      "bases": [
+        "ctypes.Structure"
+      ]
+    },
+    {
+      "id": "ExeEmbedderModule",
+      "name": "ExeEmbedderModule",
+      "file": "modules/exe_embedder.py",
+      "type": "class",
+      "description": "A module to select and embed an external EXE's GUI into a scrollable tkinter frame.",
+      "attributes": [
+        "embedded_hwnd",
+        "process",
+        "is_external_script",
+        "target_file",
+        "scripts_dir",
+        "hide_menu_timer"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "show_menu",
+        "hide_menu",
+        "schedule_hide_menu",
+        "cancel_hide_menu",
+        "add_script_to_pool",
+        "populate_scripts_dropdown",
+        "on_script_select",
+        "delete_selected_script",
+        "select_external_exe",
+        "run_exe",
+        "run_and_embed_exe",
+        "_get_all_visible_windows",
+        "find_and_embed_window",
+        "_embed_window",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "CSVProcessorApp",
+      "name": "CSVProcessorApp",
+      "file": "modules/split_para.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "split_values",
+        "suffix_var",
+        "input_file_var",
+        "split_param_label_var",
+        "prefix_var",
+        "status_var",
+        "output_dir_var",
+        "selected_values",
+        "split_param_var"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "create_values_checkboxes",
+        "update_values_frame_title",
+        "browse_input_file",
+        "browse_output_dir",
+        "select_all",
+        "deselect_all",
+        "process_data"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "YoutubeDownloaderModule",
+      "name": "YoutubeDownloaderModule",
+      "file": "modules/youtube_downloader.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "progress_bar",
+        "skip_current",
+        "stop_download",
+        "current_url_index",
+        "download_dir",
+        "status_label",
+        "url_text",
+        "current_ydl",
+        "download_thread",
+        "total_urls"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "select_download_folder",
+        "load_txt",
+        "check_dependencies",
+        "parse_url_line",
+        "start_download_thread",
+        "skip_current_download",
+        "stop_all_downloads",
+        "download_all",
+        "download_with_ytdlp",
+        "is_playlist_url",
+        "on_progress_ytdlp",
+        "update_status",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "PdfProcessorModule",
+      "name": "PdfProcessorModule",
+      "file": "modules/pdf_processor.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "current_output_dir",
+        "current_input_pdf_path"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "_select_input_pdf_split",
+        "_parse_page_ranges",
+        "_execute_split_pdf",
+        "_add_pdfs_to_merge_list",
+        "_remove_selected_pdf_from_merge_list",
+        "_move_merge_list_item",
+        "_select_output_merged_pdf",
+        "_execute_merge_pdfs",
+        "_select_input_pdf_compress",
+        "_select_output_compressed_pdf",
+        "_execute_compress_pdf",
+        "_select_input_pdf_watermark",
+        "_select_output_watermarked_pdf",
+        "_parse_pages_for_watermarking",
+        "_create_watermark_layer",
+        "_execute_add_watermark",
+        "_select_input_pdf_extract_text",
+        "_select_output_txt_file_extract_text",
+        "_parse_page_ranges_for_extract",
+        "_execute_extract_text",
+        "on_destroy",
+        "_select_split_output_folder"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "MP4Processor",
+      "name": "MP4Processor",
+      "file": "modules/mp4_processor.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "merge_file_list",
+        "segments_to_save_var",
+        "input_type_var",
+        "parent",
+        "processing_mode_var",
+        "fps_var",
+        "output_path_var",
+        "input_path_var",
+        "merge_output_filename_var"
+      ],
+      "methods": [
+        "__init__",
+        "_log_status_safe",
+        "_log_status",
+        "_browse_input",
+        "_browse_output",
+        "_on_processing_mode_changed",
+        "_merge_add_files",
+        "_merge_remove_selected",
+        "_merge_move_up",
+        "_merge_move_down",
+        "_parse_time",
+        "_process_to_frames",
+        "_process_to_mp3",
+        "_process_to_ogg",
+        "_process_remove_background",
+        "_process_split_mp4",
+        "_process_merge_media",
+        "_merge_audio_files",
+        "_merge_video_files",
+        "_start_processing",
+        "_processing_worker",
+        "create_ui"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "JumpToWindow",
+      "name": "JumpToWindow",
+      "file": "modules/video.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "listbox",
+        "master_player"
+      ],
+      "methods": [
+        "__init__",
+        "confirm_selection"
+      ],
+      "bases": [
+        "tk.Toplevel"
+      ]
+    },
+    {
+      "id": "PlaylistEditor",
+      "name": "PlaylistEditor",
+      "file": "modules/video.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "listbox",
+        "folder_path",
+        "initial_playlist",
+        "pending_insert_index",
+        "current_mode",
+        "master_player"
+      ],
+      "methods": [
+        "__init__",
+        "get_selected_pos",
+        "move_item",
+        "move_up",
+        "move_down",
+        "move_to_top",
+        "move_to_bottom",
+        "update_pending_highlight",
+        "set_pending_insert",
+        "insert_above",
+        "insert_below",
+        "execute_insert",
+        "confirm_changes"
+      ],
+      "bases": [
+        "tk.Toplevel"
+      ]
+    },
+    {
+      "id": "EffectsSettingsWindow",
+      "name": "EffectsSettingsWindow",
+      "file": "modules/video.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "mic_var",
+        "eq_image",
+        "pos_var",
+        "eq_canvas",
+        "eq_menu",
+        "result",
+        "eq_mode_var",
+        "parent_player",
+        "denoise_var",
+        "env_var",
+        "settings",
+        "aec_var"
+      ],
+      "methods": [
+        "__init__",
+        "draw_equalizer_visualization",
+        "ok",
+        "cancel"
+      ],
+      "bases": [
+        "tk.Toplevel"
+      ]
+    },
+    {
+      "id": "VideoPlayerModule",
+      "name": "VideoPlayerModule",
+      "file": "modules/video.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "canvas_size_lock",
+        "pause_time",
+        "max_workers",
+        "play_mode_var",
+        "volume_var",
+        "temp_audio_path",
+        "is_playing",
+        "audio_effects_settings",
+        "total_frames",
+        "processing_thread",
+        "start_time",
+        "processing_queue",
+        "frames_processed_count",
+        "current_playlist_index",
+        "buffer_size",
+        "audio_path",
+        "video_height",
+        "frame_reader_thread",
+        "window_height",
+        "fps",
+        "after_id",
+        "is_paused",
+        "last_known_canvas_size",
+        "current_frame_idx",
+        "stop_processing",
+        "video_width",
+        "current_folder_path",
+        "window_width",
+        "history_indices",
+        "frame_buffer",
+        "seek_lock",
+        "playlist",
+        "temp_cache_dir",
+        "unplayed_indices",
+        "video_duration",
+        "video_path",
+        "seek_request_frame",
+        "seeking"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "open_effects_window",
+        "apply_audio_effects",
+        "on_destroy",
+        "cleanup_temp_cache",
+        "start_playlist",
+        "extract_audio",
+        "open_jump_to_window",
+        "jump_to_selected_video",
+        "on_play_mode_change",
+        "reset_random_playlist",
+        "rebuild_playlist",
+        "sort_by_json",
+        "open_playlist_editor",
+        "update_playlist_from_editor",
+        "select_folder",
+        "select_file",
+        "update_module_title",
+        "play_current_video_in_playlist",
+        "play_next_video",
+        "play_previous_video",
+        "update_nav_buttons_state",
+        "update_frame",
+        "set_volume",
+        "calculate_proportional_size",
+        "process_frame_batch",
+        "display_frame",
+        "prepare_video",
+        "enable_button_states",
+        "stop_video",
+        "on_resize",
+        "on_timeline_press",
+        "on_timeline_release",
+        "on_timeline_change",
+        "format_time",
+        "update_timeline",
+        "background_processor",
+        "seek_to_frame",
+        "toggle_play_pause",
+        "pause_playback",
+        "resume_playback",
+        "start_playback",
+        "read_frames_to_queue"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "MainModuleBase",
+      "name": "MainModuleBase",
+      "file": "modules/video.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [],
+      "methods": [
+        "__init__",
+        "get_frame",
+        "on_destroy"
+      ],
+      "bases": []
+    },
+    {
+      "id": "FloatingWindow",
+      "name": "FloatingWindow",
+      "file": "modules/translator.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "drag_start_x",
+        "parent",
+        "click_timer",
+        "click_monitor_thread",
+        "drag_start_y",
+        "is_monitoring_clicks",
+        "dragging",
+        "mouse_inside_window",
+        "window"
+      ],
+      "methods": [
+        "__init__",
+        "show_translation",
+        "bind_mouse_events",
+        "on_mouse_enter",
+        "on_mouse_leave",
+        "start_drag",
+        "on_drag",
+        "stop_drag",
+        "update_window_bounds",
+        "start_click_monitoring",
+        "monitor_mouse_clicks",
+        "close"
+      ],
+      "bases": []
+    },
+    {
+      "id": "TranslatorModule",
+      "name": "TranslatorModule",
+      "file": "modules/translator.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "executor",
+        "font_size",
+        "is_translating",
+        "last_text",
+        "keyboard_listener",
+        "floating_window"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "toggle_translation",
+        "start_translation",
+        "stop_translation",
+        "on_key_press",
+        "monitor_clipboard",
+        "manual_translate",
+        "translate_text",
+        "split_text_into_segments",
+        "translate_segment",
+        "update_result",
+        "update_font_label",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "ColorPaletteModule",
+      "name": "ColorPaletteModule",
+      "file": "modules/color_palette.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "_prevent_slider_recursion",
+        "selected_palette_index",
+        "hex_entry",
+        "num_palettes",
+        "scale_b",
+        "scale_g",
+        "hex_entry_var",
+        "palette_colors_hex",
+        "palette_frames",
+        "scale_r"
+      ],
+      "methods": [
+        "__init__",
+        "_rgb_to_hex",
+        "_hex_to_rgb",
+        "create_ui",
+        "_create_slider",
+        "generate_initial_palettes",
+        "on_palette_click",
+        "on_palette_double_click",
+        "_update_slider_value_label",
+        "on_slider_change",
+        "update_color_from_hex_entry",
+        "copy_hex_to_clipboard",
+        "update_selection_highlight",
+        "open_color_chooser",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "PyGuiRunner",
+      "name": "PyGuiRunner",
+      "file": "modules/py_gui_runner.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "input_widgets",
+        "is_external_script",
+        "target_file",
+        "scripts_dir"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "add_script_to_pool",
+        "populate_scripts_dropdown",
+        "on_script_select",
+        "delete_selected_script",
+        "select_file",
+        "load_script",
+        "_create_input_widget",
+        "_create_dialog_widget",
+        "_open_dialog",
+        "run_script",
+        "_execute_in_thread",
+        "_update_output",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "RecipeWheelModule",
+      "name": "RecipeWheelModule",
+      "file": "modules/recipe_wheel.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "current_spin_recipe_idx",
+        "recipes",
+        "ingredients_text",
+        "steps_text",
+        "wheel_label",
+        "spin_after_id",
+        "recipe_name_label",
+        "spin_count"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "start_spin",
+        "_perform_spin_animation",
+        "display_recipe",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "DrawingPadModule",
+      "name": "DrawingPadModule",
+      "file": "modules/draw.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "pen_width",
+        "canvas",
+        "pen_color"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "start_draw",
+        "draw",
+        "stop_draw",
+        "clear_canvas",
+        "choose_color",
+        "on_destroy"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "ChromeBrowser",
+      "name": "ChromeBrowser",
+      "file": "modules/browser.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "tabs",
+        "current_tab",
+        "bookmarks",
+        "closing_tabs",
+        "history"
+      ],
+      "methods": [
+        "__init__",
+        "create_ui",
+        "create_toolbar",
+        "create_tabbar",
+        "update_tabbar",
+        "new_tab",
+        "switch_tab",
+        "close_tab",
+        "update_toolbar_state",
+        "create_status_bar",
+        "go_back",
+        "go_forward",
+        "refresh",
+        "go_home",
+        "zoom_in",
+        "zoom_out",
+        "toggle_bookmark",
+        "show_menu",
+        "show_bookmarks",
+        "show_history",
+        "open_dev_tools",
+        "view_source",
+        "open_settings",
+        "show_about",
+        "on_destroy",
+        "_handle_internal_tab_close_for_cef",
+        "run",
+        "add_to_history",
+        "load_bookmarks",
+        "save_bookmarks",
+        "load_history",
+        "save_history"
+      ],
+      "bases": [
+        "Module"
+      ]
+    },
+    {
+      "id": "Tab",
+      "name": "Tab",
+      "file": "modules/browser.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "title",
+        "closing",
+        "browser",
+        "url_var",
+        "is_loading",
+        "browser_app"
+      ],
+      "methods": [
+        "__init__",
+        "create_address_bar",
+        "create_browser_container",
+        "on_browser_container_configure",
+        "embed_browser",
+        "message_loop_work",
+        "navigate_to_url",
+        "select_all_url",
+        "go_back",
+        "go_forward",
+        "refresh",
+        "go_home",
+        "zoom_in",
+        "zoom_out",
+        "toggle_bookmark",
+        "open_dev_tools",
+        "view_source",
+        "close_browser",
+        "can_go_back",
+        "can_go_forward",
+        "is_bookmarked",
+        "get_title",
+        "update_title"
+      ],
+      "bases": [
+        "ttk.Frame"
+      ]
+    },
+    {
+      "id": "ClientHandler",
+      "name": "ClientHandler",
+      "file": "modules/browser.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "tab"
+      ],
+      "methods": [
+        "__init__",
+        "OnLoadStart",
+        "OnLoadEnd",
+        "OnLoadError",
+        "OnLoadingStateChange"
+      ],
+      "bases": []
+    },
+    {
+      "id": "LifespanHandler",
+      "name": "LifespanHandler",
+      "file": "modules/browser.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "tab"
+      ],
+      "methods": [
+        "__init__",
+        "OnBeforeClose"
+      ],
+      "bases": [
+        "object"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "source": "PyGuiRunner",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "ModularGUI",
+      "target": "CustomLayoutManager",
+      "type": "composition",
+      "label": "composed-of"
+    },
+    {
+      "source": "ModularGUI",
+      "target": "SharedState",
+      "type": "aggregation",
+      "label": "has-a (param)"
+    },
+    {
+      "source": "FitterModule",
+      "target": "ResonatorAnalyzer",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "LifespanHandler",
+      "target": "Tab",
+      "type": "aggregation",
+      "label": "has-a (arg)"
+    },
+    {
+      "source": "PdfProcessorModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "PlaylistEditor",
+      "target": "VideoPlayerModule",
+      "type": "aggregation",
+      "label": "has-a (arg)"
+    },
+    {
+      "source": "VideoPlayerModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "ExeEmbedderModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "SudokuStudioModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "JumpToWindow",
+      "target": "VideoPlayerModule",
+      "type": "aggregation",
+      "label": "has-a (arg)"
+    },
+    {
+      "source": "CMDModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "RecipeWheelModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "Module",
+      "target": "SharedState",
+      "type": "aggregation",
+      "label": "has-a (arg)"
+    },
+    {
+      "source": "PlotGUIModule",
+      "target": "SharedState",
+      "type": "aggregation",
+      "label": "has-a (arg)"
+    },
+    {
+      "source": "ExeEmbedderModule",
+      "target": "RECT",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "PDFViewerModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "Tab",
+      "target": "LifespanHandler",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "TemplateModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "ImageEditorModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "FitterModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "VideoPlayerModule",
+      "target": "EffectsSettingsWindow",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "SystemInfoModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "ChromeBrowser",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "CSVProcessorApp",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "ColorPaletteModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "Tab",
+      "target": "ClientHandler",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "VideoPlayerModule",
+      "target": "PlaylistEditor",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "ReportModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "ClientHandler",
+      "target": "Tab",
+      "type": "aggregation",
+      "label": "has-a (arg)"
+    },
+    {
+      "source": "UnitConverterModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "TodoListModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "CustomLayoutManager",
+      "target": "AnimatedCanvas",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "ChromeBrowser",
+      "target": "Tab",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "NotepadModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "TranslatorModule",
+      "target": "FloatingWindow",
+      "type": "composition",
+      "label": "composed-of"
+    },
+    {
+      "source": "VideoPlayerModule",
+      "target": "JumpToWindow",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "TranslatorModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "ImageEditorModule",
+      "target": "SharedState",
+      "type": "aggregation",
+      "label": "has-a (param)"
+    },
+    {
+      "source": "PlotGUIModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "ClockModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "YoutubeDownloaderModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "MP4Processor",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "DrawingPadModule",
+      "target": "Module",
+      "type": "inheritance",
+      "label": "extends"
+    }
+  ]
+}
