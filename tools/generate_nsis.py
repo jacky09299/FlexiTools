@@ -17,6 +17,20 @@ def generate_nsis(template_path, output_path, modules_dir):
     sections_code = []
     descriptions_code = []
 
+    visibility_logic = []
+    visibility_logic.append("Function ShowModules")
+    for i in range(len(modules)):
+        section_id = f"SEC_MOD_{i}"
+        module_name = os.path.splitext(modules[i])[0]
+        visibility_logic.append(f'  SectionSetText ${{{section_id}}} "{module_name}"')
+    visibility_logic.append("FunctionEnd")
+
+    visibility_logic.append("Function HideModules")
+    for i in range(len(modules)):
+        section_id = f"SEC_MOD_{i}"
+        visibility_logic.append(f'  SectionSetText ${{{section_id}}} ""')
+    visibility_logic.append("FunctionEnd")
+
     for i, module_file in enumerate(modules):
         module_name = os.path.splitext(module_file)[0]
         section_id = f"SEC_MOD_{i}"
@@ -40,6 +54,7 @@ SectionEnd
 
     final_content = template_content.replace("; <<GENERATED_MODULE_SECTIONS>>", "\n".join(sections_code))
     final_content = final_content.replace("; <<GENERATED_MODULE_DESCRIPTIONS>>", "\n".join(descriptions_code))
+    final_content = final_content.replace("; <<GENERATED_VISIBILITY_LOGIC>>", "\n".join(visibility_logic))
 
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(final_content)

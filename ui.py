@@ -1230,6 +1230,15 @@ class ModularGUI:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        def _cleanup_binding(e):
+            canvas.unbind_all("<MouseWheel>")
+        dialog.bind("<Destroy>", _cleanup_binding)
+
         # Dictionary to hold BooleanVars for each module
         self.module_vars = {}
 

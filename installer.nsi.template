@@ -44,7 +44,16 @@ SilentInstall normal
 ; 選擇安裝目錄頁面
 !insertmacro MUI_PAGE_DIRECTORY
 
-; 選擇元件頁面
+; 選擇元件頁面 - 模組選擇
+!define MUI_PAGE_HEADER_TEXT "Select Modules"
+!define MUI_PAGE_HEADER_SUBTEXT "Choose which modules to install."
+!define MUI_PAGE_CUSTOMFUNCTION_PRE PageModules_Pre
+!insertmacro MUI_PAGE_COMPONENTS
+
+; 選擇元件頁面 - 額外任務 (Shortcuts)
+!define MUI_PAGE_HEADER_TEXT "Additional Tasks"
+!define MUI_PAGE_HEADER_SUBTEXT "Create shortcuts."
+!define MUI_PAGE_CUSTOMFUNCTION_PRE PageShortcuts_Pre
 !insertmacro MUI_PAGE_COMPONENTS
 
 ; 安裝頁面
@@ -104,7 +113,7 @@ Section "Main Program" SEC01
   ; NSIS File /r /x copies recursively excluding pattern.
   ; We want to copy everything in _internal EXCEPT the modules content
   ; Because PyInstaller puts modules in _internal\modules
-  
+
   SetOutPath "$INSTDIR\_internal"
   File /r /x "modules" "dist\FlexiTools\_internal\*.*"
 
@@ -163,6 +172,22 @@ SectionEnd
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC03} "Create a ${PRODUCT_NAME} shortcut in the Quick Launch bar"
 ; <<GENERATED_MODULE_DESCRIPTIONS>>
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
+
+; <<GENERATED_VISIBILITY_LOGIC>>
+
+Function PageModules_Pre
+  ; 顯示模組，隱藏捷徑
+  Call ShowModules
+  SectionSetText ${SEC02} ""
+  SectionSetText ${SEC03} ""
+FunctionEnd
+
+Function PageShortcuts_Pre
+  ; 隱藏模組，顯示捷徑
+  Call HideModules
+  SectionSetText ${SEC02} "Desktop Shortcut"
+  SectionSetText ${SEC03} "Quick Launch Shortcut"
+FunctionEnd
 
 ; 安裝後處理
 Section -AdditionalIcons
