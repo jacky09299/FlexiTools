@@ -16,6 +16,7 @@
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
 !include "Sections.nsh"
+; !include "nsProcess.nsh" ; Uncomment if using nsProcess plugin for more robust process handling
 
 ; 設定安裝檔案屬性
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -85,22 +86,12 @@ VIAddVersionKey /LANG=${LANG_TRADCHINESE} "ProductVersion" "${PRODUCT_VERSION}"
 ; 全域變數
 Var IsUpdateMode
 Var IsFirstInstall
-Var SavesBackupPath
 
 ; 主要安裝區段
 Section "Main Program" SEC01
   SectionIn RO ; Read-Only, cannot be unselected
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-
-  ; 檢查是否為更新模式，如果是則備份 saves 資料夾
-  ${If} $IsUpdateMode == "1"
-    DetailPrint "Update mode detected, backing up user data..."
-    IfFileExists "$INSTDIR\_internal\modules\saves\*.*" 0 +3
-      CreateDirectory "$TEMP\FlexiTools_Backup"
-      CopyFiles /SILENT "$INSTDIR\_internal\modules\saves\*.*" "$TEMP\FlexiTools_Backup"
-      StrCpy $SavesBackupPath "$TEMP\FlexiTools_Backup"
-  ${EndIf}
 
   ; 複製主程式檔案
   File "dist\FlexiTools\FlexiTools.exe"
@@ -125,19 +116,10 @@ Section "Main Program" SEC01
   ; Copy __init__.py or other critical files if they exist and are not optional modules
   ; For now we assume .py files in modules root are the optional ones
   ; But subdirectories (like saves) need to be handled?
-  ; saves is user data.
+  ; saves is user data and should be in AppData now, so we don't worry about overwriting it here.
 
   ; Copy non-python files in modules just in case (e.g. assets inside modules folder?)
   File /r /x "*.py" "dist\FlexiTools\_internal\modules\*.*"
-
-  ; 如果是更新模式，恢復 saves 資料夾
-  ${If} $IsUpdateMode == "1"
-    ${AndIf} $SavesBackupPath != ""
-      DetailPrint "Restoring user data..."
-      CreateDirectory "$INSTDIR\_internal\modules\saves"
-      CopyFiles /SILENT "$SavesBackupPath\*.*" "$INSTDIR\_internal\modules\saves"
-      RMDir /r "$SavesBackupPath"
-  ${EndIf}
 
   ; 只在首次安裝或手動安裝時建立捷徑
   ${If} $IsUpdateMode != "1"
@@ -657,7 +639,13 @@ Function .onInit
   ; 初始化變數
   StrCpy $IsUpdateMode "0"
   StrCpy $IsFirstInstall "1"
-  StrCpy $SavesBackupPath ""
+
+  ; 1. 強制關閉正在運行的程式 (TaskKill)
+  ; 嘗試關閉 FlexiTools.exe。/F 強制，/IM 指定映像名稱。
+  ; 使用 ExecWait 確保在繼續之前命令執行完畢。
+  ; 為了避免使用者混淆，可以使用 Banner 或 DetailPrint (但 .onInit 時還沒介面)，
+  ; 或者直接執行，如果沒運行也不會報錯 (會有 error code 但不影響安裝)。
+  ExecWait "taskkill /F /IM FlexiTools.exe"
 
   ; 檢查命令列參數是否包含 /UPDATE
   ${GetOptions} $CMDLINE "/UPDATE" $R0
@@ -673,22 +661,36 @@ Function .onInit
   ; 已安裝，設定為非首次安裝
   StrCpy $IsFirstInstall "0"
 
-  ; 如果是更新模式，直接繼續安裝
+  ; 如果是更新模式，我們需要先記錄原本安裝了哪些模組 (InitModuleSelection)
+  ; 然後再執行卸載。
   ${If} $IsUpdateMode == "1"
-    ; Call module detection logic
+    ; 先偵測並標記模組 (因為卸載後檔案就不見了)
     Call InitModuleSelection
+
+    ; 自動執行舊版卸載程序
+    ; 使用 _?=$INSTDIR 參數讓卸載程式在安裝目錄執行但不複製到暫存區，這樣 Wait 才能真正等待它結束
+    ; 加上 /S 靜默卸載，避免跳出確認視窗
+    DetailPrint "Uninstalling previous version..."
+    ExecWait '$R0 /S _?=$INSTDIR'
+
+    ; 卸載完成後，繼續安裝
     Goto done
   ${EndIf}
 
   ; 手動安裝模式：詢問是否卸載舊版
   MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
-  "${PRODUCT_NAME} is already installed.$\n$\nClick OK to remove the previous version or Cancel to cancel this installation." \
+  "${PRODUCT_NAME} is already installed.$\n$\nClick OK to remove the previous version and install the new one." \
   /SD IDOK IDOK uninst
   Abort
 
 uninst:
   ClearErrors
-  ExecWait '$R0 _?=$INSTDIR'
+  ; 手動模式下，先偵測模組狀態以便預設勾選 (User Experience improvement)
+  Call InitModuleSelection
+
+  ; 執行卸載 (靜默或非靜默? 通常重裝建議靜默以免麻煩)
+  ; 這裡保持使用者確認後的自動卸載
+  ExecWait '$R0 /S _?=$INSTDIR'
 
   IfErrors no_remove_uninstaller done
     no_remove_uninstaller:
@@ -704,11 +706,24 @@ FunctionEnd
 
 ; 卸載前確認
 Function un.onInit
+  ; 卸載前也嘗試關閉程式
+  ExecWait "taskkill /F /IM FlexiTools.exe"
+
+  ; 如果是靜默模式 (更新時自動調用)，跳過確認
+  ${If} ${Silent}
+    Return
+  ${EndIf}
+
   MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "Are you sure you want to completely remove ${PRODUCT_NAME} and all of its components?" /SD IDYES IDYES +2
   Abort
 FunctionEnd
 
 Function un.onUninstSuccess
+  ; 如果是靜默模式，跳過成功訊息
+  ${If} ${Silent}
+    Return
+  ${EndIf}
+
   HideWindow
   MessageBox MB_ICONINFORMATION|MB_OK "${PRODUCT_NAME} has been successfully removed from your computer." /SD IDOK
 FunctionEnd
