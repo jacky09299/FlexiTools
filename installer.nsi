@@ -15,6 +15,7 @@
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
+!include "Sections.nsh"
 
 ; 設定安裝檔案屬性
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -400,10 +401,115 @@ Function HideModules
   SectionSetText ${SEC_MOD_23} ""
   SectionSetText ${SEC_MOD_24} ""
 FunctionEnd
+Function RestoreModuleSelection
+  IfFileExists "$INSTDIR\FlexiTools.exe" 0 end_restore
+  IfFileExists "$INSTDIR\_internal\modules\Fitter.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_0}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_0}
+  IfFileExists "$INSTDIR\_internal\modules\browser.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_1}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_1}
+  IfFileExists "$INSTDIR\_internal\modules\clock.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_2}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_2}
+  IfFileExists "$INSTDIR\_internal\modules\color_palette.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_3}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_3}
+  IfFileExists "$INSTDIR\_internal\modules\draw.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_4}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_4}
+  IfFileExists "$INSTDIR\_internal\modules\exe_embedder.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_5}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_5}
+  IfFileExists "$INSTDIR\_internal\modules\gui_cmd.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_6}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_6}
+  IfFileExists "$INSTDIR\_internal\modules\image_editor.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_7}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_7}
+  IfFileExists "$INSTDIR\_internal\modules\mp4_processor.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_8}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_8}
+  IfFileExists "$INSTDIR\_internal\modules\notepad.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_9}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_9}
+  IfFileExists "$INSTDIR\_internal\modules\pdf_processor.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_10}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_10}
+  IfFileExists "$INSTDIR\_internal\modules\pdf_viewer.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_11}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_11}
+  IfFileExists "$INSTDIR\_internal\modules\plot_gui.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_12}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_12}
+  IfFileExists "$INSTDIR\_internal\modules\py_gui_runner.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_13}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_13}
+  IfFileExists "$INSTDIR\_internal\modules\recipe_wheel.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_14}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_14}
+  IfFileExists "$INSTDIR\_internal\modules\report.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_15}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_15}
+  IfFileExists "$INSTDIR\_internal\modules\split_para.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_16}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_16}
+  IfFileExists "$INSTDIR\_internal\modules\sudoku_studio.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_17}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_17}
+  IfFileExists "$INSTDIR\_internal\modules\system_info.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_18}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_18}
+  IfFileExists "$INSTDIR\_internal\modules\template_module.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_19}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_19}
+  IfFileExists "$INSTDIR\_internal\modules\todo_list.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_20}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_20}
+  IfFileExists "$INSTDIR\_internal\modules\translator.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_21}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_21}
+  IfFileExists "$INSTDIR\_internal\modules\unit_converter.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_22}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_22}
+  IfFileExists "$INSTDIR\_internal\modules\video.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_23}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_23}
+  IfFileExists "$INSTDIR\_internal\modules\youtube_downloader.py" 0 +3
+    !insertmacro SelectSection ${SEC_MOD_24}
+    Goto +2
+    !insertmacro UnselectSection ${SEC_MOD_24}
+  end_restore:
+FunctionEnd
 
 Function PageModules_Pre
   ; 顯示模組，隱藏捷徑
   Call ShowModules
+  Call RestoreModuleSelection
   SectionSetText ${SEC02} ""
   SectionSetText ${SEC03} ""
 FunctionEnd
@@ -479,7 +585,7 @@ Function .onInit
   ${GetOptions} $CMDLINE "/UPDATE" $R0
   IfErrors +3 0
     StrCpy $IsUpdateMode "1"
-    SetSilent silent
+    ; SetSilent silent ; Disable silent mode to allow module selection during update
 
   ; 檢查是否已安裝
   ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"

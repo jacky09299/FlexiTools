@@ -31,6 +31,31 @@ def generate_nsis(template_path, output_path, modules_dir):
         visibility_logic.append(f'  SectionSetText ${{{section_id}}} ""')
     visibility_logic.append("FunctionEnd")
 
+    visibility_logic.append("Function RestoreModuleSelection")
+    # Only run this check if we have a previous installation
+    visibility_logic.append('  IfFileExists "$INSTDIR\\FlexiTools.exe" 0 end_restore')
+    for i, module_file in enumerate(modules):
+        module_name = os.path.splitext(module_file)[0]
+        section_id = f"SEC_MOD_{i}"
+        # Check if the module file exists in the target directory
+        # If it exists, select the section. If not, unselect it.
+        # We use Macros from Sections.nsh for better readability if possible,
+        # but here we will use SectionSetFlags to be explicit.
+        # SF_SELECTED is 1. SF_RO is 16. We just want to set selection state.
+        # However, SectionSetFlags overwrites all flags. We should be careful if we had RO sections.
+        # These module sections are standard (not RO).
+
+        # !insertmacro SelectSection/UnselectSection requires Sections.nsh.
+        # We will inject !include "Sections.nsh" in the template.
+
+        visibility_logic.append(f'  IfFileExists "$INSTDIR\\_internal\\modules\\{module_file}" 0 +3')
+        visibility_logic.append(f'    !insertmacro SelectSection ${{{section_id}}}')
+        visibility_logic.append(f'    Goto +2')
+        visibility_logic.append(f'    !insertmacro UnselectSection ${{{section_id}}}')
+
+    visibility_logic.append("  end_restore:")
+    visibility_logic.append("FunctionEnd")
+
     for i, module_file in enumerate(modules):
         module_name = os.path.splitext(module_file)[0]
         section_id = f"SEC_MOD_{i}"

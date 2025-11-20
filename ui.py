@@ -714,8 +714,8 @@ class ModularGUI:
         echo Waiting for application to close...
         timeout /t 3 /nobreak > NUL
 
-        echo Running installer in silent mode...
-        start /wait "" "{installer_path}" /UPDATE /S
+        echo Running installer...
+        start /wait "" "{installer_path}" /UPDATE
 
         echo Installer finished.
         timeout /t 2 /nobreak > NUL

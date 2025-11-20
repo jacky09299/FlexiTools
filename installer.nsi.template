@@ -15,6 +15,7 @@
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
+!include "Sections.nsh"
 
 ; 設定安裝檔案屬性
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -178,6 +179,7 @@ SectionEnd
 Function PageModules_Pre
   ; 顯示模組，隱藏捷徑
   Call ShowModules
+  Call RestoreModuleSelection
   SectionSetText ${SEC02} ""
   SectionSetText ${SEC03} ""
 FunctionEnd
@@ -253,7 +255,7 @@ Function .onInit
   ${GetOptions} $CMDLINE "/UPDATE" $R0
   IfErrors +3 0
     StrCpy $IsUpdateMode "1"
-    SetSilent silent
+    ; SetSilent silent ; Disable silent mode to allow module selection during update
   
   ; 檢查是否已安裝
   ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"
