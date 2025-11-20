@@ -54,7 +54,6 @@ jobs:
             echo "No changes detected from script. Skipping push."
           else
             echo "UML info updated. Pushing to develop..."
-            # [skip ci] 避免 develop 分支的 CI 被重複觸發
-            git commit -m "chore: auto-generate UML info after main update [skip ci]"
+            git commit -m "chore: auto-generate UML info after main update"
             git push origin develop
           fi
