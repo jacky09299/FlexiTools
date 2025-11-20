@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexiTools UML 架構圖</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --line-color: #666;
+            --box-bg: #2d2d2d;
+            --box-border: #444;
+            --text-color: #e0e0e0;
+            --header-bg: #007acc;
+            --header-text: #ffffff;
+            --method-text: #dcdcdc;
+            --attribute-text: #b0b0b0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            overflow: hidden; /* Zoom/Pan canvas */
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: auto;
+            cursor: grab;
+        }
+
+        #canvas-container.grabbing {
+            cursor: grabbing;
+        }
+
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .uml-class {
+            position: absolute;
+            background-color: var(--box-bg);
+            border: 1px solid var(--box-border);
+            border-radius: 4px;
+            min-width: 180px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 1;
+            transition: transform 0.2s, box-shadow 0.2s;
+            user-select: none;
+        }
+
+        .uml-class:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+            z-index: 10;
+            border-color: var(--header-bg);
+        }
+
+        .class-header {
+            background-color: var(--header-bg);
+            color: var(--header-text);
+            padding: 8px;
+            font-weight: bold;
+            text-align: center;
+            border-top-left-radius: 3px;
+            border-top-right-radius: 3px;
+            border-bottom: 1px solid var(--box-border);
+        }
+
+        .class-type {
+            font-size: 0.8em;
+            font-style: italic;
+            opacity: 0.8;
+            display: block;
+            font-weight: normal;
+        }
+
+        .class-body {
+            padding: 8px;
+            font-size: 0.9em;
+        }
+
+        .section-title {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 4px;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #444;
+        }
+
+        .attribute {
+            color: var(--attribute-text);
+            font-family: 'Consolas', monospace;
+            margin-bottom: 2px;
+        }
+
+        .method {
+            color: var(--method-text);
+            font-family: 'Consolas', monospace;
+            margin-bottom: 2px;
+        }
+
+        /* SVG Connectors */
+        path {
+            fill: none;
+            stroke: var(--line-color);
+            stroke-width: 2;
+        }
+
+        .arrow-head {
+            fill: var(--line-color);
+        }
+
+        /* Legend / Controls */
+        #controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            z-index: 100;
+            border: 1px solid #444;
+        }
+
+        button {
+            background: #444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 2px;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(30,30,30,0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay">
+        <h2>正在讀取架構圖資料...</h2>
+        <p>如果卡住，請確認您是透過伺服器開啟此網頁 (例如 `python -m http.server`)，而非直接點擊檔案。</p>
+        <p>這是因為瀏覽器的安全策略限制直接讀取本地 JSON 檔案。</p>
+    </div>
+
+    <div id="controls">
+        <h3 style="margin: 0 0 10px 0; font-size: 1em;">FlexiTools UML</h3>
+        <button onclick="resetView()">重置視角</button>
+        <button onclick="layoutEngine.run()">重新排版</button>
+        <div style="margin-top:10px; font-size: 0.8em; color: #aaa;">
+            <div>➜ Inheritance</div>
+            <div style="border-top: 1px dashed #aaa; margin-top:2px; padding-top:2px;">⇢ Association</div>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <svg id="connections"></svg>
+        <div id="nodes-container"></div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const DATA_URL = 'uml_data.json';
+        const NODE_WIDTH = 220;
+        const LEVEL_HEIGHT = 250; // Vertical gap between ranks
+        const NODE_SPACING = 250; // Horizontal gap
+
+        // --- State ---
+        let state = {
+            classes: [],
+            relationships: [],
+            nodes: {}, // id -> domElement & data
+            zoom: 1,
+            pan: { x: 0, y: 0 }
+        };
+
+        // --- Layout Engine (Simplified Layered Layout) ---
+        const layoutEngine = {
+            run: function() {
+                const { classes, relationships } = state;
+                const nodes = {};
+
+                // 1. Initialize Nodes
+                classes.forEach(cls => {
+                    nodes[cls.id] = {
+                        id: cls.id,
+                        data: cls,
+                        rank: -1,
+                        x: 0,
+                        y: 0,
+                        incoming: [],
+                        outgoing: []
+                    };
+                });
+
+                // 2. Build Graph
+                relationships.forEach(rel => {
+                    if (nodes[rel.source] && nodes[rel.target]) {
+                        nodes[rel.source].outgoing.push(rel.target);
+                        nodes[rel.target].incoming.push(rel.source);
+                    }
+                });
+
+                // 3. Assign Ranks (Longest Path / Topological)
+                // Inheritance implies Target (Base) is HIGHER (Lower Rank value) than Source (Subclass)
+                // Association implies... let's try to keep them nearby.
+
+                // Find roots (nodes with no inheritance parents, or 'target' in inheritance)
+                // In our JSON, 'inheritance': Source extends Target. So Source -> Target.
+                // Visual: Target should be top. Source bottom.
+                // Rank 0: Base classes.
+
+                const visited = new Set();
+
+                function assignRank(nodeId, currentRank) {
+                    if (visited.has(nodeId)) return; // prevent cycles
+                    const node = nodes[nodeId];
+
+                    // Update rank: max(current, existing)
+                    if (currentRank > node.rank) {
+                         node.rank = currentRank;
+                    }
+
+                    // Flow down to children (Subclasses)
+                    // Find nodes that inherit FROM this node.
+                    // relationships: { source: "Child", target: "Parent", type: "inheritance" }
+                    relationships.forEach(rel => {
+                        if (rel.target === nodeId && rel.type === 'inheritance') {
+                            assignRank(rel.source, currentRank + 1);
+                        }
+                        // Associations: try to put them on same level or below
+                        if (rel.source === nodeId && rel.type !== 'inheritance') {
+                           // assignRank(rel.target, currentRank); // Soft constraint
+                        }
+                    });
+                }
+
+                // Start with known roots or high-level modules
+                // Priority 1: Modules that are targets of inheritance (Base Classes)
+                const baseClasses = new Set();
+                relationships.forEach(rel => {
+                    if (rel.type === 'inheritance') baseClasses.add(rel.target);
+                });
+
+                // Also add standalone managers
+                classes.forEach(cls => {
+                    if (cls.id.includes('Manager') || cls.id === 'SharedState' || cls.id === 'ModularGUI') {
+                        baseClasses.add(cls.id);
+                    }
+                });
+
+                // Run rank assignment
+                baseClasses.forEach(id => {
+                    if(nodes[id]) assignRank(id, 0);
+                });
+
+                // Fallback for unranked nodes
+                Object.values(nodes).forEach(node => {
+                    if (node.rank === -1) node.rank = 1; // Default to level 1
+                });
+
+                // 4. Group by Rank
+                const ranks = {};
+                let maxRank = 0;
+                Object.values(nodes).forEach(node => {
+                    if (!ranks[node.rank]) ranks[node.rank] = [];
+                    ranks[node.rank].push(node);
+                    maxRank = Math.max(maxRank, node.rank);
+                });
+
+                // 5. Position Nodes (Grid)
+                const canvasWidth = document.getElementById('canvas-container').clientWidth;
+
+                for (let r = 0; r <= maxRank; r++) {
+                    if (!ranks[r]) continue;
+                    const rowNodes = ranks[r];
+                    const totalRowWidth = rowNodes.length * NODE_SPACING;
+                    const startX = (canvasWidth / 2) - (totalRowWidth / 2);
+
+                    rowNodes.forEach((node, index) => {
+                        node.y = 50 + (r * LEVEL_HEIGHT);
+                        node.x = startX + (index * NODE_SPACING);
+                    });
+                }
+
+                // Update global state
+                state.nodes = nodes;
+
+                // Apply to DOM
+                this.applyPositions(nodes);
+                this.drawConnections(nodes);
+            },
+
+            applyPositions: function(nodes) {
+                Object.values(nodes).forEach(node => {
+                    const el = document.getElementById(`node-${node.id}`);
+                    if (el) {
+                        el.style.left = node.x + 'px';
+                        el.style.top = node.y + 'px';
+                    }
+                });
+                // Update SVG size
+                const svg = document.getElementById('connections');
+                const maxH = Math.max(...Object.values(nodes).map(n => n.y)) + 400;
+                const maxW = Math.max(...Object.values(nodes).map(n => n.x)) + 400;
+                svg.style.height = maxH + 'px';
+                svg.style.width = maxW + 'px';
+            },
+
+            drawConnections: function(nodes) {
+                const svg = document.getElementById('connections');
+                svg.innerHTML = ''; // Clear
+
+                // Define markers
+                const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+
+                // Arrow for Association
+                const markerArrow = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+                markerArrow.setAttribute("id", "arrow");
+                markerArrow.setAttribute("markerWidth", "10");
+                markerArrow.setAttribute("markerHeight", "7");
+                markerArrow.setAttribute("refX", "10");
+                markerArrow.setAttribute("refY", "3.5");
+                markerArrow.setAttribute("orient", "auto");
+                const pathArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                pathArrow.setAttribute("d", "M0,0 L10,3.5 L0,7");
+                pathArrow.setAttribute("class", "arrow-head");
+                pathArrow.setAttribute("fill", "none");
+                pathArrow.setAttribute("stroke", "#666");
+                markerArrow.appendChild(pathArrow);
+                defs.appendChild(markerArrow);
+
+                // Triangle for Inheritance
+                const markerTri = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+                markerTri.setAttribute("id", "triangle");
+                markerTri.setAttribute("markerWidth", "12");
+                markerTri.setAttribute("markerHeight", "12");
+                markerTri.setAttribute("refX", "12");
+                markerTri.setAttribute("refY", "6");
+                markerTri.setAttribute("orient", "auto");
+                const pathTri = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                pathTri.setAttribute("d", "M0,0 L12,6 L0,12 Z"); // Closed triangle
+                pathTri.setAttribute("fill", "#2d2d2d"); // Match box bg
+                pathTri.setAttribute("stroke", "#666");
+                markerTri.appendChild(pathTri);
+                defs.appendChild(markerTri);
+
+                svg.appendChild(defs);
+
+                state.relationships.forEach(rel => {
+                    const src = nodes[rel.source];
+                    const tgt = nodes[rel.target];
+                    if (!src || !tgt) return;
+
+                    // Simple Orthogonal-ish routing
+                    // Start: Bottom center of Source
+                    // End: Top center of Target (for inheritance) or Side
+
+                    const start = { x: src.x + NODE_WIDTH/2, y: src.y + 50 }; // approximate center
+                    const end = { x: tgt.x + NODE_WIDTH/2, y: tgt.y + 50 };
+
+                    // Get actual DOM rects for better precision
+                    const srcEl = document.getElementById(`node-${rel.source}`);
+                    const tgtEl = document.getElementById(`node-${rel.target}`);
+                    if (srcEl && tgtEl) {
+                        start.x = src.x + srcEl.offsetWidth / 2;
+                        start.y = src.y + srcEl.offsetHeight;
+
+                        if (rel.type === 'inheritance') {
+                             // Inheritance: Bottom to Top
+                             start.y = src.y; // Start from Top of child
+                             end.x = tgt.x + tgtEl.offsetWidth / 2;
+                             end.y = tgt.y + tgtEl.offsetHeight; // End at Bottom of parent?
+                             // UML usually: Arrow points to Parent.
+                             // So Line from Child (Top) to Parent (Bottom).
+                        } else {
+                             // Association
+                             start.y = src.y + srcEl.offsetHeight / 2;
+                             start.x = src.x + srcEl.offsetWidth; // Right side
+                             end.x = tgt.x; // Left side
+                             end.y = tgt.y + tgtEl.offsetHeight / 2;
+                        }
+                    }
+
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+                    // Bezier Curve
+                    const dx = end.x - start.x;
+                    const dy = end.y - start.y;
+
+                    let d = "";
+                    if (rel.type === 'inheritance') {
+                         // Vertical curve
+                         d = `M ${start.x} ${start.y} C ${start.x} ${start.y - 50}, ${end.x} ${end.y + 50}, ${end.x} ${end.y}`;
+                    } else {
+                         // Horizontal or messier curve
+                         d = `M ${start.x} ${start.y} C ${start.x + 50} ${start.y}, ${end.x - 50} ${end.y}, ${end.x} ${end.y}`;
+                    }
+
+                    path.setAttribute("d", d);
+
+                    if (rel.type === 'inheritance') {
+                        path.setAttribute("marker-end", "url(#triangle)");
+                        path.setAttribute("stroke-dasharray", "none");
+                    } else {
+                        path.setAttribute("marker-end", "url(#arrow)");
+                        path.setAttribute("stroke-dasharray", "5,5"); // Dashed for dependency
+                    }
+
+                    svg.appendChild(path);
+                });
+            }
+        };
+
+        // --- View Logic (Pan/Zoom) ---
+        let isDragging = false;
+        let lastMouse = { x: 0, y: 0 };
+        const container = document.getElementById('canvas-container');
+        const nodesContainer = document.getElementById('nodes-container');
+        const svgContainer = document.getElementById('connections');
+
+        container.addEventListener('mousedown', e => {
+            if(e.target === container || e.target.tagName === 'svg') {
+                isDragging = true;
+                lastMouse = { x: e.clientX, y: e.clientY };
+                container.classList.add('grabbing');
+            }
+        });
+
+        window.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const dx = e.clientX - lastMouse.x;
+            const dy = e.clientY - lastMouse.y;
+            lastMouse = { x: e.clientX, y: e.clientY };
+
+            container.scrollLeft -= dx;
+            container.scrollTop -= dy;
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            container.classList.remove('grabbing');
+        });
+
+        function resetView() {
+            container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2;
+            container.scrollTop = 0;
+        }
+
+        // --- Render HTML Nodes ---
+        function renderNodes(classes) {
+            const container = document.getElementById('nodes-container');
+            container.innerHTML = '';
+
+            classes.forEach(cls => {
+                const el = document.createElement('div');
+                el.className = 'uml-class';
+                el.id = `node-${cls.id}`;
+
+                // Header
+                let html = `
+                    <div class="class-header">
+                        <span class="class-name">${cls.name}</span>
+                        <span class="class-type">&laquo;${cls.type}&raquo;</span>
+                    </div>
+                    <div class="class-body">
+                `;
+
+                // Attributes
+                if (cls.attributes && cls.attributes.length > 0) {
+                    html += `<div class="section-title">Attributes</div>`;
+                    cls.attributes.forEach(attr => {
+                        html += `<div class="attribute">- ${attr}</div>`;
+                    });
+                    html += `<hr style="border:0; border-top:1px solid #444; margin: 4px 0;">`;
+                }
+
+                // Methods
+                if (cls.methods && cls.methods.length > 0) {
+                    html += `<div class="section-title">Methods</div>`;
+                    cls.methods.forEach(method => {
+                        html += `<div class="method">+ ${method}()</div>`;
+                    });
+                }
+
+                html += `</div>`;
+                el.innerHTML = html;
+
+                // Make nodes draggable (optional, for manual adjustment)
+                makeNodeDraggable(el);
+
+                container.appendChild(el);
+            });
+        }
+
+        function makeNodeDraggable(el) {
+            let startX, startY, startLeft, startTop;
+            const header = el.querySelector('.class-header');
+
+            header.addEventListener('mousedown', e => {
+                e.stopPropagation(); // Don't trigger canvas pan
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = parseInt(el.style.left || 0);
+                startTop = parseInt(el.style.top || 0);
+
+                function onMove(e) {
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    const newX = startLeft + dx;
+                    const newY = startTop + dy;
+                    el.style.left = newX + 'px';
+                    el.style.top = newY + 'px';
+
+                    // Update internal state and redraw lines
+                    const id = el.id.replace('node-', '');
+                    if(state.nodes[id]) {
+                        state.nodes[id].x = newX;
+                        state.nodes[id].y = newY;
+                        layoutEngine.drawConnections(state.nodes);
+                    }
+                }
+
+                function onUp() {
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('mouseup', onUp);
+                }
+
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('mouseup', onUp);
+            });
+        }
+
+        // --- Initialization ---
+        async function init() {
+            try {
+                const response = await fetch(DATA_URL);
+                if (!response.ok) throw new Error("HTTP Error " + response.status);
+                const data = await response.json();
+
+                state.classes = data.classes;
+                state.relationships = data.relationships;
+
+                document.getElementById('loading-overlay').style.display = 'none';
+
+                renderNodes(state.classes);
+                // Wait for DOM render to get sizes
+                setTimeout(() => {
+                    layoutEngine.run();
+                    resetView();
+                }, 100);
+
+            } catch (e) {
+                console.error(e);
+                document.querySelector('#loading-overlay h2').innerText = "讀取失敗: " + e.message;
+            }
+        }
+
+        window.onload = init;
+
+    </script>
+</body>
+</html>
