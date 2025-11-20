@@ -3,33 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlexiTools UML 架構圖</title>
+    <title>FlexiTools - UML 架構圖</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
         :root {
-            --bg-color: #1e1e1e;
             --line-color: #666;
-            --box-bg: #2d2d2d;
+            --box-bg: #2d2d2d; /* Fallback */
             --box-border: #444;
-            --text-color: #e0e0e0;
-            --header-bg: #007acc;
-            --header-text: #ffffff;
             --method-text: #dcdcdc;
             --attribute-text: #b0b0b0;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            overflow: hidden; /* Zoom/Pan canvas */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden; /* Prevent body scroll */
+        }
+
+        /* Adjust navbar for flex layout if needed, but fixed-top takes it out of flow.
+           We need to ensure the main content starts below the navbar.
+           Body padding-top in style.css is 56px, which handles this.
+        */
+
+        #main-content {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden; /* The canvas container */
+            background-color: var(--background-color);
         }
 
         #canvas-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            overflow: auto;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow: hidden; /* JS handles panning */
             cursor: grab;
         }
 
@@ -45,30 +57,31 @@
             height: 100%;
             z-index: 0;
             pointer-events: none;
+            overflow: visible;
         }
 
         .uml-class {
             position: absolute;
-            background-color: var(--box-bg);
+            background-color: var(--surface-color);
             border: 1px solid var(--box-border);
             border-radius: 4px;
-            min-width: 180px;
+            min-width: 200px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             z-index: 1;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: box-shadow 0.2s;
             user-select: none;
+            color: var(--text-color);
         }
 
         .uml-class:hover {
-            transform: translateY(-2px);
             box-shadow: 0 8px 16px rgba(0,0,0,0.5);
             z-index: 10;
-            border-color: var(--header-bg);
+            border-color: var(--primary-color);
         }
 
         .class-header {
-            background-color: var(--header-bg);
-            color: var(--header-text);
+            background-color: rgba(0, 191, 255, 0.15); /* var(--primary-color) low opacity */
+            color: var(--primary-color);
             padding: 8px;
             font-weight: bold;
             text-align: center;
@@ -83,6 +96,7 @@
             opacity: 0.8;
             display: block;
             font-weight: normal;
+            color: var(--muted-text-color);
         }
 
         .class-body {
@@ -91,10 +105,10 @@
         }
 
         .section-title {
-            font-size: 0.8em;
-            color: #888;
-            margin-top: 4px;
-            margin-bottom: 2px;
+            font-size: 0.75em;
+            color: var(--muted-text-color);
+            margin-top: 6px;
+            margin-bottom: 4px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border-bottom: 1px solid #444;
@@ -123,73 +137,110 @@
             fill: var(--line-color);
         }
 
-        /* Legend / Controls */
+        /* Controls */
         #controls {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(5px);
+            padding: 15px;
             border-radius: 8px;
             z-index: 100;
-            border: 1px solid #444;
-        }
-
-        button {
-            background: #444;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 2px;
-        }
-
-        button:hover {
-            background: #555;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
         #loading-overlay {
-            position: fixed;
+            position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(30,30,30,0.9);
+            background: rgba(18, 18, 18, 0.9);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 999;
         }
+
+        footer {
+            margin-top: 0 !important;
+            z-index: 50; /* Above canvas if necessary */
+            background-color: var(--surface-color);
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">
+                <img src="logo.png" alt="FlexiTools Logo" width="36" height="36" class="d-inline-block align-text-top">
+                FlexiTools
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="index.html">首頁</a></li>
+                    <li class="nav-item"><a class="nav-link" href="tutorials.html">教學</a></li>
+                    <li class="nav-item"><a class="nav-link" href="download.html">下載</a></li>
+                    <li class="nav-item"><a class="nav-link" href="support.html">支援</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">關於我們</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-    <div id="loading-overlay">
-        <h2>正在讀取架構圖資料...</h2>
-        <p>如果卡住，請確認您是透過伺服器開啟此網頁 (例如 `python -m http.server`)，而非直接點擊檔案。</p>
-        <p>這是因為瀏覽器的安全策略限制直接讀取本地 JSON 檔案。</p>
-    </div>
+    <div id="main-content">
+        <div id="loading-overlay">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h4 class="text-light">正在讀取架構圖資料...</h4>
+            <p class="text-muted mt-2">如果卡住，請確認您是透過伺服器開啟此網頁。</p>
+        </div>
 
-    <div id="controls">
-        <h3 style="margin: 0 0 10px 0; font-size: 1em;">FlexiTools UML</h3>
-        <button onclick="resetView()">重置視角</button>
-        <button onclick="layoutEngine.run()">重新排版</button>
-        <div style="margin-top:10px; font-size: 0.8em; color: #aaa;">
-            <div>➜ Inheritance</div>
-            <div style="border-top: 1px dashed #aaa; margin-top:2px; padding-top:2px;">⇢ Association</div>
+        <div id="controls">
+            <h5 class="mb-3 text-light"><i class="bi bi-diagram-3"></i> UML 控制面板</h5>
+            <div class="d-grid gap-2">
+                <button class="btn btn-sm btn-outline-light" onclick="resetView()"><i class="bi bi-arrows-fullscreen"></i> 重置視角</button>
+                <button class="btn btn-sm btn-outline-primary" onclick="layoutEngine.run()"><i class="bi bi-magic"></i> 重新排版</button>
+            </div>
+            <hr class="border-secondary my-3">
+            <div style="font-size: 0.85em; color: #aaa;">
+                <div class="d-flex align-items-center mb-1">
+                    <span style="display:inline-block; width:20px; height:2px; background:#666; margin-right:5px;"></span>
+                    <span style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 10px solid #666; margin-bottom: -5px;"></span>
+                    <span class="ms-2">繼承 (Inheritance)</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span style="display:inline-block; width:20px; height:0; border-top:2px dashed #666; margin-right:5px;"></span>
+                    <span style="display:inline-block; width: 0; height: 0; border-top: 3px solid transparent; border-bottom: 3px solid transparent; border-left: 6px solid #666;"></span>
+                    <span class="ms-2">關聯 (Association)</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="canvas-container">
+            <svg id="connections"></svg>
+            <div id="nodes-container"></div>
         </div>
     </div>
 
-    <div id="canvas-container">
-        <svg id="connections"></svg>
-        <div id="nodes-container"></div>
-    </div>
+    <footer class="py-3">
+        <div class="container text-center">
+            <p class="mb-0 small">Copyright &copy; 2025 FlexiTools | <a href="uml.html" class="text-muted text-decoration-none">UML 架構圖</a></p>
+        </div>
+    </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // --- Configuration ---
         const DATA_URL = 'uml_data.json';
         const NODE_WIDTH = 220;
         const LEVEL_HEIGHT = 250; // Vertical gap between ranks
-        const NODE_SPACING = 250; // Horizontal gap
+        const NODE_SPACING = 280; // Horizontal gap
 
         // --- State ---
         let state = {
@@ -227,62 +278,51 @@
                     }
                 });
 
-                // 3. Assign Ranks (Longest Path / Topological)
-                // Inheritance implies Target (Base) is HIGHER (Lower Rank value) than Source (Subclass)
-                // Association implies... let's try to keep them nearby.
-
-                // Find roots (nodes with no inheritance parents, or 'target' in inheritance)
-                // In our JSON, 'inheritance': Source extends Target. So Source -> Target.
-                // Visual: Target should be top. Source bottom.
-                // Rank 0: Base classes.
-
+                // 3. Assign Ranks
                 const visited = new Set();
 
                 function assignRank(nodeId, currentRank) {
-                    if (visited.has(nodeId)) return; // prevent cycles
-                    const node = nodes[nodeId];
+                    if (visited.has(nodeId + "_" + currentRank)) return; // Simple cycle breaker
+                    visited.add(nodeId + "_" + currentRank);
 
-                    // Update rank: max(current, existing)
+                    const node = nodes[nodeId];
+                    if (!node) return;
+
                     if (currentRank > node.rank) {
                          node.rank = currentRank;
                     }
 
-                    // Flow down to children (Subclasses)
-                    // Find nodes that inherit FROM this node.
-                    // relationships: { source: "Child", target: "Parent", type: "inheritance" }
                     relationships.forEach(rel => {
                         if (rel.target === nodeId && rel.type === 'inheritance') {
+                            // Source inherits from Target. Source is below Target.
+                            // If we are at Target (Rank X), Source is Rank X + 1
                             assignRank(rel.source, currentRank + 1);
-                        }
-                        // Associations: try to put them on same level or below
-                        if (rel.source === nodeId && rel.type !== 'inheritance') {
-                           // assignRank(rel.target, currentRank); // Soft constraint
                         }
                     });
                 }
 
-                // Start with known roots or high-level modules
-                // Priority 1: Modules that are targets of inheritance (Base Classes)
-                const baseClasses = new Set();
-                relationships.forEach(rel => {
-                    if (rel.type === 'inheritance') baseClasses.add(rel.target);
-                });
+                // Identify roots (targets of inheritance that are not sources of inheritance)
+                // Or simply all classes that are targets
+                const potentialRoots = new Set();
 
-                // Also add standalone managers
+                // Start with classes that have no outgoing inheritance (Base classes)
+                // outgoing inheritance means: source=This, type=inheritance
                 classes.forEach(cls => {
-                    if (cls.id.includes('Manager') || cls.id === 'SharedState' || cls.id === 'ModularGUI') {
-                        baseClasses.add(cls.id);
-                    }
+                    let isSubclass = false;
+                    relationships.forEach(rel => {
+                        if(rel.source === cls.id && rel.type === 'inheritance') isSubclass = true;
+                    });
+                    if (!isSubclass) potentialRoots.add(cls.id);
                 });
 
                 // Run rank assignment
-                baseClasses.forEach(id => {
-                    if(nodes[id]) assignRank(id, 0);
+                potentialRoots.forEach(id => {
+                    assignRank(id, 0);
                 });
 
                 // Fallback for unranked nodes
                 Object.values(nodes).forEach(node => {
-                    if (node.rank === -1) node.rank = 1; // Default to level 1
+                    if (node.rank === -1) node.rank = 1;
                 });
 
                 // 4. Group by Rank
@@ -295,13 +335,14 @@
                 });
 
                 // 5. Position Nodes (Grid)
-                const canvasWidth = document.getElementById('canvas-container').clientWidth;
+                // To center properly, we need the container center, but effectively we just lay out in a coordinate system
+                // and then pan to center.
 
                 for (let r = 0; r <= maxRank; r++) {
                     if (!ranks[r]) continue;
                     const rowNodes = ranks[r];
                     const totalRowWidth = rowNodes.length * NODE_SPACING;
-                    const startX = (canvasWidth / 2) - (totalRowWidth / 2);
+                    const startX = -(totalRowWidth / 2); // Center around x=0
 
                     rowNodes.forEach((node, index) => {
                         node.y = 50 + (r * LEVEL_HEIGHT);
@@ -325,12 +366,12 @@
                         el.style.top = node.y + 'px';
                     }
                 });
-                // Update SVG size
-                const svg = document.getElementById('connections');
-                const maxH = Math.max(...Object.values(nodes).map(n => n.y)) + 400;
-                const maxW = Math.max(...Object.values(nodes).map(n => n.x)) + 400;
-                svg.style.height = maxH + 'px';
-                svg.style.width = maxW + 'px';
+                // We don't strictly need to resize SVG here because we transform the container
+                // But for the lines to draw correctly relative to 0,0...
+                // Actually, we are panning the whole #canvas-container content?
+                // Wait, the previous logic used scrollLeft/Top on container.
+                // Since we want Zoom, we should use CSS Transform on a wrapper inside container.
+                // Let's adjust the View Logic to use Transform instead of Scroll, it's smoother for Zoom.
             },
 
             drawConnections: function(nodes) {
@@ -350,7 +391,6 @@
                 markerArrow.setAttribute("orient", "auto");
                 const pathArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 pathArrow.setAttribute("d", "M0,0 L10,3.5 L0,7");
-                pathArrow.setAttribute("class", "arrow-head");
                 pathArrow.setAttribute("fill", "none");
                 pathArrow.setAttribute("stroke", "#666");
                 markerArrow.appendChild(pathArrow);
@@ -365,7 +405,7 @@
                 markerTri.setAttribute("refY", "6");
                 markerTri.setAttribute("orient", "auto");
                 const pathTri = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                pathTri.setAttribute("d", "M0,0 L12,6 L0,12 Z"); // Closed triangle
+                pathTri.setAttribute("d", "M0,0 L12,6 L0,12 Z");
                 pathTri.setAttribute("fill", "#2d2d2d"); // Match box bg
                 pathTri.setAttribute("stroke", "#666");
                 markerTri.appendChild(pathTri);
@@ -378,48 +418,38 @@
                     const tgt = nodes[rel.target];
                     if (!src || !tgt) return;
 
-                    // Simple Orthogonal-ish routing
-                    // Start: Bottom center of Source
-                    // End: Top center of Target (for inheritance) or Side
-
-                    const start = { x: src.x + NODE_WIDTH/2, y: src.y + 50 }; // approximate center
-                    const end = { x: tgt.x + NODE_WIDTH/2, y: tgt.y + 50 };
-
-                    // Get actual DOM rects for better precision
                     const srcEl = document.getElementById(`node-${rel.source}`);
                     const tgtEl = document.getElementById(`node-${rel.target}`);
-                    if (srcEl && tgtEl) {
-                        start.x = src.x + srcEl.offsetWidth / 2;
-                        start.y = src.y + srcEl.offsetHeight;
 
-                        if (rel.type === 'inheritance') {
-                             // Inheritance: Bottom to Top
-                             start.y = src.y; // Start from Top of child
-                             end.x = tgt.x + tgtEl.offsetWidth / 2;
-                             end.y = tgt.y + tgtEl.offsetHeight; // End at Bottom of parent?
-                             // UML usually: Arrow points to Parent.
-                             // So Line from Child (Top) to Parent (Bottom).
-                        } else {
-                             // Association
-                             start.y = src.y + srcEl.offsetHeight / 2;
-                             start.x = src.x + srcEl.offsetWidth; // Right side
-                             end.x = tgt.x; // Left side
-                             end.y = tgt.y + tgtEl.offsetHeight / 2;
-                        }
+                    if (!srcEl || !tgtEl) return;
+
+                    // Simple Logic:
+                    // Inheritance: Top of Child -> Bottom of Parent
+                    // Association: Right of Source -> Left of Target (or generic)
+
+                    let start = { x: 0, y: 0 };
+                    let end = { x: 0, y: 0 };
+
+                    if (rel.type === 'inheritance') {
+                         start.x = src.x + srcEl.offsetWidth / 2;
+                         start.y = src.y; // Top
+                         end.x = tgt.x + tgtEl.offsetWidth / 2;
+                         end.y = tgt.y + tgtEl.offsetHeight; // Bottom
+                    } else {
+                         start.x = src.x + srcEl.offsetWidth;
+                         start.y = src.y + srcEl.offsetHeight / 2;
+                         end.x = tgt.x;
+                         end.y = tgt.y + tgtEl.offsetHeight / 2;
                     }
 
                     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-
-                    // Bezier Curve
-                    const dx = end.x - start.x;
-                    const dy = end.y - start.y;
 
                     let d = "";
                     if (rel.type === 'inheritance') {
                          // Vertical curve
                          d = `M ${start.x} ${start.y} C ${start.x} ${start.y - 50}, ${end.x} ${end.y + 50}, ${end.x} ${end.y}`;
                     } else {
-                         // Horizontal or messier curve
+                         // Horizontal curve
                          d = `M ${start.x} ${start.y} C ${start.x + 50} ${start.y}, ${end.x - 50} ${end.y}, ${end.x} ${end.y}`;
                     }
 
@@ -427,26 +457,52 @@
 
                     if (rel.type === 'inheritance') {
                         path.setAttribute("marker-end", "url(#triangle)");
-                        path.setAttribute("stroke-dasharray", "none");
                     } else {
                         path.setAttribute("marker-end", "url(#arrow)");
-                        path.setAttribute("stroke-dasharray", "5,5"); // Dashed for dependency
+                        path.setAttribute("stroke-dasharray", "5,5");
                     }
 
                     svg.appendChild(path);
                 });
+
+                // Adjust SVG Size to encompass everything
+                // Since we use CSS transform on the wrapper, the SVG just needs to be big enough for the content
+                // But to simplify, let's make SVG huge and position it at 0,0
+                // Or better: the nodes and SVG are children of a 'world' div that we transform.
+                // For now, let's update the View Logic to handle the transform.
             }
         };
 
-        // --- View Logic (Pan/Zoom) ---
-        let isDragging = false;
-        let lastMouse = { x: 0, y: 0 };
+        // --- View Logic (Pan/Zoom with Transform) ---
         const container = document.getElementById('canvas-container');
         const nodesContainer = document.getElementById('nodes-container');
-        const svgContainer = document.getElementById('connections');
+        const svg = document.getElementById('connections');
+
+        // Create a wrapper for content to transform
+        const contentWrapper = document.createElement('div');
+        contentWrapper.id = 'content-wrapper';
+        contentWrapper.style.transformOrigin = '0 0';
+        contentWrapper.style.position = 'absolute';
+        contentWrapper.style.top = '0';
+        contentWrapper.style.left = '0';
+        contentWrapper.style.width = '100%'; // Will expand
+        contentWrapper.style.height = '100%';
+
+        // Move nodes and svg into wrapper
+        container.appendChild(contentWrapper);
+        contentWrapper.appendChild(svg);
+        contentWrapper.appendChild(nodesContainer);
+
+        let isDragging = false;
+        let lastMouse = { x: 0, y: 0 };
+        let transform = { x: 0, y: 0, k: 1 };
+
+        function updateTransform() {
+            contentWrapper.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`;
+        }
 
         container.addEventListener('mousedown', e => {
-            if(e.target === container || e.target.tagName === 'svg') {
+            if(e.target === container || e.target === contentWrapper || e.target.tagName === 'svg') {
                 isDragging = true;
                 lastMouse = { x: e.clientX, y: e.clientY };
                 container.classList.add('grabbing');
@@ -459,8 +515,9 @@
             const dy = e.clientY - lastMouse.y;
             lastMouse = { x: e.clientX, y: e.clientY };
 
-            container.scrollLeft -= dx;
-            container.scrollTop -= dy;
+            transform.x += dx;
+            transform.y += dy;
+            updateTransform();
         });
 
         window.addEventListener('mouseup', () => {
@@ -468,9 +525,37 @@
             container.classList.remove('grabbing');
         });
 
+        container.addEventListener('wheel', e => {
+            e.preventDefault();
+            const zoomSensitivity = 0.001;
+            const newK = transform.k - (e.deltaY * zoomSensitivity);
+
+            // Limit zoom
+            if (newK < 0.1 || newK > 5) return;
+
+            // Zoom towards mouse pointer
+            // 1. Get mouse pos relative to container
+            const rect = container.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // 2. Calculate world coordinates of mouse
+            const worldX = (mouseX - transform.x) / transform.k;
+            const worldY = (mouseY - transform.y) / transform.k;
+
+            // 3. Update Scale
+            transform.k = newK;
+
+            // 4. Update Translate to keep worldX, worldY under mouse
+            transform.x = mouseX - worldX * transform.k;
+            transform.y = mouseY - worldY * transform.k;
+
+            updateTransform();
+        }, { passive: false });
+
         function resetView() {
-            container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2;
-            container.scrollTop = 0;
+            transform = { x: container.clientWidth / 2, y: 50, k: 1 };
+            updateTransform();
         }
 
         // --- Render HTML Nodes ---
@@ -483,7 +568,6 @@
                 el.className = 'uml-class';
                 el.id = `node-${cls.id}`;
 
-                // Header
                 let html = `
                     <div class="class-header">
                         <span class="class-name">${cls.name}</span>
@@ -492,7 +576,6 @@
                     <div class="class-body">
                 `;
 
-                // Attributes
                 if (cls.attributes && cls.attributes.length > 0) {
                     html += `<div class="section-title">Attributes</div>`;
                     cls.attributes.forEach(attr => {
@@ -501,7 +584,6 @@
                     html += `<hr style="border:0; border-top:1px solid #444; margin: 4px 0;">`;
                 }
 
-                // Methods
                 if (cls.methods && cls.methods.length > 0) {
                     html += `<div class="section-title">Methods</div>`;
                     cls.methods.forEach(method => {
@@ -512,7 +594,7 @@
                 html += `</div>`;
                 el.innerHTML = html;
 
-                // Make nodes draggable (optional, for manual adjustment)
+                // Draggable Logic for individual nodes
                 makeNodeDraggable(el);
 
                 container.appendChild(el);
@@ -520,31 +602,29 @@
         }
 
         function makeNodeDraggable(el) {
-            let startX, startY, startLeft, startTop;
+            let startX, startY;
             const header = el.querySelector('.class-header');
 
             header.addEventListener('mousedown', e => {
-                e.stopPropagation(); // Don't trigger canvas pan
+                e.stopPropagation();
                 startX = e.clientX;
                 startY = e.clientY;
-                startLeft = parseInt(el.style.left || 0);
-                startTop = parseInt(el.style.top || 0);
+
+                const nodeId = el.id.replace('node-', '');
+                const node = state.nodes[nodeId];
+                const startNodeX = node.x;
+                const startNodeY = node.y;
 
                 function onMove(e) {
-                    const dx = e.clientX - startX;
-                    const dy = e.clientY - startY;
-                    const newX = startLeft + dx;
-                    const newY = startTop + dy;
-                    el.style.left = newX + 'px';
-                    el.style.top = newY + 'px';
+                    // Calculate delta in world coordinates (divide by zoom)
+                    const dx = (e.clientX - startX) / transform.k;
+                    const dy = (e.clientY - startY) / transform.k;
 
-                    // Update internal state and redraw lines
-                    const id = el.id.replace('node-', '');
-                    if(state.nodes[id]) {
-                        state.nodes[id].x = newX;
-                        state.nodes[id].y = newY;
-                        layoutEngine.drawConnections(state.nodes);
-                    }
+                    node.x = startNodeX + dx;
+                    node.y = startNodeY + dy;
+
+                    layoutEngine.applyPositions(state.nodes); // Update DOM
+                    layoutEngine.drawConnections(state.nodes); // Redraw lines
                 }
 
                 function onUp() {
@@ -570,6 +650,7 @@
                 document.getElementById('loading-overlay').style.display = 'none';
 
                 renderNodes(state.classes);
+
                 // Wait for DOM render to get sizes
                 setTimeout(() => {
                     layoutEngine.run();
@@ -578,12 +659,12 @@
 
             } catch (e) {
                 console.error(e);
-                document.querySelector('#loading-overlay h2').innerText = "讀取失敗: " + e.message;
+                const overlay = document.getElementById('loading-overlay');
+                overlay.innerHTML = `<h3 class="text-danger">讀取失敗</h3><p class="text-light">${e.message}</p>`;
             }
         }
 
         window.onload = init;
-
     </script>
 </body>
 </html>
