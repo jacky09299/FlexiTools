@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexiTools UML Documentation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #1e1e1e; color: #e0e0e0; }
+        .nav-tabs .nav-link { color: #aaa; }
+        .nav-tabs .nav-link.active { background-color: #2d2d2d; color: #fff; border-color: #444 #444 #2d2d2d; }
+        .tab-content { background-color: #2d2d2d; padding: 20px; border: 1px solid #444; border-top: none; }
+        .mermaid { background-color: #fff; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        h1 { margin-top: 20px; margin-bottom: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <h1>FlexiTools UML Diagrams</h1>
+
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="arch-tab" data-bs-toggle="tab" data-bs-target="#arch" type="button" role="tab">System Architecture</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="core-tab" data-bs-toggle="tab" data-bs-target="#core" type="button" role="tab">Core Classes</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="modules-tab" data-bs-toggle="tab" data-bs-target="#modules" type="button" role="tab">Modules Structure</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="arch" role="tabpanel">
+                <div class="mermaid">
+graph TD
+    subgraph "Entry Point"
+        Main[main.py]
+        Splash[splash_ui.py]
+    end
+
+    subgraph "Core System"
+        UI[ui.py / ModularGUI]
+        SharedState[shared_state.py]
+        UpdateMgr[update_manager.py]
+        StyleMgr[style_manager.py]
+    end
+
+    subgraph "Modules Layer"
+        ModulesFolder[modules/]
+        BaseModule[Module Class]
+    end
+
+    subgraph "Storage"
+        Config[layout_config.json]
+        Saves[saves/ directory]
+    end
+
+    Main -->|Initializes| SharedState
+    Main -->|Launches| Splash
+    Main -->|Starts| UI
+    UI -->|Uses| SharedState
+    UI -->|Uses| StyleMgr
+    UI -->|Checks| UpdateMgr
+    UI -->|Loads| ModulesFolder
+    ModulesFolder -.->|Inherits| BaseModule
+    UI -->|Reads/Writes| Config
+    ModulesFolder -->|Reads/Writes| Saves
+
+                </div>
+            </div>
+            <div class="tab-pane fade" id="core" role="tabpanel">
+                <div class="mermaid">
+classDiagram
+    class AnimatedCanvas {
+        +__init__()
+    }
+    Canvas <|-- AnimatedCanvas
+    class Module {
+        +__init__()
+        +close_module_action()
+        +toggle_maximize_action()
+        +get_frame()
+        +create_ui()
+        +on_destroy()
+    }
+    class CustomLayoutManager {
+        +__init__()
+        +add_module()
+        +remove_module()
+        +resize_module()
+        +reflow_layout()
+        +scale_modules()
+        +get_max_module_width()
+        +move_module_before()
+        +get_layout_data()
+        +get_module_info()
+    }
+    AnimatedCanvas <|-- CustomLayoutManager
+    class ModularGUI {
+        +__init__()
+        +update_status_bar_log()
+        +setup_bindings()
+        +ui_check_for_updates_startup()
+        +ui_check_for_updates_manual()
+        +update_layout_scrollregion()
+        +update_layout_manager_canvas_item_config()
+        +on_canvas_configure()
+        +update_min_window_size()
+        +add_module_from_menu()
+        +discover_modules()
+        +instantiate_module()
+        +setup_default_layout()
+        +save_layout_config()
+        +load_layout_config()
+        +save_profile_dialog()
+        +load_profile_dialog()
+        +manage_profiles_dialog()
+        +load_module_visibility()
+        +save_module_visibility()
+        +refresh_modules_menu()
+        +manage_modules_dialog()
+        +on_closing()
+        +show_context_menu()
+        +toggle_module_visibility()
+        +hide_module()
+        +start_drag()
+        +on_drag()
+        +end_drag()
+        +maximize_module()
+        +restore_modules()
+        +get_resize_cursor()
+        +on_mouse_motion()
+        +on_mouse_down()
+        +on_mouse_drag()
+        +on_mouse_up()
+        +start_move()
+        +do_move()
+        +toggle_maximize()
+        +maximize_window_custom()
+        +restore_window_custom()
+        +close_window()
+        +show_on_taskbar()
+        +minimize_window()
+        +restore_window()
+    }
+    class SharedState {
+        +__init__()
+        +set_log_callback()
+        +set_splash_log_callback()
+        +clear_splash_log_callback()
+        +set_splash_progress_callback()
+        +clear_splash_progress_callback()
+        +update_splash_progress()
+        +get()
+        +set()
+        +log()
+        +add_observer()
+        +remove_observer()
+        +notify_observers()
+    }
+                </div>
+            </div>
+            <div class="tab-pane fade" id="modules" role="tabpanel">
+                <div class="mermaid">
+classDiagram
+    class Module {
+        +create_ui()
+        +on_destroy()
+    }
+    class ChromeBrowser {
+        +__init__()
+        +create_ui()
+        +create_toolbar()
+        +create_tabbar()
+        +update_tabbar()
+        +new_tab()
+        +switch_tab()
+        +on_destroy()
+        +...
+    }
+    Module <|-- ChromeBrowser
+    class Tab {
+        +__init__()
+        +create_address_bar()
+        +create_browser_container()
+        +on_browser_container_configure()
+        +embed_browser()
+        +message_loop_work()
+        +...
+    }
+    Frame <|-- Tab
+    class ClientHandler {
+        +__init__()
+        +OnLoadStart()
+        +OnLoadEnd()
+        +OnLoadError()
+        +OnLoadingStateChange()
+    }
+    class LifespanHandler {
+        +__init__()
+        +OnBeforeClose()
+    }
+    object <|-- LifespanHandler
+    class RecipeWheelModule {
+        +__init__()
+        +create_ui()
+        +start_spin()
+        +display_recipe()
+        +on_destroy()
+    }
+    Module <|-- RecipeWheelModule
+    class ReportModule {
+        +__init__()
+        +create_ui()
+        +load_excel_file_dialog()
+        +on_sheet_selected()
+        +load_sheet_data()
+        +clear_treeview()
+        +populate_treeview()
+        +on_destroy()
+    }
+    Module <|-- ReportModule
+    class FloatingWindow {
+        +__init__()
+        +show_translation()
+        +bind_mouse_events()
+        +on_mouse_enter()
+        +on_mouse_leave()
+        +start_drag()
+        +...
+    }
+    class TranslatorModule {
+        +__init__()
+        +create_ui()
+        +toggle_translation()
+        +start_translation()
+        +stop_translation()
+        +on_key_press()
+        +monitor_clipboard()
+        +on_destroy()
+        +...
+    }
+    Module <|-- TranslatorModule
+    class JumpToWindow {
+        +__init__()
+        +confirm_selection()
+    }
+    Toplevel <|-- JumpToWindow
+    class PlaylistEditor {
+        +__init__()
+        +get_selected_pos()
+        +move_item()
+        +move_up()
+        +move_down()
+        +move_to_top()
+        +...
+    }
+    Toplevel <|-- PlaylistEditor
+    class EffectsSettingsWindow {
+        +__init__()
+        +draw_equalizer_visualization()
+        +ok()
+        +cancel()
+    }
+    Toplevel <|-- EffectsSettingsWindow
+    class VideoPlayerModule {
+        +__init__()
+        +create_ui()
+        +open_effects_window()
+        +apply_audio_effects()
+        +on_destroy()
+        +cleanup_temp_cache()
+        +start_playlist()
+        +extract_audio()
+        +...
+    }
+    Module <|-- VideoPlayerModule
+    class UnitConverterModule {
+        +__init__()
+        +create_ui()
+        +on_category_selected()
+        +on_conversion_selected()
+        +perform_conversion()
+        +on_destroy()
+    }
+    Module <|-- UnitConverterModule
+    class MP4Processor {
+        +__init__()
+        +create_ui()
+        +...
+    }
+    Module <|-- MP4Processor
+    class NotepadModule {
+        +__init__()
+        +create_ui()
+        +open_file()
+        +save_file()
+        +save_file_as()
+        +on_destroy()
+    }
+    Module <|-- NotepadModule
+    class RECT {
+    }
+    Structure <|-- RECT
+    class ExeEmbedderModule {
+        +__init__()
+        +create_ui()
+        +show_menu()
+        +hide_menu()
+        +schedule_hide_menu()
+        +cancel_hide_menu()
+        +add_script_to_pool()
+        +on_destroy()
+        +...
+    }
+    Module <|-- ExeEmbedderModule
+    class PdfProcessorModule {
+        +__init__()
+        +create_ui()
+        +on_destroy()
+        +...
+    }
+    Module <|-- PdfProcessorModule
+    class TodoListModule {
+        +__init__()
+        +create_ui()
+        +add_task_event()
+        +remove_task()
+        +clear_all_tasks()
+        +refresh_task_list()
+        +on_destroy()
+    }
+    Module <|-- TodoListModule
+    class ResonatorAnalyzer {
+        +__init__()
+        +load_data()
+        +resonator_model_abs()
+        +circle_model()
+        +circle_fit_func()
+        +find_sharpest_peak_range()
+        +...
+    }
+    class FitterModule {
+        +__init__()
+        +create_ui()
+        +on_destroy()
+        +browse_file()
+        +run_analysis()
+        +clear_frequency_boundaries()
+        +run_analysis_thread()
+        +create_and_display_full_spectrum()
+        +...
+    }
+    Module <|-- FitterModule
+    class CMDModule {
+        +__init__()
+        +create_ui()
+        +init_cmd_process()
+        +start_output_threads()
+        +read_output()
+        +process_output()
+        +clean_output()
+        +on_destroy()
+        +...
+    }
+    Module <|-- CMDModule
+    class ColorPaletteModule {
+        +__init__()
+        +create_ui()
+        +generate_initial_palettes()
+        +on_palette_click()
+        +on_palette_double_click()
+        +on_slider_change()
+        +update_color_from_hex_entry()
+        +on_destroy()
+        +...
+    }
+    Module <|-- ColorPaletteModule
+    class SudokuStudioModule {
+        +__init__()
+        +create_ui()
+        +validate_input()
+        +load_new_game()
+        +reset_puzzle()
+        +check_solution()
+        +on_destroy()
+    }
+    Module <|-- SudokuStudioModule
+    class SystemInfoModule {
+        +__init__()
+        +create_ui()
+        +update_info()
+        +on_destroy()
+    }
+    Module <|-- SystemInfoModule
+    class PlotGUIModule {
+        +__init__()
+        +create_ui()
+        +load_excel()
+        +update_x_units()
+        +update_y_units()
+        +plot_data()
+        +select_save_path()
+    }
+    Module <|-- PlotGUIModule
+    class PyGuiRunner {
+        +__init__()
+        +create_ui()
+        +add_script_to_pool()
+        +populate_scripts_dropdown()
+        +on_script_select()
+        +delete_selected_script()
+        +select_file()
+        +on_destroy()
+        +...
+    }
+    Module <|-- PyGuiRunner
+    class PDFViewerModule {
+        +__init__()
+        +setup_ui()
+        +fit_page_to_canvas()
+        +open_pdf()
+        +initial_fit_page()
+        +display_page()
+        +...
+    }
+    Module <|-- PDFViewerModule
+    class ImageEditorModule {
+        +__init__()
+        +create_ui()
+        +update_button_states()
+        +set_status()
+        +open_image_action()
+        +toggle_edit_mode_action()
+        +rotate_action()
+        +on_destroy()
+        +...
+    }
+    Module <|-- ImageEditorModule
+    class YoutubeDownloaderModule {
+        +__init__()
+        +create_ui()
+        +select_download_folder()
+        +load_txt()
+        +check_dependencies()
+        +parse_url_line()
+        +start_download_thread()
+        +on_destroy()
+        +...
+    }
+    Module <|-- YoutubeDownloaderModule
+    class CSVProcessorApp {
+        +__init__()
+        +create_ui()
+        +create_values_checkboxes()
+        +update_values_frame_title()
+        +browse_input_file()
+        +browse_output_dir()
+        +select_all()
+        +...
+    }
+    Module <|-- CSVProcessorApp
+    class TemplateModule {
+        +__init__()
+        +create_ui()
+        +show_message()
+        +on_destroy()
+    }
+    Module <|-- TemplateModule
+    class DrawingPadModule {
+        +__init__()
+        +create_ui()
+        +start_draw()
+        +draw()
+        +stop_draw()
+        +clear_canvas()
+        +choose_color()
+        +on_destroy()
+    }
+    Module <|-- DrawingPadModule
+    class ClockModule {
+        +__init__()
+        +create_ui()
+        +update_time()
+        +on_destroy()
+    }
+    Module <|-- ClockModule
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</body>
+</html>
