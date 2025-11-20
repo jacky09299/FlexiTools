@@ -1,20 +1,15 @@
-name: Extract UML Info on Merge
+name: Extract UML Info on Main Push
 
+# 改為監聽 main 分支的 push 事件
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - main
 
 jobs:
-  run-extract-script:
-    # 兩個條件必須同時成立：
-    # 1. PR 確實被合併了 (而不是被關閉/拒絕)
-    # 2. 來源分支 (head) 必須是 develop
-    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop'
+  update-develop-uml:
     runs-on: ubuntu-latest
-    
-    # 給予 Action 寫入權限以便 Push 程式碼
+    # 給予寫入權限以允許 push
     permissions:
       contents: write
 
@@ -22,38 +17,44 @@ jobs:
       - name: Checkout develop branch
         uses: actions/checkout@v4
         with:
-          ref: develop      # 明確指定切換到 develop 分支
-          fetch-depth: 0    # 獲取完整歷史記錄，避免 Push 時出現問題
+          ref: develop      # 1. 鎖定操作 develop 分支
+          fetch-depth: 0    # 2. 抓取完整歷史以便進行 merge
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10' # 請根據您的專案需求調整版本
+          python-version: '3.10'
 
-      # 如果您的腳本依賴特定的 library，請取消下面註解並安裝
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync main into develop
+        # 關鍵步驟：
+        # 因為你是直接 push main，Action 執行當下 origin/develop 可能還在舊版本。
+        # 我們必須先把剛 push 到 main 的東西 merge 回 develop，確保腳本跑到的是新程式碼。
+        run: |
+          echo "Merging origin/main into develop to ensure code is up-to-date..."
+          git merge origin/main --no-edit
+
+      # 如有依賴套件請解除註解
       # - name: Install dependencies
-      #   run: |
-      #     python -m pip install --upgrade pip
-      #     pip install -r requirements.txt
+      #   run: pip install -r requirements.txt
 
       - name: Run Extraction Script
         run: python tools/extract_uml_info.py
 
       - name: Commit and Push changes
         run: |
-          # 設定 Git 使用者 (使用 GitHub Actions Bot)
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # 加入所有變更
           git add .
           
-          # 檢查是否有變更需要 Commit
+          # 檢查是否有變更
           if git diff-index --quiet HEAD; then
-            echo "No changes detected. Skipping push."
+            echo "No changes detected from script. Skipping push."
           else
-            echo "Changes detected. Committing and pushing..."
-            # [skip ci] 可以避免這次 Push 再次觸發 develop 分支上的其他 CI 流程
-            git commit -m "chore: auto-generate UML info after merge to main [skip ci]"
+            echo "UML info updated. Pushing to develop..."
+            # [skip ci] 避免 develop 分支的 CI 被重複觸發
+            git commit -m "chore: auto-generate UML info after main update [skip ci]"
             git push origin develop
           fi
