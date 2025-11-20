@@ -230,7 +230,7 @@
 
     <footer class="py-3">
         <div class="container text-center">
-            <p class="mb-0 small">Copyright &copy; 2025 FlexiTools | <a href="uml.html" class="text-muted text-decoration-none">UML 架構圖</a></p>
+            <p class="mb-0 small">Copyright &copy; 2025 FlexiTools</p>
         </div>
     </footer>
 
@@ -238,9 +238,74 @@
     <script>
         // --- Configuration ---
         const DATA_URL = 'uml_data.json';
-        const NODE_WIDTH = 220;
-        const LEVEL_HEIGHT = 350; // Vertical gap between ranks (Increased for better spacing)
-        const NODE_SPACING = 400; // Horizontal gap (Increased for better spacing)
+        const NODE_SPACING_X = 600; // Increased initial spacing
+        const NODE_SPACING_Y = 500;
+
+        // --- Helper Geometry ---
+        const Geometry = {
+            // Check if two line segments (p1-p2) and (p3-p4) intersect
+            lineIntersectsLine: function(p1, p2, p3, p4) {
+                const det = (p2.x - p1.x) * (p4.y - p3.y) - (p4.x - p3.x) * (p2.y - p1.y);
+                if (det === 0) return false; // Parallel
+                const lambda = ((p4.y - p3.y) * (p4.x - p1.x) + (p3.x - p4.x) * (p4.y - p1.y)) / det;
+                const gamma = ((p1.y - p2.y) * (p4.x - p1.x) + (p2.x - p1.x) * (p4.y - p1.y)) / det;
+                return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+            },
+
+            // Check if a line segment (p1-p2) intersects a rectangle (rect)
+            lineIntersectsRect: function(p1, p2, rect) {
+                // Check if either point is INSIDE the rect
+                if (p1.x > rect.x && p1.x < rect.x + rect.w && p1.y > rect.y && p1.y < rect.y + rect.h) return true;
+                if (p2.x > rect.x && p2.x < rect.x + rect.w && p2.y > rect.y && p2.y < rect.y + rect.h) return true;
+
+                // Check intersection with 4 edges
+                const tl = {x: rect.x, y: rect.y};
+                const tr = {x: rect.x + rect.w, y: rect.y};
+                const bl = {x: rect.x, y: rect.y + rect.h};
+                const br = {x: rect.x + rect.w, y: rect.y + rect.h};
+
+                return Geometry.lineIntersectsLine(p1, p2, tl, tr) ||
+                       Geometry.lineIntersectsLine(p1, p2, tr, br) ||
+                       Geometry.lineIntersectsLine(p1, p2, br, bl) ||
+                       Geometry.lineIntersectsLine(p1, p2, bl, tl);
+            },
+
+            // Check if two rectangles overlap
+            rectIntersectsRect: function(r1, r2) {
+                return !(r2.x >= r1.x + r1.w ||
+                         r2.x + r2.w <= r1.x ||
+                         r2.y >= r1.y + r1.h ||
+                         r2.y + r2.h <= r1.y);
+            },
+
+            // Find intersection point of a line from center of rect to 'targetPoint' with the rect's border
+            getBorderIntersection: function(center, rect, targetPoint) {
+                const dx = targetPoint.x - center.x;
+                const dy = targetPoint.y - center.y;
+
+                if (dx === 0 && dy === 0) return center;
+
+                // Try all 4 intersection times (positive only)
+                const times = [];
+
+                if (dx !== 0) {
+                   times.push((rect.x - center.x) / dx); // Left
+                   times.push((rect.x + rect.w - center.x) / dx); // Right
+                }
+                if (dy !== 0) {
+                   times.push((rect.y - center.y) / dy); // Top
+                   times.push((rect.y + rect.h - center.y) / dy); // Bottom
+                }
+
+                // We want the smallest positive t
+                const validT = times.filter(t => t > 0).sort((a,b) => a-b)[0] || 0;
+
+                return {
+                    x: center.x + validT * dx,
+                    y: center.y + validT * dy
+                };
+            }
+        };
 
         // --- State ---
         let state = {
@@ -251,62 +316,52 @@
             pan: { x: 0, y: 0 }
         };
 
-        // --- Layout Engine (Simplified Layered Layout) ---
+        // --- Layout Engine ---
         const layoutEngine = {
-            run: function() {
+            run: async function() {
                 const { classes, relationships } = state;
-                const nodes = {};
 
-                // 1. Initialize Nodes
+                // 1. Initial Layered Layout (Start Point)
+                this.initialLayeredLayout(classes, relationships);
+
+                // 2. Get Dimensions
+                this.updateNodeDimensions();
+
+                // 3. Optimize Layout
+                await this.optimizeLayout(1500); // Iterations
+
+                // 4. Render
+                this.applyPositions(state.nodes);
+                this.drawConnections(state.nodes);
+            },
+
+            initialLayeredLayout: function(classes, relationships) {
+                const nodes = {};
                 classes.forEach(cls => {
                     nodes[cls.id] = {
-                        id: cls.id,
-                        data: cls,
-                        rank: -1,
-                        x: 0,
-                        y: 0,
-                        incoming: [],
-                        outgoing: []
+                        id: cls.id, data: cls,
+                        rank: -1, x: 0, y: 0, w: 220, h: 100 // Default size
                     };
                 });
 
-                // 2. Build Graph
-                relationships.forEach(rel => {
-                    if (nodes[rel.source] && nodes[rel.target]) {
-                        nodes[rel.source].outgoing.push(rel.target);
-                        nodes[rel.target].incoming.push(rel.source);
-                    }
-                });
-
-                // 3. Assign Ranks
+                // Assign Ranks based on inheritance
                 const visited = new Set();
-
                 function assignRank(nodeId, currentRank) {
-                    if (visited.has(nodeId + "_" + currentRank)) return; // Simple cycle breaker
+                    if (visited.has(nodeId + "_" + currentRank)) return;
                     visited.add(nodeId + "_" + currentRank);
-
                     const node = nodes[nodeId];
                     if (!node) return;
-
-                    if (currentRank > node.rank) {
-                         node.rank = currentRank;
-                    }
+                    if (currentRank > node.rank) node.rank = currentRank;
 
                     relationships.forEach(rel => {
                         if (rel.target === nodeId && rel.type === 'inheritance') {
-                            // Source inherits from Target. Source is below Target.
-                            // If we are at Target (Rank X), Source is Rank X + 1
                             assignRank(rel.source, currentRank + 1);
                         }
                     });
                 }
 
-                // Identify roots (targets of inheritance that are not sources of inheritance)
-                // Or simply all classes that are targets
+                // Find roots
                 const potentialRoots = new Set();
-
-                // Start with classes that have no outgoing inheritance (Base classes)
-                // outgoing inheritance means: source=This, type=inheritance
                 classes.forEach(cls => {
                     let isSubclass = false;
                     relationships.forEach(rel => {
@@ -314,48 +369,198 @@
                     });
                     if (!isSubclass) potentialRoots.add(cls.id);
                 });
+                potentialRoots.forEach(id => assignRank(id, 0));
+                Object.values(nodes).forEach(n => { if(n.rank === -1) n.rank = 1; });
 
-                // Run rank assignment
-                potentialRoots.forEach(id => {
-                    assignRank(id, 0);
-                });
-
-                // Fallback for unranked nodes
-                Object.values(nodes).forEach(node => {
-                    if (node.rank === -1) node.rank = 1;
-                });
-
-                // 4. Group by Rank
+                // Initial grid position
                 const ranks = {};
                 let maxRank = 0;
-                Object.values(nodes).forEach(node => {
-                    if (!ranks[node.rank]) ranks[node.rank] = [];
-                    ranks[node.rank].push(node);
-                    maxRank = Math.max(maxRank, node.rank);
+                Object.values(nodes).forEach(n => {
+                    if(!ranks[n.rank]) ranks[n.rank] = [];
+                    ranks[n.rank].push(n);
+                    maxRank = Math.max(maxRank, n.rank);
                 });
 
-                // 5. Position Nodes (Grid)
-                // To center properly, we need the container center, but effectively we just lay out in a coordinate system
-                // and then pan to center.
-
-                for (let r = 0; r <= maxRank; r++) {
-                    if (!ranks[r]) continue;
-                    const rowNodes = ranks[r];
-                    const totalRowWidth = rowNodes.length * NODE_SPACING;
-                    const startX = -(totalRowWidth / 2); // Center around x=0
-
-                    rowNodes.forEach((node, index) => {
-                        node.y = 50 + (r * LEVEL_HEIGHT);
-                        node.x = startX + (index * NODE_SPACING);
+                for(let r=0; r<=maxRank; r++) {
+                    if(!ranks[r]) continue;
+                    const row = ranks[r];
+                    const width = row.length * NODE_SPACING_X;
+                    const startX = -width/2;
+                    row.forEach((n, i) => {
+                        n.x = startX + i * NODE_SPACING_X;
+                        n.y = 50 + r * NODE_SPACING_Y;
                     });
                 }
-
-                // Update global state
                 state.nodes = nodes;
+            },
 
-                // Apply to DOM
-                this.applyPositions(nodes);
-                this.drawConnections(nodes);
+            updateNodeDimensions: function() {
+                Object.values(state.nodes).forEach(node => {
+                    const el = document.getElementById(`node-${node.id}`);
+                    if (el) {
+                        node.w = el.offsetWidth;
+                        node.h = el.offsetHeight;
+                    }
+                });
+            },
+
+            // Simulated Annealing Optimization
+            optimizeLayout: async function(iterations) {
+                const nodes = Object.values(state.nodes);
+                const rels = state.relationships;
+                let temp = 1000.0; // Higher initial temperature
+                const coolingRate = 0.99; // Slower cooling
+
+                for (let i = 0; i < iterations; i++) {
+                    // Pick a random node
+                    const node = nodes[Math.floor(Math.random() * nodes.length)];
+
+                    // Save current pos
+                    const oldX = node.x;
+                    const oldY = node.y;
+                    const oldCost = this.calculateCost(nodes, rels);
+
+                    // Propose move
+                    const angle = Math.random() * Math.PI * 2;
+                    // Move distance scales with temp
+                    const dist = Math.random() * temp;
+
+                    node.x += Math.cos(angle) * dist;
+                    node.y += Math.sin(angle) * dist;
+
+                    const newCost = this.calculateCost(nodes, rels);
+
+                    // Metropolis Acceptance Criterion
+                    if (newCost < oldCost) {
+                        // Accept improvement
+                    } else {
+                        // Accept degradation with probability e^(-delta / temp)
+                        const delta = newCost - oldCost;
+                        const prob = Math.exp(-delta / temp);
+                        if (Math.random() < prob) {
+                            // Accept worse state to escape local minima
+                        } else {
+                            // Revert
+                            node.x = oldX;
+                            node.y = oldY;
+                        }
+                    }
+
+                    temp *= coolingRate;
+                    // if (temp < 1) temp = 500; // Optional Re-heating if we were doing multiple passes
+                }
+            },
+
+            calculateCost: function(nodes, rels) {
+                let cost = 0;
+                const BOX_PADDING = 50; // Increased padding
+
+                // 1. Node Overlaps (Super Expensive)
+                for (let i = 0; i < nodes.length; i++) {
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const n1 = nodes[i];
+                        const n2 = nodes[j];
+                        // AABB Check
+                        // n.x/y are top-left? No, in applyPositions: style.left = node.x
+                        // But in initialLayout calculation: x is center-ish?
+                        // Wait, initialLayout: n.x = startX + i * SPACING.
+                        // applyPositions: left = n.x.
+                        // So n.x is LEFT coordinate.
+                        // Center logic in lines code: x + w/2.
+                        // Overlap check:
+                        // Rect1: [x, x+w], [y, y+h]
+
+                        const overlapX = (n1.x < n2.x + n2.w + BOX_PADDING) && (n1.x + n1.w + BOX_PADDING > n2.x);
+                        const overlapY = (n1.y < n2.y + n2.h + BOX_PADDING) && (n1.y + n1.h + BOX_PADDING > n2.y);
+
+                        if (overlapX && overlapY) {
+                            // Cost proportional to overlap depth to provide gradient
+                            cost += 1000000;
+                        }
+                    }
+                }
+
+                // Calculate Virtual Lines for all relationships
+                const lines = rels.map(rel => {
+                    const s = state.nodes[rel.source];
+                    const t = state.nodes[rel.target];
+                    if (!s || !t) return null;
+
+                    // Centers
+                    const c1 = { x: s.x + s.w/2, y: s.y + s.h/2 };
+                    const c2 = { x: t.x + t.w/2, y: t.y + t.h/2 };
+
+                    // Virtual Line Endpoints (on borders)
+                    // Simplified Rect for geometry: {x, y, w, h}
+                    // Note: node.x/y are Top-Left coordinates in DOM logic?
+                    // Wait, in initialLayout: n.x = startX.
+                    // In applyPositions: left = node.x.
+                    // So node.x is Left, node.y is Top.
+
+                    const r1 = {x: s.x, y: s.y, w: s.w, h: s.h};
+                    const r2 = {x: t.x, y: t.y, w: t.w, h: t.h};
+
+                    const pStart = Geometry.getBorderIntersection(c1, r1, c2);
+                    const pEnd = Geometry.getBorderIntersection(c2, r2, c1);
+
+                    return { p1: pStart, p2: pEnd, source: s.id, target: t.id };
+                }).filter(l => l !== null);
+
+                // 2. Virtual Line Intersects Node (Expensive)
+                lines.forEach(line => {
+                    nodes.forEach(node => {
+                        if (node.id === line.source || node.id === line.target) return; // Ignore self
+
+                        const rect = {x: node.x - 10, y: node.y - 10, w: node.w + 20, h: node.h + 20}; // Padding
+                        if (Geometry.lineIntersectsRect(line.p1, line.p2, rect)) {
+                            cost += 10000;
+                        }
+                    });
+                });
+
+                // 3. Virtual Line Intersects Virtual Line (Medium-Expensive)
+                for (let i = 0; i < lines.length; i++) {
+                    for (let j = i + 1; j < lines.length; j++) {
+                        const l1 = lines[i];
+                        const l2 = lines[j];
+                        // Check if they share a node (connected lines naturally touch at the node)
+                        if (l1.source === l2.source || l1.source === l2.target ||
+                            l1.target === l2.source || l1.target === l2.target) continue;
+
+                        if (Geometry.lineIntersectsLine(l1.p1, l1.p2, l2.p1, l2.p2)) {
+                            cost += 20000; // Increased penalty
+                        }
+                    }
+                }
+
+                // 4. Hierarchy Violation (Soft constraint)
+                rels.forEach(rel => {
+                    if (rel.type === 'inheritance') {
+                        const child = state.nodes[rel.source];
+                        const parent = state.nodes[rel.target];
+                        if (child && parent) {
+                            if (child.y < parent.y + 50) {
+                                cost += 2000; // Increased penalty
+                            }
+                        }
+                    }
+                });
+
+                // 5. Edge Length (Keep it compact, but less important than overlap)
+                lines.forEach(line => {
+                    const dx = line.p1.x - line.p2.x;
+                    const dy = line.p1.y - line.p2.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    cost += dist * 0.1; // Reduced weight to allow spreading
+                });
+
+                // 6. Center Gravity (Keep nodes near center to prevent explosion)
+                nodes.forEach(n => {
+                    const dist = Math.sqrt(n.x*n.x + n.y*n.y);
+                    cost += dist * 0.05;
+                });
+
+                return cost;
             },
 
             applyPositions: function(nodes) {
@@ -366,22 +571,16 @@
                         el.style.top = node.y + 'px';
                     }
                 });
-                // We don't strictly need to resize SVG here because we transform the container
-                // But for the lines to draw correctly relative to 0,0...
-                // Actually, we are panning the whole #canvas-container content?
-                // Wait, the previous logic used scrollLeft/Top on container.
-                // Since we want Zoom, we should use CSS Transform on a wrapper inside container.
-                // Let's adjust the View Logic to use Transform instead of Scroll, it's smoother for Zoom.
             },
 
             drawConnections: function(nodes) {
                 const svg = document.getElementById('connections');
                 svg.innerHTML = ''; // Clear
 
-                // Define markers
+                // Re-define markers (since we cleared innerHTML)
                 const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
 
-                // Arrow for Association
+                // Association Arrow
                 const markerArrow = document.createElementNS("http://www.w3.org/2000/svg", "marker");
                 markerArrow.setAttribute("id", "arrow");
                 markerArrow.setAttribute("markerWidth", "10");
@@ -396,7 +595,7 @@
                 markerArrow.appendChild(pathArrow);
                 defs.appendChild(markerArrow);
 
-                // Triangle for Inheritance
+                // Inheritance Triangle
                 const markerTri = document.createElementNS("http://www.w3.org/2000/svg", "marker");
                 markerTri.setAttribute("id", "triangle");
                 markerTri.setAttribute("markerWidth", "12");
@@ -406,7 +605,7 @@
                 markerTri.setAttribute("orient", "auto");
                 const pathTri = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 pathTri.setAttribute("d", "M0,0 L12,6 L0,12 Z");
-                pathTri.setAttribute("fill", "#2d2d2d"); // Match box bg
+                pathTri.setAttribute("fill", "#2d2d2d");
                 pathTri.setAttribute("stroke", "#666");
                 markerTri.appendChild(pathTri);
                 defs.appendChild(markerTri);
@@ -421,39 +620,109 @@
                     const srcEl = document.getElementById(`node-${rel.source}`);
                     const tgtEl = document.getElementById(`node-${rel.target}`);
 
-                    if (!srcEl || !tgtEl) return;
+                    // Centers for connection logic
+                    const c1 = { x: src.x + src.w/2, y: src.y + src.h/2 };
+                    const c2 = { x: tgt.x + tgt.w/2, y: tgt.y + tgt.h/2 };
 
-                    // Simple Logic:
-                    // Inheritance: Top of Child -> Bottom of Parent
-                    // Association: Right of Source -> Left of Target (or generic)
-
-                    let start = { x: 0, y: 0 };
-                    let end = { x: 0, y: 0 };
-
-                    if (rel.type === 'inheritance') {
-                         start.x = src.x + srcEl.offsetWidth / 2;
-                         start.y = src.y; // Top
-                         end.x = tgt.x + tgtEl.offsetWidth / 2;
-                         end.y = tgt.y + tgtEl.offsetHeight; // Bottom
-                    } else {
-                         start.x = src.x + srcEl.offsetWidth;
-                         start.y = src.y + srcEl.offsetHeight / 2;
-                         end.x = tgt.x;
-                         end.y = tgt.y + tgtEl.offsetHeight / 2;
-                    }
+                    // Calculate border intersection points for visual drawing
+                    const pStart = Geometry.getBorderIntersection(c1, {x:src.x, y:src.y, w:src.w, h:src.h}, c2);
+                    const pEnd = Geometry.getBorderIntersection(c2, {x:tgt.x, y:tgt.y, w:tgt.w, h:tgt.h}, c1);
 
                     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
 
+                    // Draw Curve
+                    // If straight line is clear (which optimization tries to enforce),
+                    // we can just draw a slight curve or even a straight line.
+                    // But the user likes curved arrows.
+                    // Let's make the curve control points perpendicular to the virtual line
+                    // to give it a nice arc, but check if that arc intersects anything?
+                    // User said: "Arrow is original drawing method".
+                    // Original method was based on Side-to-Side or Top-to-Bottom.
+                    // Let's adapt original method to use the dynamic positions.
+
                     let d = "";
+                    // Calculate control points
+                    const dx = pEnd.x - pStart.x;
+                    const dy = pEnd.y - pStart.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+
+                    // Simple quadratic bezier or cubic
+                    // A simple curve: Offset the midpoint
+                    // const midX = (pStart.x + pEnd.x) / 2;
+                    // const midY = (pStart.y + pEnd.y) / 2;
+                    // Perpendicular vector (-dy, dx)
+
+                    // Let's stick to a standard cubic bezier that flows naturally
+                    // If mainly vertical (Inheritance)
                     if (rel.type === 'inheritance') {
-                         // Vertical curve - make it wider to avoid hitting nodes directly above
-                         d = `M ${start.x} ${start.y} C ${start.x} ${start.y - 80}, ${end.x} ${end.y + 80}, ${end.x} ${end.y}`;
+                        // Curve out from top/bottom?
+                        // Actually pStart/pEnd are on the border closest to the other node.
+                        // So if they are vertical, pStart is likely Bottom/Top.
+                        // Control points: extend vertically from start/end
+                        d = `M ${pStart.x} ${pStart.y} C ${pStart.x} ${pStart.y - 50}, ${pEnd.x} ${pEnd.y + 50}, ${pEnd.x} ${pEnd.y}`;
+                        // This logic assumes pStart is TOP and pEnd is BOTTOM of their respective nodes?
+                        // No, pStart is just "on the border".
+                        // If pStart is below pEnd, this C curve might loop weirdly.
+                        // Better approach: C P1 P2
+                        // P1 = pStart + (direction away from center) * scale
+                        // P2 = pEnd + (direction away from center) * scale
+
+                        // To keep it simple and robust:
+                        // Just use the virtual line approach but with a slight curve?
+                        // Or restore the logic: Source Center -> Target Center
+                        // But use the calculated border points.
+
+                        // Let's try to match the original aesthetic:
+                        // Original: M start C start_control end_control end
+                        // Let's just use a generic curved path between the two border points.
+                         d = `M ${pStart.x} ${pStart.y} Q ${(pStart.x+pEnd.x)/2} ${(pStart.y+pEnd.y)/2}, ${pEnd.x} ${pEnd.y}`;
+                         // Wait, Q with midpoint is a straight line.
+                         // Let's offset the control point.
+                         const offset = 20;
+                         d = `M ${pStart.x} ${pStart.y} Q ${(pStart.x+pEnd.x)/2 + offset} ${(pStart.y+pEnd.y)/2}, ${pEnd.x} ${pEnd.y}`;
                     } else {
-                         // Horizontal curve - loop wider
-                         const dist = Math.abs(end.x - start.x);
-                         const controlPointOffset = Math.min(150, dist / 2);
-                         d = `M ${start.x} ${start.y} C ${start.x + controlPointOffset} ${start.y}, ${end.x - controlPointOffset} ${end.y}, ${end.x} ${end.y}`;
+                        // Association
+                         const offset = 30;
+                         d = `M ${pStart.x} ${pStart.y} Q ${(pStart.x+pEnd.x)/2} ${(pStart.y+pEnd.y)/2 - offset}, ${pEnd.x} ${pEnd.y}`;
                     }
+
+                    // Reverting to user request: "Arrow remains original drawing method"
+                    // Original method used fixed logic:
+                    // Inheritance: Top of Child -> Bottom of Parent
+                    // Association: Right of Source -> Left of Target
+                    // BUT, since nodes move freely now, "Top of Child" might not be facing "Bottom of Parent".
+                    // So "Original Drawing Method" implies "Curved lines", not necessarily "Fixed attachment points".
+                    // The "Virtual Line" logic determines *positions*.
+                    // I will implement a robust curve between the dynamic border points.
+
+                    // Let's make a nice S-curve or Arc.
+                    const cx1 = pStart.x + (pEnd.x - pStart.x) * 0.25; // 25% along x
+                    const cy1 = pStart.y; // Horizontal out?
+                    const cx2 = pEnd.x - (pEnd.x - pStart.x) * 0.25;
+                    const cy2 = pEnd.y;
+
+                    // If we want to emulate the previous logic which had specific exit sides:
+                    // We can determine which side of the rect the intersection point is on.
+                    // (Top, Bottom, Left, Right)
+                    // And extend the control point out from that normal.
+
+                    const getNormal = (pt, rect) => {
+                        const buffer = 2;
+                        if (Math.abs(pt.y - rect.y) < buffer) return {x:0, y:-1}; // Top
+                        if (Math.abs(pt.y - (rect.y+rect.h)) < buffer) return {x:0, y:1}; // Bottom
+                        if (Math.abs(pt.x - rect.x) < buffer) return {x:-1, y:0}; // Left
+                        if (Math.abs(pt.x - (rect.x+rect.w)) < buffer) return {x:1, y:0}; // Right
+                        return {x:0, y:0};
+                    };
+
+                    const n1 = getNormal(pStart, {x:src.x, y:src.y, w:src.w, h:src.h});
+                    const n2 = getNormal(pEnd, {x:tgt.x, y:tgt.y, w:tgt.w, h:tgt.h});
+
+                    const cpDist = 60;
+                    const cp1 = { x: pStart.x + n1.x * cpDist, y: pStart.y + n1.y * cpDist };
+                    const cp2 = { x: pEnd.x + n2.x * cpDist, y: pEnd.y + n2.y * cpDist };
+
+                    d = `M ${pStart.x} ${pStart.y} C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${pEnd.x} ${pEnd.y}`;
 
                     path.setAttribute("d", d);
 
@@ -466,12 +735,6 @@
 
                     svg.appendChild(path);
                 });
-
-                // Adjust SVG Size to encompass everything
-                // Since we use CSS transform on the wrapper, the SVG just needs to be big enough for the content
-                // But to simplify, let's make SVG huge and position it at 0,0
-                // Or better: the nodes and SVG are children of a 'world' div that we transform.
-                // For now, let's update the View Logic to handle the transform.
             }
         };
 
