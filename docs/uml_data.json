@@ -1,0 +1,131 @@
+{
+  "classes": [
+    {
+      "id": "ModularGUI",
+      "name": "ModularGUI",
+      "file": "ui.py",
+      "type": "class",
+      "description": "Main application window and controller.",
+      "attributes": ["root", "shared_state", "loaded_modules", "main_layout_manager"],
+      "methods": ["discover_modules", "setup_default_layout", "add_module_from_menu"]
+    },
+    {
+      "id": "Module",
+      "name": "Module",
+      "file": "ui.py",
+      "type": "class",
+      "description": "Base class for all functional modules.",
+      "attributes": ["master", "shared_state", "module_name", "frame"],
+      "methods": ["create_ui", "close_module_action", "toggle_maximize_action", "on_destroy"]
+    },
+    {
+      "id": "SharedState",
+      "name": "SharedState",
+      "file": "shared_state.py",
+      "type": "class",
+      "description": "Singleton for state management and logging.",
+      "attributes": ["variables", "observers", "logger"],
+      "methods": ["get", "set", "log", "add_observer", "notify_observers"]
+    },
+    {
+      "id": "CustomLayoutManager",
+      "name": "CustomLayoutManager",
+      "file": "ui.py",
+      "type": "class",
+      "description": "Manages module positioning on the canvas.",
+      "attributes": ["modules", "canvas_parent"],
+      "methods": ["add_module", "reflow_layout", "resize_module"]
+    },
+    {
+      "id": "AnimatedCanvas",
+      "name": "AnimatedCanvas",
+      "file": "ui.py",
+      "type": "class",
+      "description": "Canvas with background animation support.",
+      "attributes": ["stars"],
+      "methods": ["_on_resize"]
+    },
+    {
+      "id": "StyleManager",
+      "name": "style_manager",
+      "file": "style_manager.py",
+      "type": "module",
+      "description": "Manages Tkinter styles.",
+      "methods": ["configure_styles", "apply_post_creation_styles"]
+    },
+    {
+      "id": "UpdateManager",
+      "name": "update_manager",
+      "file": "update_manager.py",
+      "type": "module",
+      "description": "Handles application updates.",
+      "methods": ["check_for_updates", "get_update_info"]
+    },
+    {
+      "id": "NotepadModule",
+      "name": "NotepadModule",
+      "file": "modules/notepad.py",
+      "type": "class",
+      "description": "Simple text editor module.",
+      "attributes": ["text_area", "current_file_path"],
+      "methods": ["open_file", "save_file"]
+    },
+    {
+      "id": "BrowserModule",
+      "name": "BrowserModule",
+      "file": "modules/browser.py",
+      "type": "class",
+      "description": "Web browser module."
+    },
+    {
+      "id": "ClockModule",
+      "name": "ClockModule",
+      "file": "modules/clock.py",
+      "type": "class",
+      "description": "Digital/Analog clock module."
+    },
+    {
+      "id": "CalculatorModule",
+      "name": "CalculatorModule",
+      "file": "modules/unit_converter.py",
+      "type": "class",
+      "description": "Unit converter/Calculator module."
+    },
+    {
+      "id": "DrawModule",
+      "name": "DrawModule",
+      "file": "modules/draw.py",
+      "type": "class",
+      "description": "Drawing canvas module."
+    },
+    {
+      "id": "TodoListModule",
+      "name": "TodoListModule",
+      "file": "modules/todo_list.py",
+      "type": "class",
+      "description": "Task management module."
+    },
+    {
+      "id": "SystemInfoModule",
+      "name": "SystemInfoModule",
+      "file": "modules/system_info.py",
+      "type": "class",
+      "description": "System resource monitor module."
+    }
+  ],
+  "relationships": [
+    {"source": "ModularGUI", "target": "SharedState", "type": "association", "label": "uses"},
+    {"source": "ModularGUI", "target": "CustomLayoutManager", "type": "composition", "label": "manages"},
+    {"source": "CustomLayoutManager", "target": "AnimatedCanvas", "type": "inheritance", "label": "extends"},
+    {"source": "Module", "target": "SharedState", "type": "association", "label": "uses"},
+    {"source": "NotepadModule", "target": "Module", "type": "inheritance", "label": "extends"},
+    {"source": "BrowserModule", "target": "Module", "type": "inheritance", "label": "extends"},
+    {"source": "ClockModule", "target": "Module", "type": "inheritance", "label": "extends"},
+    {"source": "CalculatorModule", "target": "Module", "type": "inheritance", "label": "extends"},
+    {"source": "DrawModule", "target": "Module", "type": "inheritance", "label": "extends"},
+    {"source": "TodoListModule", "target": "Module", "type": "inheritance", "label": "extends"},
+    {"source": "SystemInfoModule", "target": "Module", "type": "inheritance", "label": "extends"},
+    {"source": "ModularGUI", "target": "StyleManager", "type": "dependency", "label": "calls"},
+    {"source": "ModularGUI", "target": "UpdateManager", "type": "dependency", "label": "calls"}
+  ]
+}
