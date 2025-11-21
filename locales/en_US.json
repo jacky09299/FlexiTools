@@ -13,6 +13,11 @@
     "menu_check_updates": "Check for Updates...",
     "menu_lang_en": "English",
     "menu_lang_zh": "Traditional Chinese",
+    "menu_lang_ja": "Japanese",
+    "menu_lang_de": "German",
+    "menu_lang_fr": "French",
+    "menu_lang_es": "Spanish",
+    "menu_lang_ko": "Korean",
 
     "__comment_status__": "--- Status Bar ---",
     "status_ready": "Ready",

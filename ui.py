@@ -604,6 +604,11 @@ class ModularGUI:
         self.language_menubutton.bind("<Button-1>", lambda e: self.language_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
         self.language_menu.add_command(label=self.loc_manager.get("menu_lang_en"), command=lambda: self.switch_language("en_US"))
         self.language_menu.add_command(label=self.loc_manager.get("menu_lang_zh"), command=lambda: self.switch_language("zh_TW"))
+        self.language_menu.add_command(label=self.loc_manager.get("menu_lang_ja"), command=lambda: self.switch_language("ja_JP"))
+        self.language_menu.add_command(label=self.loc_manager.get("menu_lang_de"), command=lambda: self.switch_language("de_DE"))
+        self.language_menu.add_command(label=self.loc_manager.get("menu_lang_fr"), command=lambda: self.switch_language("fr_FR"))
+        self.language_menu.add_command(label=self.loc_manager.get("menu_lang_es"), command=lambda: self.switch_language("es_ES"))
+        self.language_menu.add_command(label=self.loc_manager.get("menu_lang_ko"), command=lambda: self.switch_language("ko_KR"))
 
         self.shared_state.log("ModularGUI initialized.")
 
@@ -888,6 +893,11 @@ class ModularGUI:
         # Language Menu
         self.language_menu.entryconfigure(0, label=self.loc_manager.get("menu_lang_en"))
         self.language_menu.entryconfigure(1, label=self.loc_manager.get("menu_lang_zh"))
+        self.language_menu.entryconfigure(2, label=self.loc_manager.get("menu_lang_ja"))
+        self.language_menu.entryconfigure(3, label=self.loc_manager.get("menu_lang_de"))
+        self.language_menu.entryconfigure(4, label=self.loc_manager.get("menu_lang_fr"))
+        self.language_menu.entryconfigure(5, label=self.loc_manager.get("menu_lang_es"))
+        self.language_menu.entryconfigure(6, label=self.loc_manager.get("menu_lang_ko"))
 
         # Status Bar
         self.status_label.config(text=self.loc_manager.get("status_ready"))

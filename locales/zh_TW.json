@@ -13,6 +13,11 @@
     "menu_check_updates": "檢查更新...",
     "menu_lang_en": "英文",
     "menu_lang_zh": "繁體中文",
+    "menu_lang_ja": "日文",
+    "menu_lang_de": "德文",
+    "menu_lang_fr": "法文",
+    "menu_lang_es": "西班牙文",
+    "menu_lang_ko": "韓文",
 
     "__comment_status__": "--- 狀態列 ---",
     "status_ready": "就緒",
