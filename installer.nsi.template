@@ -113,13 +113,12 @@ Section "Main Program" SEC01
   CreateDirectory "$INSTDIR\_internal\modules"
   SetOutPath "$INSTDIR\_internal\modules"
 
-  ; Copy __init__.py or other critical files if they exist and are not optional modules
-  ; For now we assume .py files in modules root are the optional ones
-  ; But subdirectories (like saves) need to be handled?
-  ; saves is user data and should be in AppData now, so we don't worry about overwriting it here.
-
   ; Copy non-python files in modules just in case (e.g. assets inside modules folder?)
   File /r /x "*.py" "dist\FlexiTools\_internal\modules\*.*"
+
+  ; 複製語言檔案 (locales)
+  SetOutPath "$INSTDIR\locales"
+  File /r "locales\*.*"
   
   ; 只在首次安裝或手動安裝時建立捷徑
   ${If} $IsUpdateMode != "1"

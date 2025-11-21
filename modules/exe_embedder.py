@@ -90,13 +90,13 @@ class ExeEmbedderModule(Module):
         self.script_combo = ttk.Combobox(self.menu_frame, textvariable=self.script_var, state="readonly")
         self.script_combo.grid(row=0, column=1, sticky="ew", padx=(0, 5), pady=(0,5))
         self.script_combo.bind("<<ComboboxSelected>>", self.on_script_select)
-        delete_button = ttk.Button(self.menu_frame, text="刪除選定", command=self.delete_selected_script)
-        delete_button.grid(row=0, column=2, padx=(0, 5), pady=(0,5))
+        self.delete_button = ttk.Button(self.menu_frame, text="刪除選定", command=self.delete_selected_script)
+        self.delete_button.grid(row=0, column=2, padx=(0, 5), pady=(0,5))
         self.populate_scripts_dropdown()
 
         # Row 1: File selection
-        select_button = ttk.Button(self.menu_frame, text="選擇外部 .exe 檔案", command=self.select_external_exe)
-        select_button.grid(row=1, column=0, padx=(0, 5), pady=(0,5))
+        self.select_button = ttk.Button(self.menu_frame, text="選擇外部 .exe 檔案", command=self.select_external_exe)
+        self.select_button.grid(row=1, column=0, padx=(0, 5), pady=(0,5))
         self.file_label = ttk.Label(self.menu_frame, text="尚未選擇檔案", anchor="w")
         self.file_label.grid(row=1, column=1, columnspan=2, sticky="ew", padx=(0, 5), pady=(0,5))
 
@@ -104,6 +104,20 @@ class ExeEmbedderModule(Module):
         self.run_button = ttk.Button(self.menu_frame, text="執行", command=self.run_exe, state=tk.DISABLED)
         self.run_button.grid(row=2, column=0, columnspan=3, sticky="ew", pady=(0,5))
         # --- End of Overlay Hover Menu ---
+
+        self.update_language()
+
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'add_button', None): return
+
+        self.add_button.config(text=self.tr("module_exeembedder_btn_add", "Add to Pool"))
+        self.delete_button.config(text=self.tr("module_exeembedder_btn_delete", "Delete Selected"))
+        self.select_button.config(text=self.tr("module_exeembedder_btn_select", "Select External .exe"))
+        self.run_button.config(text=self.tr("module_exeembedder_btn_run", "Run"))
+
+        if self.file_label.cget("text") == "尚未選擇檔案" or self.file_label.cget("text") == "No file selected":
+             self.file_label.config(text=self.tr("module_exeembedder_lbl_no_file", "No file selected"))
 
     def show_menu(self, event=None):
         """Shows the control menu as an overlay."""
@@ -129,19 +143,25 @@ class ExeEmbedderModule(Module):
     def add_script_to_pool(self):
         """Adds the currently loaded external script to the scripts directory."""
         if not self.target_file or not self.is_external_script:
-            messagebox.showwarning("沒有外部腳本", "請先選擇一個外部EXE檔案。", parent=self.frame)
+            messagebox.showwarning(
+                self.tr("module_exeembedder_msg_no_script_title", "No External Script"),
+                self.tr("module_exeembedder_msg_no_script_body", "Please select an external EXE file first."),
+                parent=self.frame
+            )
             return
 
         filename = os.path.basename(self.target_file)
         dest_path = os.path.join(self.scripts_dir, filename)
 
         if os.path.exists(dest_path):
-            if not messagebox.askyesno("檔案已存在", f"檔案 '{filename}' 已存在於程式組中。要覆蓋它嗎？", parent=self.frame):
+            msg = self.tr("module_exeembedder_msg_overwrite", "File '{0}' already exists in pool. Overwrite?", filename)
+            if not messagebox.askyesno(self.tr("module_exeembedder_msg_file_exists", "File Exists"), msg, parent=self.frame):
                 return
 
         try:
             shutil.copy(self.target_file, dest_path)
-            messagebox.showinfo("成功", f"腳本 '{filename}' 已成功加入。", parent=self.frame)
+            msg = self.tr("module_exeembedder_msg_added", "Script '{0}' added successfully.", filename)
+            messagebox.showinfo(self.tr("module_exeembedder_msg_success", "Success"), msg, parent=self.frame)
 
             self.target_file = dest_path
             self.is_external_script = False
@@ -151,7 +171,8 @@ class ExeEmbedderModule(Module):
             self.script_var.set(filename)
 
         except Exception as e:
-            messagebox.showerror("複製失敗", f"無法將檔案複製到程式組資料夾：\n{e}", parent=self.frame)
+            msg = self.tr("module_exeembedder_msg_copy_fail", "Failed to copy file to pool:\n{0}", str(e))
+            messagebox.showerror(self.tr("module_exeembedder_msg_fail_title", "Copy Failed"), msg, parent=self.frame)
 
     def populate_scripts_dropdown(self):
         """Scans the scripts directory and populates the dropdown."""
@@ -159,19 +180,22 @@ class ExeEmbedderModule(Module):
             scripts = [f for f in os.listdir(self.scripts_dir) if f.endswith(".exe")]
             self.script_combo['values'] = sorted(scripts)
             if not scripts:
-                self.script_var.set("程式組中沒有腳本")
+                self.script_var.set(self.tr("module_exeembedder_lbl_no_scripts", "No scripts in pool"))
             else:
-                if self.script_var.get() not in scripts:
-                    self.script_var.set("")
+                current = self.script_var.get()
+                # If current selection is invalid or needs reset
+                if current not in scripts and not current.endswith(".exe"):
+                     self.script_var.set("")
         except Exception as e:
             self.shared_state.log(f"Error populating scripts dropdown: {e}")
             self.script_combo['values'] = []
-            self.script_var.set("讀取腳本失敗")
+            self.script_var.set(self.tr("module_exeembedder_lbl_load_fail", "Failed to load scripts"))
 
     def on_script_select(self, event=None):
         """Handles the selection of a script from the dropdown."""
         selected_script = self.script_var.get()
-        if not selected_script or selected_script == "程式組中沒有腳本":
+        no_script_msg = self.tr("module_exeembedder_lbl_no_scripts", "No scripts in pool")
+        if not selected_script or selected_script == no_script_msg:
             self.run_button.config(state=tk.DISABLED)
             return
 
@@ -185,11 +209,17 @@ class ExeEmbedderModule(Module):
     def delete_selected_script(self):
         """Deletes the currently selected script from the pool."""
         selected_script = self.script_var.get()
-        if not selected_script or selected_script == "程式組中沒有腳本":
-            messagebox.showwarning("沒有選擇", "請先從下拉清單中選擇一個腳本。", parent=self.frame)
+        no_script_msg = self.tr("module_exeembedder_lbl_no_scripts", "No scripts in pool")
+        if not selected_script or selected_script == no_script_msg:
+            messagebox.showwarning(
+                self.tr("module_exeembedder_msg_no_selection", "No Selection"),
+                self.tr("module_exeembedder_msg_select_first", "Please select a script first."),
+                parent=self.frame
+            )
             return
 
-        if not messagebox.askyesno("確認刪除", f"您確定要刪除腳本 '{selected_script}' 嗎？此操作無法復原。", parent=self.frame):
+        msg = self.tr("module_exeembedder_msg_confirm_delete", "Delete script '{0}'? Cannot be undone.", selected_script)
+        if not messagebox.askyesno(self.tr("module_exeembedder_msg_confirm_title", "Confirm Delete"), msg, parent=self.frame):
             return
 
         filepath_to_delete = os.path.join(self.scripts_dir, selected_script)
@@ -202,23 +232,26 @@ class ExeEmbedderModule(Module):
 
         try:
             os.remove(filepath_to_delete)
-            messagebox.showinfo("成功", f"腳本 '{selected_script}' 已被刪除。", parent=self.frame)
+            msg = self.tr("module_exeembedder_msg_deleted", "Script '{0}' deleted.", selected_script)
+            messagebox.showinfo(self.tr("module_exeembedder_msg_success", "Success"), msg, parent=self.frame)
             self.populate_scripts_dropdown()
 
             # Reset UI elements
-            self.file_label.config(text="尚未選擇檔案")
+            self.file_label.config(text=self.tr("module_exeembedder_lbl_no_file", "No file selected"))
             self.add_button.config(state=tk.DISABLED)
             self.is_external_script = False
             self.run_button.config(state=tk.DISABLED)
             self.script_var.set("")
 
         except Exception as e:
-            messagebox.showerror("刪除失敗", f"無法刪除檔案：\n{e}", parent=self.frame)
+            msg = self.tr("module_exeembedder_msg_delete_fail", "Could not delete file:\n{0}", str(e))
+            messagebox.showerror(self.tr("module_exeembedder_msg_fail_title", "Delete Failed"), msg, parent=self.frame)
 
     def select_external_exe(self):
         """Open a file dialog to select an external .exe file."""
+        title = self.tr("module_exeembedder_dialog_select", "Select an .exe file")
         filepath = filedialog.askopenfilename(
-            title="選擇一個 .exe 檔案",
+            title=title,
             filetypes=[("Executable files", "*.exe"), ("All files", "*.* ")],
             parent=self.frame
         )
@@ -239,10 +272,15 @@ class ExeEmbedderModule(Module):
     def run_and_embed_exe(self, filepath):
         """Runs and embeds the specified EXE file."""
         if not filepath or not os.path.exists(filepath):
-            messagebox.showerror("錯誤", "檔案不存在或未選擇。", parent=self.frame)
+            messagebox.showerror(
+                self.tr("module_exeembedder_msg_error", "Error"),
+                self.tr("module_exeembedder_msg_file_not_found", "File not found or not selected."),
+                parent=self.frame
+            )
             return
 
-        self.file_label.config(text=f"執行中: {os.path.basename(filepath)}")
+        status_msg = self.tr("module_exeembedder_status_running", "Running: {0}", os.path.basename(filepath))
+        self.file_label.config(text=status_msg)
         self.on_destroy(cleanup_resources=False) # Clean up previous instance
 
         try:
@@ -250,8 +288,9 @@ class ExeEmbedderModule(Module):
             self.process = subprocess.Popen([filepath])
             self.master.after(500, self.find_and_embed_window, pre_existing_windows)
         except Exception as e:
-            messagebox.showerror("執行錯誤", f"無法執行檔案: {e}", parent=self.frame)
-            self.file_label.config(text=f"錯誤: {e}")
+            msg = self.tr("module_exeembedder_msg_run_fail", "Could not run file: {0}", str(e))
+            messagebox.showerror(self.tr("module_exeembedder_msg_run_error", "Execution Error"), msg, parent=self.frame)
+            self.file_label.config(text=f"Error: {e}")
             self.process = None
             self.run_button.config(state=tk.NORMAL if self.target_file else tk.DISABLED)
 
@@ -334,7 +373,7 @@ class ExeEmbedderModule(Module):
             self.process = None
         
         if hasattr(self, 'file_label'):
-            self.file_label.config(text="尚未選擇檔案")
+            self.file_label.config(text=self.tr("module_exeembedder_lbl_no_file", "No file selected"))
         
         # Reset scroll region when clearing
         self.embed_target_frame.config(width=1, height=1)

@@ -43,20 +43,28 @@ class PDFViewerModule(Module):
         toolbar.pack(fill=tk.X, pady=(0, 5))
         
         # 按鈕
-        ttk.Button(toolbar, text="選擇 PDF", command=self.open_pdf).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(toolbar, text="上一頁", command=self.prev_page).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(toolbar, text="下一頁", command=self.next_page).pack(side=tk.LEFT, padx=(0, 5))
+        self.btn_open = ttk.Button(toolbar, text="選擇 PDF", command=self.open_pdf)
+        self.btn_open.pack(side=tk.LEFT, padx=(0, 5))
+        self.btn_prev = ttk.Button(toolbar, text="上一頁", command=self.prev_page)
+        self.btn_prev.pack(side=tk.LEFT, padx=(0, 5))
+        self.btn_next = ttk.Button(toolbar, text="下一頁", command=self.next_page)
+        self.btn_next.pack(side=tk.LEFT, padx=(0, 5))
         
         # 歷史檢視按鈕組
         history_frame = ttk.Frame(toolbar)
         history_frame.pack(side=tk.LEFT, padx=(10, 5))
         
-        ttk.Button(history_frame, text="回上1個", command=lambda: self.go_back_steps(1)).pack(side=tk.LEFT, padx=(0, 2))
-        ttk.Button(history_frame, text="回上2個", command=lambda: self.go_back_steps(2)).pack(side=tk.LEFT, padx=(0, 2))
-        ttk.Button(history_frame, text="回上3個", command=lambda: self.go_back_steps(3)).pack(side=tk.LEFT, padx=(0, 2))
-        ttk.Button(history_frame, text="回上4個", command=lambda: self.go_back_steps(4)).pack(side=tk.LEFT, padx=(0, 2))
+        self.btn_back1 = ttk.Button(history_frame, text="回上1個", command=lambda: self.go_back_steps(1))
+        self.btn_back1.pack(side=tk.LEFT, padx=(0, 2))
+        self.btn_back2 = ttk.Button(history_frame, text="回上2個", command=lambda: self.go_back_steps(2))
+        self.btn_back2.pack(side=tk.LEFT, padx=(0, 2))
+        self.btn_back3 = ttk.Button(history_frame, text="回上3個", command=lambda: self.go_back_steps(3))
+        self.btn_back3.pack(side=tk.LEFT, padx=(0, 2))
+        self.btn_back4 = ttk.Button(history_frame, text="回上4個", command=lambda: self.go_back_steps(4))
+        self.btn_back4.pack(side=tk.LEFT, padx=(0, 2))
         
-        ttk.Button(toolbar, text="重置檢視", command=self.reset_view).pack(side=tk.LEFT, padx=(0, 5))
+        self.btn_reset = ttk.Button(toolbar, text="重置檢視", command=self.reset_view)
+        self.btn_reset.pack(side=tk.LEFT, padx=(0, 5))
         
         # 頁碼顯示
         self.page_label = ttk.Label(toolbar, text="頁碼: 0/0")
@@ -100,6 +108,25 @@ class PDFViewerModule(Module):
         self.status_bar = ttk.Label(content_frame, text="請選擇 PDF 檔案", relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(fill=tk.X, side=tk.BOTTOM, pady=(5, 0))
 
+        self.update_language()
+
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'btn_open', None): return
+
+        self.btn_open.config(text=self.tr("module_pdfviewer_btn_open", "Open PDF"))
+        self.btn_prev.config(text=self.tr("module_pdfviewer_btn_prev", "Prev Page"))
+        self.btn_next.config(text=self.tr("module_pdfviewer_btn_next", "Next Page"))
+
+        self.btn_back1.config(text=self.tr("module_pdfviewer_btn_back1", "Back 1"))
+        self.btn_back2.config(text=self.tr("module_pdfviewer_btn_back2", "Back 2"))
+        self.btn_back3.config(text=self.tr("module_pdfviewer_btn_back3", "Back 3"))
+        self.btn_back4.config(text=self.tr("module_pdfviewer_btn_back4", "Back 4"))
+        self.btn_reset.config(text=self.tr("module_pdfviewer_btn_reset", "Reset View"))
+
+        if "請選擇 PDF 檔案" in self.status_bar.cget("text") or "Please select" in self.status_bar.cget("text"):
+             self.status_bar.config(text=self.tr("module_pdfviewer_status_select_pdf", "Please select a PDF file"))
+
     def fit_page_to_canvas(self):
         """計算讓整個PDF頁面剛好顯示於畫布的縮放比例"""
         if not self.pdf_document:
@@ -118,8 +145,9 @@ class PDFViewerModule(Module):
 
     def open_pdf(self):
         """開啟 PDF 檔案"""
+        title = self.tr("module_pdfviewer_dialog_select", "Select PDF File")
         file_path = filedialog.askopenfilename(
-            title="選擇 PDF 檔案",
+            title=title,
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
         )
         

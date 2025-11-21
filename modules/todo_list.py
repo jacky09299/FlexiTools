@@ -10,14 +10,17 @@ class TodoListModule(Module):
         self.tasks = []
         self.task_listbox = None
         self.task_entry = None
+        self.add_button = None
+        self.remove_button = None
         self.create_ui()
+        self.update_language()
 
     def create_ui(self):
         self.frame.config(borderwidth=2, relief=tk.GROOVE)
 
         # Main content frame
         content_frame = ttk.Frame(self.frame)
-        content_frame.pack(padx=5, pady=5, expand=True, fill=tk.BOTH) # Reduced padding slightly
+        content_frame.pack(padx=5, pady=5, expand=True, fill=tk.BOTH)
 
         # Input frame for adding tasks
         input_frame = ttk.Frame(content_frame)
@@ -27,8 +30,8 @@ class TodoListModule(Module):
         self.task_entry.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0,5))
         self.task_entry.bind("<Return>", self.add_task_event)
 
-        add_button = ttk.Button(input_frame, text="Add Task", command=self.add_task_event)
-        add_button.pack(side=tk.LEFT)
+        self.add_button = ttk.Button(input_frame, text="Add Task", command=self.add_task_event)
+        self.add_button.pack(side=tk.LEFT)
 
         # Listbox frame for displaying tasks
         listbox_frame = ttk.Frame(content_frame)
@@ -46,15 +49,18 @@ class TodoListModule(Module):
         buttons_frame = ttk.Frame(content_frame)
         buttons_frame.pack(fill=tk.X)
 
-        remove_button = ttk.Button(buttons_frame, text="Remove Selected", command=self.remove_task)
-        remove_button.pack(side=tk.LEFT, padx=(0,5))
-
-        # (Optional) Clear all button
-        # clear_all_button = ttk.Button(buttons_frame, text="Clear All", command=self.clear_all_tasks)
-        # clear_all_button.pack(side=tk.LEFT)
+        self.remove_button = ttk.Button(buttons_frame, text="Remove Selected", command=self.remove_task)
+        self.remove_button.pack(side=tk.LEFT, padx=(0,5))
 
         self.shared_state.log(f"UI for {self.module_name} created.", level=logging.INFO)
         self.refresh_task_list() # Populate listbox if there are any initial tasks
+
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'add_button', None): return
+
+        self.add_button.config(text=self.tr("module_todolist_btn_add", "Add Task"))
+        self.remove_button.config(text=self.tr("module_todolist_btn_remove", "Remove Selected"))
 
     def add_task_event(self, event=None): # Can be called by button or Enter key
         task_text = self.task_entry.get().strip()
@@ -65,13 +71,9 @@ class TodoListModule(Module):
                 self.task_entry.delete(0, tk.END)
                 self.shared_state.log(f"Task added: {task_text}", level=logging.DEBUG)
             else:
-                # Optionally inform user about duplicate
-                # messagebox.showinfo("Duplicate Task", "This task is already in the list.", parent=self.frame)
                 self.shared_state.log(f"Attempted to add duplicate task: {task_text}", level=logging.DEBUG)
                 self.task_entry.delete(0, tk.END) # Clear entry even if duplicate
         else:
-            # Optionally inform user that task cannot be empty
-            # messagebox.showwarning("Empty Task", "Task description cannot be empty.", parent=self.frame)
             pass
 
     def remove_task(self):
@@ -82,12 +84,10 @@ class TodoListModule(Module):
             self.refresh_task_list()
             self.shared_state.log(f"Task removed: {task_text}", level=logging.DEBUG)
         else:
-            # messagebox.showwarning("No Task Selected", "Please select a task to remove.", parent=self.frame)
             self.shared_state.log("Remove task called but no task selected.", level=logging.DEBUG)
 
 
     def clear_all_tasks(self):
-        # if messagebox.askyesno("Confirm Clear", "Are you sure you want to remove all tasks?", parent=self.frame):
         self.tasks.clear()
         self.refresh_task_list()
         self.shared_state.log("All tasks cleared.", level=logging.DEBUG)
@@ -99,7 +99,5 @@ class TodoListModule(Module):
                 self.task_listbox.insert(tk.END, task)
 
     def on_destroy(self):
-        # No specific resources to clean up like timers for this module
-        # If tasks were saved to a file, this would be a place to ensure they are saved.
         super().on_destroy()
         self.shared_state.log(f"{self.module_name} instance destroyed.")

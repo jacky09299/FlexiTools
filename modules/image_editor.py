@@ -96,13 +96,17 @@ class ImageEditorModule(Module):
         self.drawing_tools_frame = ttk.Frame(self.frame)
         # Packed/unpacked in toggle_edit_mode_action, not here directly
 
-        ttk.Button(self.drawing_tools_frame, text="Line", command=lambda: self._set_drawing_tool("line")).pack(side=tk.LEFT)
-        ttk.Button(self.drawing_tools_frame, text="Rect", command=lambda: self._set_drawing_tool("rectangle")).pack(side=tk.LEFT)
-        ttk.Button(self.drawing_tools_frame, text="Oval", command=lambda: self._set_drawing_tool("oval")).pack(side=tk.LEFT)
+        self.btn_tool_line = ttk.Button(self.drawing_tools_frame, text="Line", command=lambda: self._set_drawing_tool("line"))
+        self.btn_tool_line.pack(side=tk.LEFT)
+        self.btn_tool_rect = ttk.Button(self.drawing_tools_frame, text="Rect", command=lambda: self._set_drawing_tool("rectangle"))
+        self.btn_tool_rect.pack(side=tk.LEFT)
+        self.btn_tool_oval = ttk.Button(self.drawing_tools_frame, text="Oval", command=lambda: self._set_drawing_tool("oval"))
+        self.btn_tool_oval.pack(side=tk.LEFT)
         # ttk.Button(self.drawing_tools_frame, text="Text", command=lambda: self._set_drawing_tool("text")).pack(side=tk.LEFT) # Text later
         self.color_button_preview = tk.Frame(self.drawing_tools_frame, width=20, height=20, bg=self.drawing_color, relief=tk.SUNKEN, borderwidth=1)
         self.color_button_preview.pack(side=tk.LEFT, padx=5)
-        ttk.Button(self.drawing_tools_frame, text="Color", command=self._choose_drawing_color).pack(side=tk.LEFT)
+        self.btn_choose_color = ttk.Button(self.drawing_tools_frame, text="Color", command=self._choose_drawing_color)
+        self.btn_choose_color.pack(side=tk.LEFT)
 
 
         # Edit mode specific controls (e.g., line width, font selector) could go here too
@@ -121,7 +125,39 @@ class ImageEditorModule(Module):
         self.status_bar_label.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=(0,5))
 
         self.shared_state.log("ImageEditorModule: UI creation mostly complete.")
+        self.update_language()
         # Bind zoom and pan events later, only when an image is loaded
+
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'open_button', None): return
+
+        self.open_button.config(text=self.tr("module_imageeditor_btn_open", "Open Image"))
+
+        if self.edit_mode_active:
+            self.edit_button.config(text=self.tr("module_imageeditor_btn_save_drawing", "Save Drawing"))
+            self.cancel_button.config(text=self.tr("module_imageeditor_btn_cancel_drawing", "Cancel Drawing"))
+            self.set_status(self.tr("module_imageeditor_status_edit_mode", "Editing Mode"))
+        elif self.crop_mode_active:
+            self.crop_button.config(text=self.tr("module_imageeditor_btn_confirm_crop", "Confirm Crop"))
+            self.cancel_button.config(text=self.tr("module_imageeditor_btn_cancel_crop", "Cancel Crop"))
+            self.set_status(self.tr("module_imageeditor_status_crop_mode", "Cropping Mode"))
+        else:
+            self.edit_button.config(text=self.tr("module_imageeditor_btn_edit_mode", "Edit Mode"))
+            self.crop_button.config(text=self.tr("module_imageeditor_btn_crop", "Crop"))
+            self.cancel_button.config(text=self.tr("module_imageeditor_btn_cancel", "Cancel"))
+            if self.current_image_pil:
+                self.set_status(self.tr("module_imageeditor_status_image_loaded", "Image Loaded"))
+            else:
+                self.set_status(self.tr("module_imageeditor_status_no_image", "Please load an image"))
+
+        self.rotate_button.config(text=self.tr("module_imageeditor_btn_rotate", "Rotate"))
+        self.save_button.config(text=self.tr("module_imageeditor_btn_save", "Save"))
+
+        self.btn_tool_line.config(text=self.tr("module_imageeditor_tool_line", "Line"))
+        self.btn_tool_rect.config(text=self.tr("module_imageeditor_tool_rect", "Rect"))
+        self.btn_tool_oval.config(text=self.tr("module_imageeditor_tool_oval", "Oval"))
+        self.btn_choose_color.config(text=self.tr("module_imageeditor_btn_color", "Color"))
 
     def update_button_states(self):
         self.shared_state.log("ImageEditorModule: Updating button states...")
@@ -132,31 +168,31 @@ class ImageEditorModule(Module):
             self.crop_button.config(state=tk.DISABLED)
             self.save_button.config(state=tk.DISABLED)
             self.cancel_button.config(state=tk.DISABLED)
-            self.set_status("請先載入圖片")
+            self.set_status(self.tr("module_imageeditor_status_no_image", "Please load an image"))
         else: # Image is loaded
             self.open_button.config(state=tk.NORMAL) # Or some other logic like "Open Another"
 
             if self.edit_mode_active:
-                self.edit_button.config(text="💾 儲存繪圖", state=tk.NORMAL) # Becomes "Save Drawing"
+                self.edit_button.config(text=self.tr("module_imageeditor_btn_save_drawing", "Save Drawing"), state=tk.NORMAL) # Becomes "Save Drawing"
                 self.rotate_button.config(state=tk.DISABLED)
                 self.crop_button.config(state=tk.DISABLED)
                 self.save_button.config(state=tk.DISABLED) # Main save disabled
-                self.cancel_button.config(text="❌ 取消繪圖", state=tk.NORMAL) # Becomes "Cancel Drawing"
-                self.set_status("繪圖/打字模式中")
+                self.cancel_button.config(text=self.tr("module_imageeditor_btn_cancel_drawing", "Cancel Drawing"), state=tk.NORMAL) # Becomes "Cancel Drawing"
+                self.set_status(self.tr("module_imageeditor_status_edit_mode", "Editing Mode"))
             elif self.crop_mode_active:
                 self.edit_button.config(state=tk.DISABLED)
                 self.rotate_button.config(state=tk.DISABLED)
-                self.crop_button.config(text="✅ 確認裁剪", state=tk.NORMAL) # Becomes "Confirm Crop"
+                self.crop_button.config(text=self.tr("module_imageeditor_btn_confirm_crop", "Confirm Crop"), state=tk.NORMAL) # Becomes "Confirm Crop"
                 self.save_button.config(state=tk.DISABLED) # Main save disabled
-                self.cancel_button.config(text="❌ 取消裁剪", state=tk.NORMAL) # Becomes "Cancel Crop"
-                self.set_status("裁剪模式中")
+                self.cancel_button.config(text=self.tr("module_imageeditor_btn_cancel_crop", "Cancel Crop"), state=tk.NORMAL) # Becomes "Cancel Crop"
+                self.set_status(self.tr("module_imageeditor_status_crop_mode", "Cropping Mode"))
             else: # Normal state with image loaded
-                self.edit_button.config(text="🔧 編輯模式", state=tk.NORMAL)
+                self.edit_button.config(text=self.tr("module_imageeditor_btn_edit_mode", "Edit Mode"), state=tk.NORMAL)
                 self.rotate_button.config(state=tk.NORMAL)
-                self.crop_button.config(text="✂️ 裁剪", state=tk.NORMAL)
+                self.crop_button.config(text=self.tr("module_imageeditor_btn_crop", "Crop"), state=tk.NORMAL)
                 self.save_button.config(state=tk.NORMAL)
-                self.cancel_button.config(text="❌ 取消", state=tk.NORMAL) # General cancel/undo
-                self.set_status("圖片已載入")
+                self.cancel_button.config(text=self.tr("module_imageeditor_btn_cancel", "Cancel"), state=tk.NORMAL) # General cancel/undo
+                self.set_status(self.tr("module_imageeditor_status_image_loaded", "Image Loaded"))
         self.shared_state.log("ImageEditorModule: Button states updated.")
 
     def set_status(self, message):
@@ -269,12 +305,12 @@ class ImageEditorModule(Module):
 
         # Simple dialog for choosing rotation
         dialog = tk.Toplevel(self.frame)
-        dialog.title("選擇旋轉角度")
+        dialog.title(self.tr("module_imageeditor_title_rotate", "Select Rotation Angle"))
         dialog.geometry("250x200") # Increased height for buttons
         dialog.resizable(False, False)
         dialog.grab_set() # Make it modal
 
-        ttk.Label(dialog, text="請選擇或輸入旋轉角度:").pack(pady=10)
+        ttk.Label(dialog, text=self.tr("module_imageeditor_msg_select_angle", "Select or enter angle:")).pack(pady=10)
 
         # angle_var = tk.StringVar() # Not directly used with this button approach
 
@@ -288,7 +324,7 @@ class ImageEditorModule(Module):
 
             if angle_degrees is None: # User cancelled custom input or closed main dialog prematurely
                 self.shared_state.log("Rotation cancelled or angle not provided.", "DEBUG")
-                self.set_status("旋轉已取消")
+                self.set_status(self.tr("module_imageeditor_status_rotate_cancelled", "Rotation cancelled"))
                 return
             try:
                 angle = float(angle_degrees)
@@ -299,36 +335,46 @@ class ImageEditorModule(Module):
                 self.canvas_image_x = 0
                 self.canvas_image_y = 0
                 self._display_image_on_canvas()
-                self.set_status(f"圖片已旋轉 {angle}°")
+                self.set_status(self.tr("module_imageeditor_status_rotated", "Rotated by {0}°", angle))
                 self.shared_state.log(f"Image rotated by {angle} degrees.")
             except ValueError:
-                messagebox.showerror("無效角度", "請輸入有效的數字角度。", parent=self.frame)
-                self.set_status("無效的旋轉角度")
+                messagebox.showerror(
+                    self.tr("module_imageeditor_msg_error_angle", "Invalid Angle"),
+                    self.tr("module_imageeditor_msg_enter_number", "Please enter a valid number."),
+                    parent=self.frame
+                )
+                self.set_status(self.tr("module_imageeditor_status_invalid_angle", "Invalid angle"))
             except Exception as e:
-                messagebox.showerror("旋轉錯誤", f"旋轉圖片時發生錯誤: {e}", parent=self.frame)
+                messagebox.showerror(
+                    self.tr("module_imageeditor_msg_error_rotate", "Rotation Error"),
+                    f"{e}",
+                    parent=self.frame
+                )
                 self.shared_state.log(f"Error during rotation: {e}", "ERROR")
-                self.set_status("旋轉時發生錯誤")
+                self.set_status(self.tr("module_imageeditor_status_error_rotate", "Error during rotation"))
             finally:
                 # Ensure main dialog is closed if an error occurred after simpledialog
                 if dialog.winfo_exists():
                     dialog.destroy()
 
 
-        ttk.Button(dialog, text="90° (順時針)", command=lambda: apply_rotation(-90.0)).pack(fill=tk.X, padx=20, pady=2)
-        ttk.Button(dialog, text="180°", command=lambda: apply_rotation(180.0)).pack(fill=tk.X, padx=20, pady=2)
-        ttk.Button(dialog, text="90° (逆時針)", command=lambda: apply_rotation(90.0)).pack(fill=tk.X, padx=20, pady=2)
+        ttk.Button(dialog, text=self.tr("module_imageeditor_btn_90_cw", "90° (CW)"), command=lambda: apply_rotation(-90.0)).pack(fill=tk.X, padx=20, pady=2)
+        ttk.Button(dialog, text=self.tr("module_imageeditor_btn_180", "180°"), command=lambda: apply_rotation(180.0)).pack(fill=tk.X, padx=20, pady=2)
+        ttk.Button(dialog, text=self.tr("module_imageeditor_btn_90_ccw", "90° (CCW)"), command=lambda: apply_rotation(90.0)).pack(fill=tk.X, padx=20, pady=2)
 
         custom_frame = ttk.Frame(dialog)
         custom_frame.pack(fill=tk.X, padx=15, pady=5, side=tk.BOTTOM, anchor=tk.S) # Ensure it's at bottom
 
         def ask_custom_angle():
             # Dialog is parent here, so simpledialog will be on top of it.
-            custom_angle = simpledialog.askfloat("自訂角度", "輸入角度 (逆時針為正):", parent=dialog, minvalue=-360.0, maxvalue=360.0)
+            title = self.tr("module_imageeditor_title_custom_angle", "Custom Angle")
+            prompt = self.tr("module_imageeditor_msg_enter_angle", "Enter angle (positive for CCW):")
+            custom_angle = simpledialog.askfloat(title, prompt, parent=dialog, minvalue=-360.0, maxvalue=360.0)
             # apply_rotation will handle None if cancelled
             apply_rotation(custom_angle)
 
-        ttk.Button(custom_frame, text="自訂角度...", command=ask_custom_angle).pack(side=tk.LEFT, expand=True, padx=5)
-        ttk.Button(custom_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, expand=True, padx=5)
+        ttk.Button(custom_frame, text=self.tr("module_imageeditor_btn_custom", "Custom..."), command=ask_custom_angle).pack(side=tk.LEFT, expand=True, padx=5)
+        ttk.Button(custom_frame, text=self.tr("module_imageeditor_btn_cancel", "Cancel"), command=dialog.destroy).pack(side=tk.LEFT, expand=True, padx=5)
 
 
     def toggle_crop_mode_action(self):
@@ -336,15 +382,23 @@ class ImageEditorModule(Module):
         if self.crop_mode_active:
             # --- 直接執行裁剪 ---
             if not self.crop_rect_id:
-                messagebox.showwarning("未選擇區域", "請先在圖片上拖曳選擇裁剪區域，再按確認裁剪。", parent=self.frame)
-                self.set_status("請先選擇裁剪區域")
+                messagebox.showwarning(
+                    self.tr("module_imageeditor_msg_no_selection", "No Selection"),
+                    self.tr("module_imageeditor_msg_select_area", "Please select an area first."),
+                    parent=self.frame
+                )
+                self.set_status(self.tr("module_imageeditor_status_select_area", "Please select crop area"))
                 return
             if self.current_image_pil:
                 try:
                     c_coords = self.canvas.coords(self.crop_rect_id)
                     if len(c_coords) != 4:
-                        messagebox.showwarning("裁剪區域錯誤", "裁剪區域座標無效，請重新選擇。", parent=self.frame)
-                        self.set_status("裁剪區域座標無效")
+                        messagebox.showwarning(
+                            self.tr("module_imageeditor_msg_crop_error", "Crop Error"),
+                            self.tr("module_imageeditor_msg_invalid_coords", "Invalid coordinates."),
+                            parent=self.frame
+                        )
+                        self.set_status(self.tr("module_imageeditor_status_invalid_coords", "Invalid coordinates"))
                         return
                     # Ensure correct order: left_can = min(x1_can, x2_can), etc.
                     left_can, top_can, right_can, bottom_can = min(c_coords[0], c_coords[2]), min(c_coords[1], c_coords[3]), max(c_coords[0], c_coords[2]), max(c_coords[1], c_coords[3])
@@ -382,16 +436,28 @@ class ImageEditorModule(Module):
                             self.zoom_factor = 1.0
                             self.canvas_image_x = 0
                             self.canvas_image_y = 0
-                            self.set_status("圖片裁剪成功")
+                            self.set_status(self.tr("module_imageeditor_status_crop_success", "Crop successful"))
                         else:
-                            messagebox.showwarning("裁剪區域無效", "選擇的裁剪區域經轉換後寬度或高度為零。", parent=self.frame)
-                            self.set_status("裁剪失敗：選擇區域尺寸為零")
+                            messagebox.showwarning(
+                                self.tr("module_imageeditor_msg_invalid_area", "Invalid Area"),
+                                self.tr("module_imageeditor_msg_zero_size", "Zero size crop area."),
+                                parent=self.frame
+                            )
+                            self.set_status(self.tr("module_imageeditor_status_fail_zero", "Crop failed: Zero size"))
                     else:
-                        messagebox.showwarning("裁剪區域無效", "選擇的裁剪區域太小或無效。", parent=self.frame)
-                        self.set_status("裁剪失敗：選擇區域無效")
+                        messagebox.showwarning(
+                            self.tr("module_imageeditor_msg_invalid_area", "Invalid Area"),
+                            self.tr("module_imageeditor_msg_area_too_small", "Area too small or invalid."),
+                            parent=self.frame
+                        )
+                        self.set_status(self.tr("module_imageeditor_status_fail_invalid", "Crop failed: Invalid area"))
                 except Exception as e:
-                    messagebox.showerror("裁剪錯誤", f"裁剪圖片時發生錯誤: {e}", parent=self.frame)
-                    self.set_status("裁剪時發生錯誤")
+                    messagebox.showerror(
+                        self.tr("module_imageeditor_msg_crop_error", "Crop Error"),
+                        f"{e}",
+                        parent=self.frame
+                    )
+                    self.set_status(self.tr("module_imageeditor_status_error_occurred", "Error occurred"))
             self.crop_mode_active = False
             if self.crop_rect_id:
                 self.canvas.delete(self.crop_rect_id)
@@ -404,19 +470,27 @@ class ImageEditorModule(Module):
             self._display_image_on_canvas()
         else:
             if not self.current_image_pil:
-                messagebox.showwarning("無圖片", "請先載入圖片才能進行裁剪。", parent=self.frame)
+                messagebox.showwarning(
+                    self.tr("module_imageeditor_status_no_image", "No Image"),
+                    self.tr("module_imageeditor_msg_load_first", "Please load an image first."),
+                    parent=self.frame
+                )
                 return
             self.crop_mode_active = True
             self._unbind_pan_events()
             self.canvas.bind("<ButtonPress-1>", self._crop_on_press)
             self.canvas.bind("<B1-Motion>", self._crop_on_drag)
             self.canvas.bind("<ButtonRelease-1>", self._crop_on_release)
-            self.set_status("請在圖片上拖曳以選擇裁剪區域")
+            self.set_status(self.tr("module_imageeditor_status_drag_crop", "Drag to select crop area"))
         self.update_button_states()
 
     def save_action(self):
         if not self.current_image_pil:
-            messagebox.showwarning("無可儲存圖片", "目前沒有圖片可供儲存。", parent=self.frame)
+            messagebox.showwarning(
+                self.tr("module_imageeditor_status_no_image", "No Image"),
+                self.tr("module_imageeditor_msg_no_save", "Nothing to save."),
+                parent=self.frame
+            )
             return
 
         self.shared_state.log("ImageEditorModule: 'Save' action triggered.")
@@ -435,7 +509,7 @@ class ImageEditorModule(Module):
 
         filepath = filedialog.asksaveasfilename(
             parent=self.frame,
-            title="儲存圖片為",
+            title=self.tr("module_imageeditor_title_save", "Save Image As"),
             initialfile=default_filename,
             defaultextension=".png",
             filetypes=file_types
@@ -464,13 +538,21 @@ class ImageEditorModule(Module):
                 image_to_save = background
 
             image_to_save.save(filepath)
-            self.set_status(f"圖片已儲存至: {os.path.basename(filepath)}")
+            self.set_status(self.tr("module_imageeditor_status_saved", "Saved to {0}", os.path.basename(filepath)))
             self.shared_state.log(f"Image saved to {filepath}")
-            messagebox.showinfo("儲存成功", f"圖片已成功儲存至:\n{filepath}", parent=self.frame)
+            messagebox.showinfo(
+                self.tr("module_imageeditor_msg_success", "Success"),
+                self.tr("module_imageeditor_msg_saved_to", "Image saved to:\n{0}", filepath),
+                parent=self.frame
+            )
         except Exception as e:
             self.shared_state.log(f"Error saving image to {filepath}: {e}", "ERROR")
-            messagebox.showerror("儲存失敗", f"儲存圖片時發生錯誤: {e}", parent=self.frame)
-            self.set_status(f"儲存失敗: {e}")
+            messagebox.showerror(
+                self.tr("module_imageeditor_msg_save_fail", "Save Failed"),
+                f"{e}",
+                parent=self.frame
+            )
+            self.set_status(f"Error: {e}")
 
     def cancel_action(self):
         self.shared_state.log(f"ImageEditorModule: 'Cancel' action triggered. Edit mode: {self.edit_mode_active}, Crop mode: {self.crop_mode_active}")
@@ -490,7 +572,7 @@ class ImageEditorModule(Module):
             self.canvas.unbind("<ButtonRelease-1>")
             self._bind_pan_events() # Re-bind pan
 
-            self.set_status("Drawing cancelled (placeholder).")
+            self.set_status(self.tr("module_imageeditor_status_draw_cancelled", "Drawing cancelled"))
             action_cancelled = True
         elif self.crop_mode_active:
             self.crop_mode_active = False
@@ -502,7 +584,7 @@ class ImageEditorModule(Module):
             self.canvas.unbind("<B1-Motion>")
             self.canvas.unbind("<ButtonRelease-1>")
             self._bind_pan_events() # Re-bind pan
-            self.set_status("Cropping cancelled (placeholder).")
+            self.set_status(self.tr("module_imageeditor_status_crop_cancelled", "Cropping cancelled"))
             action_cancelled = True # To trigger redraw and remove visual artifacts
         else:
             # TODO: General cancel/undo logic if applicable (e.g., undo last rotation)
@@ -520,11 +602,11 @@ class ImageEditorModule(Module):
                     self.canvas_image_y = 0
 
                     action_cancelled = True
-                    self.set_status("變更已還原至原始載入圖片")
+                    self.set_status(self.tr("module_imageeditor_status_reverted", "Reverted to original"))
                 else:
-                    self.set_status("目前圖片與原始載入版本相同，無操作取消。")
+                    self.set_status(self.tr("module_imageeditor_status_no_changes", "No changes to revert"))
             else:
-                self.set_status("沒有原始圖片可供還原。")
+                self.set_status(self.tr("module_imageeditor_status_no_original", "No original image"))
 
         if action_cancelled:
             self._display_image_on_canvas() # Refresh to show state before cancel
@@ -586,19 +668,20 @@ class ImageEditorModule(Module):
 
     def _set_drawing_tool(self, tool_name):
         self.current_drawing_tool = tool_name
-        self.set_status(f"工具已選擇: {tool_name}")
+        self.set_status(self.tr("module_imageeditor_status_tool_selected", "Tool selected: {0}", tool_name))
         self.shared_state.log(f"Drawing tool set to: {self.current_drawing_tool}")
 
     def _choose_drawing_color(self):
         try:
-            color_code = colorchooser.askcolor(title="選擇繪圖顏色", initialcolor=self.drawing_color, parent=self.frame)
+            title = self.tr("module_imageeditor_title_color", "Choose Color")
+            color_code = colorchooser.askcolor(title=title, initialcolor=self.drawing_color, parent=self.frame)
             if color_code and color_code[1]:
                 self.drawing_color = color_code[1]
                 self.color_button_preview.config(bg=self.drawing_color)
                 self.shared_state.log(f"Drawing color changed to: {self.drawing_color}")
         except Exception as e:
             self.shared_state.log(f"Error in color chooser: {e}", "ERROR")
-            messagebox.showerror("顏色選擇錯誤", f"無法開啟顏色選擇器: {e}", parent=self.frame)
+            messagebox.showerror("Error", f"{e}", parent=self.frame)
 
     def _edit_on_press(self, event):
         if not self.edit_mode_active or not self.edit_buffer_image: return

@@ -97,8 +97,8 @@ class ColorPaletteModule(Module):
         action_frame = ttk.Frame(controls_frame)
         action_frame.pack(fill=tk.X, pady=(10,0))
 
-        regenerate_button = ttk.Button(action_frame, text="Regenerate All Palettes", command=self.generate_initial_palettes)
-        regenerate_button.pack(side=tk.LEFT, padx=(0,5))
+        self.regenerate_button = ttk.Button(action_frame, text="Regenerate All Palettes", command=self.generate_initial_palettes)
+        self.regenerate_button.pack(side=tk.LEFT, padx=(0,5))
 
         # choose_color_button = ttk.Button(action_frame, text="Choose Color...", command=self.open_color_chooser)
         # choose_color_button.pack(side=tk.LEFT)
@@ -106,6 +106,16 @@ class ColorPaletteModule(Module):
 
         self.shared_state.log(f"UI for {self.module_name} created.", level=logging.INFO)
         self.update_selection_highlight() # Initial highlight
+
+        self.update_language()
+
+    def update_language(self):
+        super().update_language()
+        if getattr(self, 'regenerate_button', None):
+            self.regenerate_button.config(text=self.tr("module_colorpalette_btn_regenerate", "Regenerate All Palettes"))
+        # Sliders and HEX labels could be localized if needed, but "HEX", "R", "G", "B" are standard.
+        # If we wanted to translate them:
+        # self.hex_label.config(text=self.tr("module_colorpalette_lbl_hex", "HEX:"))
 
     def _create_slider(self, parent, label_text, color):
         frame = ttk.Frame(parent)
@@ -250,8 +260,9 @@ class ColorPaletteModule(Module):
             # Simple visual feedback (optional)
             original_text = self.hex_entry.cget("textvariable") # This gets the var name, not value
             current_hex_val = self.hex_entry_var.get()
-            self.hex_entry_var.set(f"{current_hex_val} (Copied!)")
-            self.hex_entry.after(1000, lambda: self.hex_entry_var.set(current_hex_val) if self.hex_entry_var.get().endswith("(Copied!)") else None)
+            copied_msg = self.tr("module_colorpalette_msg_copied", "(Copied!)")
+            self.hex_entry_var.set(f"{current_hex_val} {copied_msg}")
+            self.hex_entry.after(1000, lambda: self.hex_entry_var.set(current_hex_val) if self.hex_entry_var.get().endswith(copied_msg) else None)
 
         except tk.TclError:
             self.shared_state.log("Clipboard access failed.", level=logging.ERROR)

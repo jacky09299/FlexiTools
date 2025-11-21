@@ -27,14 +27,14 @@ class NotepadModule(Module):
         button_bar = ttk.Frame(content_frame)
         button_bar.grid(row=0, column=0, sticky="ew", pady=(0,5))
 
-        open_button = ttk.Button(button_bar, text="Open", command=self.open_file)
-        open_button.pack(side=tk.LEFT, padx=(0,5))
+        self.open_button = ttk.Button(button_bar, text="Open", command=self.open_file)
+        self.open_button.pack(side=tk.LEFT, padx=(0,5))
 
-        save_button = ttk.Button(button_bar, text="Save", command=self.save_file)
-        save_button.pack(side=tk.LEFT, padx=(0,5))
+        self.save_button = ttk.Button(button_bar, text="Save", command=self.save_file)
+        self.save_button.pack(side=tk.LEFT, padx=(0,5))
 
-        save_as_button = ttk.Button(button_bar, text="Save As...", command=self.save_file_as)
-        save_as_button.pack(side=tk.LEFT)
+        self.save_as_button = ttk.Button(button_bar, text="Save As...", command=self.save_file_as)
+        self.save_as_button.pack(side=tk.LEFT)
 
         # Text Area with Scrollbars
         text_frame = ttk.Frame(content_frame) # Frame to hold text and scrollbars
@@ -56,8 +56,17 @@ class NotepadModule(Module):
         self.text_area.config(xscrollcommand=h_scroll.set, wrap=tk.NONE) # Use tk.NONE for horizontal scroll
 
         self.shared_state.log(f"UI for {self.module_name} created.", level=logging.INFO)
+
+        self.update_language()
         self._update_title()
 
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'open_button', None): return
+        self.open_button.config(text=self.tr("module_notepad_btn_open", "Open"))
+        self.save_button.config(text=self.tr("module_notepad_btn_save", "Save"))
+        self.save_as_button.config(text=self.tr("module_notepad_btn_save_as", "Save As..."))
+        self._update_title()
 
     def _update_title(self):
         base_name = "Notepad"
@@ -85,7 +94,11 @@ class NotepadModule(Module):
                 self._update_title()
                 self.shared_state.log(f"Opened file: {filepath}", level=logging.INFO)
             except Exception as e:
-                messagebox.showerror("Error Opening File", f"Could not open file: {e}", parent=self.frame)
+                messagebox.showerror(
+                    self.tr("module_notepad_msg_error_open", "Error Opening File"),
+                    f"{e}",
+                    parent=self.frame
+                )
                 self.shared_state.log(f"Error opening file {filepath}: {e}", level=logging.ERROR)
 
     def save_file(self):
@@ -95,7 +108,11 @@ class NotepadModule(Module):
                     f.write(self.text_area.get("1.0", tk.END).strip()) # Use strip to remove trailing newline often added by Text widget
                 self.shared_state.log(f"Saved file: {self.current_file_path}", level=logging.INFO)
             except Exception as e:
-                messagebox.showerror("Error Saving File", f"Could not save file: {e}", parent=self.frame)
+                messagebox.showerror(
+                    self.tr("module_notepad_msg_error_save", "Error Saving File"),
+                    f"{e}",
+                    parent=self.frame
+                )
                 self.shared_state.log(f"Error saving file {self.current_file_path}: {e}", level=logging.ERROR)
         else:
             self.save_file_as() # If no current path, prompt for one
@@ -115,7 +132,11 @@ class NotepadModule(Module):
                 self._update_title()
                 self.shared_state.log(f"Saved file as: {filepath}", level=logging.INFO)
             except Exception as e:
-                messagebox.showerror("Error Saving File", f"Could not save file: {e}", parent=self.frame)
+                messagebox.showerror(
+                    self.tr("module_notepad_msg_error_save", "Error Saving File"),
+                    f"{e}",
+                    parent=self.frame
+                )
                 self.shared_state.log(f"Error saving file as {filepath}: {e}", level=logging.ERROR)
 
     def on_destroy(self):

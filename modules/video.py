@@ -40,7 +40,7 @@ class JumpToWindow(tk.Toplevel):
     def __init__(self, video_player_module, playlist, current_index):
         super().__init__(video_player_module.frame.winfo_toplevel())
         self.master_player = video_player_module
-        self.title("跳至影片")
+        self.title(video_player_module.tr("module_videoplayer_win_jump", "Jump to Video"))
         self.geometry("400x500")
         self.transient(video_player_module.frame.winfo_toplevel())
         self.grab_set()
@@ -59,14 +59,15 @@ class JumpToWindow(tk.Toplevel):
         self.listbox.config(yscrollcommand=scrollbar.set)
         button_frame = tk.Frame(self)
         button_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
-        tk.Button(button_frame, text="取消", command=self.destroy).pack(side=tk.RIGHT, padx=5)
-        tk.Button(button_frame, text="確定", command=self.confirm_selection).pack(side=tk.RIGHT)
+        tk.Button(button_frame, text=self.master_player.tr("btn_cancel", "Cancel"), command=self.destroy).pack(side=tk.RIGHT, padx=5)
+        tk.Button(button_frame, text=self.master_player.tr("btn_ok", "OK"), command=self.confirm_selection).pack(side=tk.RIGHT)
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         self.listbox.bind("<Double-Button-1>", lambda e: self.confirm_selection())
     def confirm_selection(self):
         selection = self.listbox.curselection()
         if not selection:
-            messagebox.showwarning("未選擇", "請選擇一個影片。", parent=self)
+            # Localization for "No Selection" warning? Using default for now or could be added
+            messagebox.showwarning("Warning", "Please select a video.", parent=self)
             return
         selected_index = selection[0]
         self.master_player.jump_to_selected_video(selected_index)
@@ -80,7 +81,7 @@ class PlaylistEditor(tk.Toplevel):
         self.folder_path = folder_path
         self.current_mode = current_mode
         self.pending_insert_index = None
-        self.title("調整播放順序")
+        self.title(video_player_module.tr("module_videoplayer_win_order", "Adjust Play Order"))
         self.geometry("550x500")
         self.transient(video_player_module.frame.winfo_toplevel())
         self.grab_set()
@@ -97,21 +98,21 @@ class PlaylistEditor(tk.Toplevel):
             self.listbox.insert(tk.END, os.path.basename(video_path))
         button_frame = tk.Frame(main_frame)
         button_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(10, 0))
-        move_frame = tk.LabelFrame(button_frame, text="位置調整")
+        move_frame = tk.LabelFrame(button_frame, text="Move")
         move_frame.pack(fill=tk.X, pady=5)
-        tk.Button(move_frame, text="上移 ↑", command=self.move_up).pack(fill=tk.X, padx=5, pady=2)
-        tk.Button(move_frame, text="下移 ↓", command=self.move_down).pack(fill=tk.X, padx=5, pady=2)
-        tk.Button(move_frame, text="移到頂部", command=self.move_to_top).pack(fill=tk.X, padx=5, pady=2)
-        tk.Button(move_frame, text="移到底部", command=self.move_to_bottom).pack(fill=tk.X, padx=5, pady=2)
-        insert_frame = tk.LabelFrame(button_frame, text="插入操作")
+        tk.Button(move_frame, text="Up ↑", command=self.move_up).pack(fill=tk.X, padx=5, pady=2)
+        tk.Button(move_frame, text="Down ↓", command=self.move_down).pack(fill=tk.X, padx=5, pady=2)
+        tk.Button(move_frame, text="Top", command=self.move_to_top).pack(fill=tk.X, padx=5, pady=2)
+        tk.Button(move_frame, text="Bottom", command=self.move_to_bottom).pack(fill=tk.X, padx=5, pady=2)
+        insert_frame = tk.LabelFrame(button_frame, text="Insert")
         insert_frame.pack(fill=tk.X, pady=5)
-        tk.Button(insert_frame, text="設為待插入", command=self.set_pending_insert).pack(fill=tk.X, padx=5, pady=2)
-        tk.Button(insert_frame, text="插入其上", command=self.insert_above).pack(fill=tk.X, padx=5, pady=2)
-        tk.Button(insert_frame, text="插入其下", command=self.insert_below).pack(fill=tk.X, padx=5, pady=2)
+        tk.Button(insert_frame, text="Set Source", command=self.set_pending_insert).pack(fill=tk.X, padx=5, pady=2)
+        tk.Button(insert_frame, text="Insert Above", command=self.insert_above).pack(fill=tk.X, padx=5, pady=2)
+        tk.Button(insert_frame, text="Insert Below", command=self.insert_below).pack(fill=tk.X, padx=5, pady=2)
         bottom_frame = tk.Frame(self)
         bottom_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        tk.Button(bottom_frame, text="取消", command=self.destroy).pack(side=tk.RIGHT, padx=5)
-        tk.Button(bottom_frame, text="確定", command=self.confirm_changes).pack(side=tk.RIGHT, padx=5)
+        tk.Button(bottom_frame, text=self.master_player.tr("btn_cancel", "Cancel"), command=self.destroy).pack(side=tk.RIGHT, padx=5)
+        tk.Button(bottom_frame, text=self.master_player.tr("btn_ok", "OK"), command=self.confirm_changes).pack(side=tk.RIGHT, padx=5)
         self.protocol("WM_DELETE_WINDOW", self.destroy)
     def get_selected_pos(self):
         selection = self.listbox.curselection()
@@ -148,11 +149,9 @@ class PlaylistEditor(tk.Toplevel):
     def insert_below(self): self.execute_insert(offset=1)
     def execute_insert(self, offset):
         if self.pending_insert_index is None:
-            messagebox.showwarning("操作無效", "請先使用「設為待插入」選擇一個來源影片。", parent=self)
             return
         target_pos = self.get_selected_pos()
         if target_pos is None:
-            messagebox.showwarning("操作無效", "請選擇一個要插入的目標位置。", parent=self)
             return
         if self.pending_insert_index == target_pos: return
         item_text = self.listbox.get(self.pending_insert_index)
@@ -171,7 +170,7 @@ class PlaylistEditor(tk.Toplevel):
             try:
                 with open(json_path, 'w', encoding='utf-8') as f: json.dump(new_order_basenames, f, ensure_ascii=False, indent=4)
             except Exception as e:
-                messagebox.showerror("儲存失敗", f"無法寫入 playlist.json:\n{e}", parent=self)
+                messagebox.showerror("Error", f"Could not write playlist.json:\n{e}", parent=self)
                 return
         self.master_player.update_playlist_from_editor(new_order_basenames)
         self.destroy()
@@ -226,11 +225,8 @@ def apply_equalizer(wav_path, out_path, gains):
             # Implement a basic graphic EQ by summing filtered bands
             for i, (low, high) in enumerate(EQ_BANDS):
                 gain = db_to_gain(gains[i])
-                if abs(gain - 1.0) < 1e-4: # Gain is 1 (0 dB), so this band is unchanged
-                    # This is a simplification. A true graphic EQ would use parallel filters.
-                    # For this implementation, we just add the gained components.
-                    # A gain of 1 means we should add the component filtered for this band.
-                    pass # Let's just add all gained components.
+                if abs(gain - 1.0) < 1e-4:
+                    pass
 
                 nyquist = framerate / 2.0
                 if low >= nyquist: continue
@@ -298,7 +294,7 @@ class EffectsSettingsWindow(tk.Toplevel):
         super().__init__(parent_player.frame.winfo_toplevel())
         self.transient(parent_player.frame.winfo_toplevel())
         self.grab_set()
-        self.title("音訊效果設定")
+        self.title(parent_player.tr("module_videoplayer_win_effects", "Audio Effects Settings"))
         self.parent_player = parent_player
         self.result = None
 
@@ -315,39 +311,39 @@ class EffectsSettingsWindow(tk.Toplevel):
         processing_tab = ttk.Frame(notebook, padding="10")
         eq_tab = ttk.Frame(notebook, padding="10")
 
-        notebook.add(mic_env_tab, text="麥克風與環境")
-        notebook.add(processing_tab, text="音訊處理")
-        notebook.add(eq_tab, text="等化器")
+        notebook.add(mic_env_tab, text=parent_player.tr("module_videoplayer_tab_mic", "Mic & Env"))
+        notebook.add(processing_tab, text=parent_player.tr("module_videoplayer_tab_proc", "Processing"))
+        notebook.add(eq_tab, text=parent_player.tr("module_videoplayer_tab_eq", "Equalizer"))
 
         # --- Mic & Environment Tab ---
-        mic_frame = ttk.LabelFrame(mic_env_tab, text="模擬收音裝置", padding="5")
+        mic_frame = ttk.LabelFrame(mic_env_tab, text="Simulate Microphone", padding="5")
         mic_frame.pack(fill=tk.X, pady=5)
         self.mic_var = tk.StringVar(value=self.settings.get("mic_sim", "無"))
         mic_options = ["無", "手機", "筆電", "錄音筆", "會議麥克風", "大型平面陣列"]
         ttk.Combobox(mic_frame, textvariable=self.mic_var, values=mic_options, state="readonly").pack(fill=tk.X, expand=True)
 
-        env_frame = ttk.LabelFrame(mic_env_tab, text="播放器環境", padding="5")
+        env_frame = ttk.LabelFrame(mic_env_tab, text="Environment", padding="5")
         env_frame.pack(fill=tk.X, pady=5)
         self.env_var = tk.StringVar(value=self.settings.get("environment", "無"))
         env_options = ["無", "小房間", "浴室", "教室", "音樂廳", "廢棄廠房", "錄音室", "會議室", "地下道", "劇場前排", "戶外", "車內", "購物中心中庭"]
         ttk.Combobox(env_frame, textvariable=self.env_var, values=env_options, state="readonly").pack(fill=tk.X, expand=True)
 
-        pos_frame = ttk.LabelFrame(mic_env_tab, text="播放器位置", padding="5")
+        pos_frame = ttk.LabelFrame(mic_env_tab, text="Position", padding="5")
         pos_frame.pack(fill=tk.X, pady=5)
         self.pos_var = tk.StringVar(value=self.settings.get("position", "無"))
         pos_options = ["無", "前方", "後方", "上方", "下方", "左方", "右方", "360度環繞"]
         ttk.Combobox(pos_frame, textvariable=self.pos_var, values=pos_options, state="readonly").pack(fill=tk.X, expand=True)
 
         # --- Processing Tab ---
-        proc_frame = ttk.LabelFrame(processing_tab, text="處理選項", padding="5")
+        proc_frame = ttk.LabelFrame(processing_tab, text="Options", padding="5")
         proc_frame.pack(fill=tk.X, pady=5)
         self.denoise_var = tk.BooleanVar(value=self.settings.get("denoise", False))
         self.aec_var = tk.BooleanVar(value=self.settings.get("aec", False))
-        ttk.Checkbutton(proc_frame, text="降噪", variable=self.denoise_var).pack(anchor=tk.W)
-        ttk.Checkbutton(proc_frame, text="回音消除 (AEC)", variable=self.aec_var).pack(anchor=tk.W)
+        ttk.Checkbutton(proc_frame, text="Denoise", variable=self.denoise_var).pack(anchor=tk.W)
+        ttk.Checkbutton(proc_frame, text="AEC (Echo Cancel)", variable=self.aec_var).pack(anchor=tk.W)
 
         # --- Equalizer Tab ---
-        eq_options_frame = ttk.LabelFrame(eq_tab, text="等化器預設", padding="5")
+        eq_options_frame = ttk.LabelFrame(eq_tab, text="EQ Preset", padding="5")
         eq_options_frame.pack(fill=tk.X, pady=5)
         self.eq_mode_var = tk.StringVar(value=self.settings.get("eq_mode", "無"))
         eq_options = list(EQ_PRESETS.keys())
@@ -362,8 +358,8 @@ class EffectsSettingsWindow(tk.Toplevel):
 
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(10, 0))
-        ttk.Button(button_frame, text="取消", command=self.cancel).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="確定", command=self.ok).pack(side=tk.RIGHT)
+        ttk.Button(button_frame, text=parent_player.tr("btn_cancel", "Cancel"), command=self.cancel).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=parent_player.tr("btn_ok", "OK"), command=self.ok).pack(side=tk.RIGHT)
 
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.wait_window(self)
@@ -457,6 +453,24 @@ class VideoPlayerModule(Module):
         self.start_time = None
         self.pause_time = None
 
+        # Initialize widget references
+        self.file_selection_frame = None
+        self.btn_select_file = None
+        self.btn_select_folder = None
+        self.mode_selection_frame = None
+        self.rb_ctime = None
+        self.rb_json = None
+        self.rb_random = None
+        self.btn_adjust_order = None
+        self.btn_jump_to = None
+        self.effects_frame = None
+        self.btn_effects = None
+        self.btn_prev = None
+        self.btn_play_pause = None
+        self.btn_next = None
+        self.lbl_volume = None
+        self.progress_label = None
+
         # --- [NEW] Audio Effects Settings ---
         self.audio_effects_settings = {
             "mic_sim": "無",
@@ -475,6 +489,7 @@ class VideoPlayerModule(Module):
 
         self.volume_var = tk.DoubleVar(value=100)
         self.create_ui()
+        self.update_language()
         if pygame.mixer.get_init():
              self.set_volume(self.volume_var.get())
         else:
@@ -489,27 +504,30 @@ class VideoPlayerModule(Module):
         selection_area = tk.Frame(self.frame)
         selection_area.pack(fill=tk.X, padx=10, pady=5)
 
-        file_selection_frame = tk.LabelFrame(selection_area, text="檔案選擇")
-        file_selection_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-        self.btn_select_file = tk.Button(file_selection_frame, text="選擇檔案", command=self.select_file)
+        self.file_selection_frame = tk.LabelFrame(selection_area, text="File Selection")
+        self.file_selection_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        self.btn_select_file = tk.Button(self.file_selection_frame, text="Select File", command=self.select_file)
         self.btn_select_file.pack(pady=5, padx=10)
-        self.btn_select_folder = tk.Button(file_selection_frame, text="選擇資料夾", command=self.select_folder)
+        self.btn_select_folder = tk.Button(self.file_selection_frame, text="Select Folder", command=self.select_folder)
         self.btn_select_folder.pack(pady=5, padx=10)
 
-        mode_selection_frame = tk.LabelFrame(selection_area, text="播放模式")
-        mode_selection_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        ttk.Radiobutton(mode_selection_frame, text="按建立時間", variable=self.play_mode_var, value="ctime", command=self.on_play_mode_change).pack(anchor=tk.W, padx=10)
-        ttk.Radiobutton(mode_selection_frame, text="按JSON順序", variable=self.play_mode_var, value="json", command=self.on_play_mode_change).pack(anchor=tk.W, padx=10)
-        ttk.Radiobutton(mode_selection_frame, text="隨機播放", variable=self.play_mode_var, value="random", command=self.on_play_mode_change).pack(anchor=tk.W, padx=10)
-        self.btn_adjust_order = tk.Button(mode_selection_frame, text="調整播放順序", state=tk.DISABLED, command=self.open_playlist_editor)
+        self.mode_selection_frame = tk.LabelFrame(selection_area, text="Play Mode")
+        self.mode_selection_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.rb_ctime = ttk.Radiobutton(self.mode_selection_frame, text="By Creation Time", variable=self.play_mode_var, value="ctime", command=self.on_play_mode_change)
+        self.rb_ctime.pack(anchor=tk.W, padx=10)
+        self.rb_json = ttk.Radiobutton(self.mode_selection_frame, text="By JSON Order", variable=self.play_mode_var, value="json", command=self.on_play_mode_change)
+        self.rb_json.pack(anchor=tk.W, padx=10)
+        self.rb_random = ttk.Radiobutton(self.mode_selection_frame, text="Random", variable=self.play_mode_var, value="random", command=self.on_play_mode_change)
+        self.rb_random.pack(anchor=tk.W, padx=10)
+        self.btn_adjust_order = tk.Button(self.mode_selection_frame, text="Adjust Order", state=tk.DISABLED, command=self.open_playlist_editor)
         self.btn_adjust_order.pack(pady=5, padx=10, side=tk.LEFT)
-        self.btn_jump_to = tk.Button(mode_selection_frame, text="跳至影片...", state=tk.DISABLED, command=self.open_jump_to_window)
+        self.btn_jump_to = tk.Button(self.mode_selection_frame, text="Jump to...", state=tk.DISABLED, command=self.open_jump_to_window)
         self.btn_jump_to.pack(pady=5, padx=10, side=tk.LEFT)
 
         # --- [NEW] Audio Effects Button ---
-        effects_frame = tk.LabelFrame(selection_area, text="音訊")
-        effects_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-        self.btn_effects = tk.Button(effects_frame, text="音訊效果...", command=self.open_effects_window)
+        self.effects_frame = tk.LabelFrame(selection_area, text="Audio")
+        self.effects_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        self.btn_effects = tk.Button(self.effects_frame, text="Audio Effects...", command=self.open_effects_window)
         self.btn_effects.pack(pady=5, padx=10)
         if not PYROOM_AVAILABLE:
             self.btn_effects.config(state=tk.DISABLED)
@@ -532,25 +550,55 @@ class VideoPlayerModule(Module):
         control_frame.pack(fill=tk.X, padx=10, pady=5)
         left_controls = tk.Frame(control_frame)
         left_controls.pack(side=tk.LEFT)
-        self.btn_prev = tk.Button(left_controls, text="上一個", command=self.play_previous_video, state=tk.DISABLED)
+        self.btn_prev = tk.Button(left_controls, text="Previous", command=self.play_previous_video, state=tk.DISABLED)
         self.btn_prev.pack(side=tk.LEFT, padx=5)
-        self.btn_play_pause = tk.Button(left_controls, text="播放", command=self.toggle_play_pause, state=tk.DISABLED)
+        self.btn_play_pause = tk.Button(left_controls, text="Play", command=self.toggle_play_pause, state=tk.DISABLED)
         self.btn_play_pause.pack(side=tk.LEFT, padx=5)
-        self.btn_next = tk.Button(left_controls, text="下一個", command=self.play_next_video, state=tk.DISABLED)
+        self.btn_next = tk.Button(left_controls, text="Next", command=self.play_next_video, state=tk.DISABLED)
         self.btn_next.pack(side=tk.LEFT, padx=5)
         right_controls = tk.Frame(control_frame)
         right_controls.pack(side=tk.RIGHT)
         self.volume_scale = ttk.Scale(right_controls, from_=0, to=100, orient=tk.HORIZONTAL, variable=self.volume_var, command=self.set_volume, length=120)
         self.volume_scale.pack(side=tk.RIGHT)
-        tk.Label(right_controls, text="音量:").pack(side=tk.RIGHT)
-        self.progress_label = tk.Label(control_frame, text="請選擇檔案或資料夾", fg="blue")
+        self.lbl_volume = tk.Label(right_controls, text="Volume:")
+        self.lbl_volume.pack(side=tk.RIGHT)
+        self.progress_label = tk.Label(control_frame, text="Ready", fg="blue")
         self.progress_label.pack(side=tk.LEFT, padx=20, fill=tk.X, expand=True)
 
         self.shared_state.log("VideoPlayerModule UI created.", level=logging.INFO)
 
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'file_selection_frame', None): return
+
+        self.file_selection_frame.config(text=self.tr("module_videoplayer_grp_file", "File Selection"))
+        self.btn_select_file.config(text=self.tr("module_videoplayer_btn_file", "Select File"))
+        self.btn_select_folder.config(text=self.tr("module_videoplayer_btn_folder", "Select Folder"))
+
+        self.mode_selection_frame.config(text=self.tr("module_videoplayer_grp_mode", "Play Mode"))
+        self.rb_ctime.config(text=self.tr("module_videoplayer_rb_ctime", "By Creation Time"))
+        self.rb_json.config(text=self.tr("module_videoplayer_rb_json", "By JSON Order"))
+        self.rb_random.config(text=self.tr("module_videoplayer_rb_random", "Random"))
+        self.btn_adjust_order.config(text=self.tr("module_videoplayer_btn_order", "Adjust Order"))
+        self.btn_jump_to.config(text=self.tr("module_videoplayer_btn_jump", "Jump to..."))
+
+        self.effects_frame.config(text=self.tr("module_videoplayer_grp_audio", "Audio"))
+        self.btn_effects.config(text=self.tr("module_videoplayer_btn_effects", "Audio Effects..."))
+
+        self.btn_prev.config(text=self.tr("module_videoplayer_btn_prev", "Previous"))
+        if self.is_playing and not self.is_paused:
+             self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_pause", "Pause"))
+        else:
+             self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_play", "Play"))
+        self.btn_next.config(text=self.tr("module_videoplayer_btn_next", "Next"))
+        self.lbl_volume.config(text=self.tr("module_videoplayer_lbl_vol", "Volume:"))
+
+        if self.progress_label.cget("text") in ["Ready", "就緒"]:
+             self.progress_label.config(text=self.tr("module_videoplayer_lbl_ready", "Ready"))
+
     def open_effects_window(self):
         if not PYROOM_AVAILABLE:
-            messagebox.showerror("錯誤", "缺少 'pyroomacoustics' 套件，無法使用音訊效果功能。", parent=self.frame.winfo_toplevel())
+            messagebox.showerror("Error", self.tr("module_videoplayer_msg_no_pyroom", "Missing 'pyroomacoustics' package."), parent=self.frame.winfo_toplevel())
             return
         
         window = EffectsSettingsWindow(self)
@@ -558,14 +606,14 @@ class VideoPlayerModule(Module):
             # Check if settings actually changed
             if window.result != self.audio_effects_settings:
                 self.audio_effects_settings = window.result
-                self.shared_state.log(f"音訊效果已更新: {self.audio_effects_settings}", level=logging.INFO)
+                self.shared_state.log(f"Audio effects updated: {self.audio_effects_settings}", level=logging.INFO)
                 # If a video is playing, restart it to apply new effects
                 if self.is_playing or self.is_paused:
-                    messagebox.showinfo("套用效果", "音訊效果已變更，將重新載入目前的影片以套用。", parent=self.frame.winfo_toplevel())
+                    messagebox.showinfo("Apply Effects", "Audio effects changed, restarting video to apply.", parent=self.frame.winfo_toplevel())
                     self.stop_video()
                     self.play_current_video_in_playlist()
             else:
-                self.shared_state.log("音訊效果未變更。", level=logging.DEBUG)
+                self.shared_state.log("Audio effects unchanged.", level=logging.DEBUG)
 
     def apply_audio_effects(self, input_wav, output_wav):
         """
@@ -576,7 +624,7 @@ class VideoPlayerModule(Module):
             shutil.copy(input_wav, output_wav)
             return output_wav
 
-        self.shared_state.log(f"開始套用音訊效果: {self.audio_effects_settings}", level=logging.INFO)
+        self.shared_state.log(f"Applying audio effects: {self.audio_effects_settings}", level=logging.INFO)
         
         # Read the input file
         wf = wave.open(input_wav, 'rb')
@@ -609,7 +657,7 @@ class VideoPlayerModule(Module):
         mic_sim_type = mic_sim_map.get(mic_sim_key)
 
         if mic_sim_type:
-            self.shared_state.log(f"模擬麥克風: {mic_sim_key}", level=logging.DEBUG)
+            self.shared_state.log(f"Simulating mic: {mic_sim_key}", level=logging.DEBUG)
             try:
                 # --- RESAMPLING FOR SIMULATION ---
                 SIM_RATE = 16000
@@ -652,16 +700,16 @@ class VideoPlayerModule(Module):
                      current_signal = resampled_back.reshape(-1, 1)
 
             except Exception as e:
-                self.shared_state.log(f"麥克風模擬失敗: {e}", level=logging.ERROR)
+                self.shared_state.log(f"Mic simulation failed: {e}", level=logging.ERROR)
 
         # 2. AEC (Echo Cancellation) - Placeholder
         if self.audio_effects_settings.get("aec", False):
-            self.shared_state.log("AEC (回音消除) - 功能待實現", level=logging.WARNING)
+            self.shared_state.log("AEC not implemented yet", level=logging.WARNING)
             pass
 
         # 3. Denoise
         if self.audio_effects_settings.get("denoise", False):
-            self.shared_state.log("套用降噪...", level=logging.DEBUG)
+            self.shared_state.log("Applying denoise...", level=logging.DEBUG)
             try:
                 if current_signal.ndim > 1:
                     processed_channels = []
@@ -673,12 +721,12 @@ class VideoPlayerModule(Module):
                     denoiser = pra.denoise.SpectralSub(n_fft=512, db_reduc=10, look_back=5, beta=10, alpha=2)
                     current_signal = denoiser.process(current_signal.flatten()).reshape(-1, 1)
             except Exception as e:
-                self.shared_state.log(f"降噪失敗: {e}", level=logging.ERROR)
+                self.shared_state.log(f"Denoise failed: {e}", level=logging.ERROR)
 
         # 4. Equalizer
         eq_mode = self.audio_effects_settings.get("eq_mode", "無")
         if eq_mode and eq_mode != "無":
-            self.shared_state.log(f"套用等化器: {eq_mode}", level=logging.INFO)
+            self.shared_state.log(f"Applying EQ: {eq_mode}", level=logging.INFO)
             gains = get_equalizer_gains(eq_mode)
             eq_signal = np.zeros_like(current_signal, dtype=np.float64)
 
@@ -716,7 +764,7 @@ class VideoPlayerModule(Module):
         position = self.audio_effects_settings.get("position", "無")
 
         if environment != "無" or position != "無":
-            self.shared_state.log(f"模擬環境: {environment}, 位置: {position}", level=logging.DEBUG)
+            self.shared_state.log(f"Simulating env: {environment}, pos: {position}", level=logging.DEBUG)
             try:
                 env_presets = {
                     "小房間": ([4, 5, 3], 0.2), "浴室": ([2, 3, 2.5], 0.05),
@@ -732,7 +780,7 @@ class VideoPlayerModule(Module):
                     # For outdoor, we can't simulate reverb, but we can still do positioning
                     # We'll create a stereo signal by delaying one channel slightly for non-center positions
                     if position not in ["無", "前方", "360度環繞"]:
-                        self.shared_state.log("戶外模式簡化位置模擬...", level=logging.DEBUG)
+                        self.shared_state.log("Outdoor simplified positioning...", level=logging.DEBUG)
                         mono_signal = np.mean(current_signal, axis=1) if current_signal.ndim > 1 else current_signal.flatten()
                         delay_samples = 0
                         if position == "左方": delay_samples = int(0.0005 * framerate) # 0.5ms delay for right channel
@@ -753,7 +801,7 @@ class VideoPlayerModule(Module):
                 elif room_dim:
                     signal_for_room = current_signal
                     if current_signal.ndim > 1:
-                        self.shared_state.log("環境模擬前將音訊轉為單聲道。", level=logging.DEBUG)
+                        self.shared_state.log("Converting to mono for env sim.", level=logging.DEBUG)
                         signal_for_room = np.mean(signal_for_room, axis=1)
 
                     room = pra.ShoeBox(room_dim, fs=framerate, materials=pra.Material(absorption), max_order=3)
@@ -775,7 +823,7 @@ class VideoPlayerModule(Module):
                     source_pos = pos_presets.get(position, mic_center + np.array([0, -2, 0]))
 
                     if position == "360度環繞":
-                        self.shared_state.log("360度環繞 - 簡化模擬", level=logging.WARNING)
+                        self.shared_state.log("360 surround - simplified", level=logging.WARNING)
                         t = np.arange(len(signal_for_room)) / framerate
                         radius = 2.0
                         x = mic_center[0] + radius * np.cos(2 * np.pi * 0.2 * t)
@@ -796,7 +844,7 @@ class VideoPlayerModule(Module):
                     current_signal = np.column_stack([left_channel, right_channel])
 
             except Exception as e:
-                self.shared_state.log(f"環境模擬失敗: {e}", level=logging.ERROR)
+                self.shared_state.log(f"Env sim failed: {e}", level=logging.ERROR)
 
         # Final normalization and conversion
         # Ensure output is stereo if we processed it as such
@@ -817,7 +865,7 @@ class VideoPlayerModule(Module):
             wf_out.setparams(tuple(final_params))
             wf_out.writeframes(processed_signal_int.tobytes())
             
-        self.shared_state.log("音訊效果套用完畢。", level=logging.INFO)
+        self.shared_state.log("Audio effects applied.", level=logging.INFO)
         return output_wav
 
     def on_destroy(self):
@@ -872,7 +920,7 @@ class VideoPlayerModule(Module):
             temp_wav_path = os.path.join(self.temp_cache_dir, "temp.wav")
             with VideoFileClip(video_path_to_extract) as video:
                 if video.audio is None:
-                    raise Exception("影片不包含音軌。")
+                    raise Exception("Video contains no audio track.")
                 video.audio.write_audiofile(temp_wav_path, codec='pcm_s16le', logger=None)
 
             # Apply audio effects chain if any are active
@@ -880,12 +928,12 @@ class VideoPlayerModule(Module):
             
             path_for_ffmpeg = temp_wav_path
             if effects_active:
-                self.shared_state.log("偵測到有效音訊效果，開始處理...", level=logging.INFO)
+                self.shared_state.log("Applying audio effects...", level=logging.INFO)
                 effects_out_path = os.path.join(self.temp_cache_dir, "temp_effects.wav")
                 self.apply_audio_effects(temp_wav_path, effects_out_path)
                 path_for_ffmpeg = effects_out_path
             else:
-                self.shared_state.log("無有效音訊效果，跳過處理。", level=logging.DEBUG)
+                self.shared_state.log("No effects active, skipping processing.", level=logging.DEBUG)
             
             # --- Convert final WAV to MP3 for playback ---
             self.temp_audio_path = os.path.join(self.temp_cache_dir, "audio.mp3")
@@ -895,12 +943,12 @@ class VideoPlayerModule(Module):
 
 
             if not os.path.exists(self.temp_audio_path) or os.path.getsize(self.temp_audio_path) == 0:
-                raise Exception(f"FFmpeg 無法建立或建立了空的音訊檔: {self.temp_audio_path}")
+                raise Exception(f"FFmpeg failed to create audio file: {self.temp_audio_path}")
 
-            self.shared_state.log(f"音訊已提取: {self.temp_audio_path}", level=logging.INFO)
+            self.shared_state.log(f"Audio extracted: {self.temp_audio_path}", level=logging.INFO)
             return self.temp_audio_path
         except Exception as e:
-            self.shared_state.log(f"提取音訊時發生錯誤: {e}", level=logging.ERROR)
+            self.shared_state.log(f"Audio extraction error: {e}", level=logging.ERROR)
             self.cleanup_temp_cache()
             raise
 
@@ -1007,7 +1055,7 @@ class VideoPlayerModule(Module):
         self.update_module_title()
 
     def select_folder(self):
-        folder_path = filedialog.askdirectory(title="Select Video Folder", parent=self.frame.winfo_toplevel())
+        folder_path = filedialog.askdirectory(title=self.tr("module_videoplayer_btn_folder", "Select Video Folder"), parent=self.frame.winfo_toplevel())
         if not folder_path: return
         self.current_folder_path = folder_path
         valid_extensions = ('.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.wmv')
@@ -1049,7 +1097,7 @@ class VideoPlayerModule(Module):
             self.playlist = []
             self.current_playlist_index = -1
             self.update_module_title()
-            if hasattr(self, 'progress_label'): self.progress_label.config(text="Ready")
+            if hasattr(self, 'progress_label'): self.progress_label.config(text=self.tr("module_videoplayer_lbl_ready", "Ready"))
             self.enable_button_states()
             return
         filepath = self.playlist[self.current_playlist_index]
@@ -1261,7 +1309,7 @@ class VideoPlayerModule(Module):
                     pygame.mixer.music.play()
                     self.is_playing = True
                     self.enable_button_states()
-                    if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text="Pause")
+                    if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_pause", "Pause"))
                     if hasattr(self, 'progress_label'): self.progress_label.config(text="Playing (Audio Only)")
                     
                     def check_audio_end():
@@ -1297,12 +1345,12 @@ class VideoPlayerModule(Module):
             adj_order_state = tk.NORMAL if (self.play_mode_var.get() == 'json' and self.current_folder_path) else tk.DISABLED
             self.btn_adjust_order.config(state=adj_order_state)
         if hasattr(self, 'progress_label'):
-            if self.is_playing and not self.is_paused: self.progress_label.config(text="Playing...")
-            elif self.is_paused: self.progress_label.config(text="Paused")
+            if self.is_playing and not self.is_paused: self.progress_label.config(text=self.tr("module_videoplayer_lbl_playing", "Playing..."))
+            elif self.is_paused: self.progress_label.config(text=self.tr("module_videoplayer_lbl_paused", "Paused"))
             else:
                 if self.playlist and self.current_playlist_index != -1:
-                    self.progress_label.config(text=f"Ready ({self.current_playlist_index + 1}/{len(self.playlist)})")
-                else: self.progress_label.config(text="Ready. Select file/folder.")
+                    self.progress_label.config(text=f"{self.tr('module_videoplayer_lbl_ready', 'Ready')} ({self.current_playlist_index + 1}/{len(self.playlist)})")
+                else: self.progress_label.config(text=f"{self.tr('module_videoplayer_lbl_ready', 'Ready')}. {self.tr('module_videoplayer_msg_select', 'Select file/folder.')}")
 
     def stop_video(self):
         self.is_playing = self.is_paused = False
@@ -1435,13 +1483,13 @@ class VideoPlayerModule(Module):
         if was_playing_before_seek:
             self.is_paused = False
             if self.frame and self.frame.winfo_exists():
-                 if hasattr(self, 'progress_label'): self.frame.after(0, lambda: self.progress_label.config(text="Playing..."))
+                 if hasattr(self, 'progress_label'): self.frame.after(0, lambda: self.progress_label.config(text=self.tr("module_videoplayer_lbl_playing", "Playing...")))
                  self.frame.after(0, self.update_frame)
         else:
             self.is_paused = False
             self.pause_playback()
             if hasattr(self, 'progress_label') and self.frame.winfo_exists():
-                self.frame.after(0, lambda: self.progress_label.config(text="Paused"))
+                self.frame.after(0, lambda: self.progress_label.config(text=self.tr("module_videoplayer_lbl_paused", "Paused")))
 
     def toggle_play_pause(self):
         if not self.video_path: return
@@ -1455,8 +1503,8 @@ class VideoPlayerModule(Module):
         self.is_paused = True
         self.pause_time = time.time()
         if pygame.mixer.get_init(): pygame.mixer.music.pause()
-        if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text="Play")
-        if hasattr(self, 'progress_label'): self.progress_label.config(text="Paused")
+        if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_play", "Play"))
+        if hasattr(self, 'progress_label'): self.progress_label.config(text=self.tr("module_videoplayer_lbl_paused", "Paused"))
 
     def resume_playback(self):
         if not self.is_playing or not self.is_paused: return
@@ -1464,8 +1512,8 @@ class VideoPlayerModule(Module):
         self.is_paused = False
         self.pause_time = None
         if pygame.mixer.get_init(): pygame.mixer.music.unpause()
-        if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text="Pause")
-        if hasattr(self, 'progress_label'): self.progress_label.config(text="Playing...")
+        if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_pause", "Pause"))
+        if hasattr(self, 'progress_label'): self.progress_label.config(text=self.tr("module_videoplayer_lbl_playing", "Playing..."))
         if self.frame and self.frame.winfo_exists(): self.update_frame()
 
     def start_playback(self):
@@ -1479,8 +1527,8 @@ class VideoPlayerModule(Module):
             try:
                 pygame.mixer.music.play(start=start_sec)
             except pygame.error: pass
-        if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text="Pause")
-        if hasattr(self, 'progress_label'): self.progress_label.config(text="Playing...")
+        if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_pause", "Pause"))
+        if hasattr(self, 'progress_label'): self.progress_label.config(text=self.tr("module_videoplayer_lbl_playing", "Playing..."))
         if self.frame and self.frame.winfo_exists(): self.update_frame()
 
     def read_frames_to_queue(self):

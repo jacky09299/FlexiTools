@@ -37,6 +37,26 @@ class MP4Processor(Module):
         self.merge_output_filename_var = tk.StringVar(value="merged_output.mp4")
         self.merge_file_list = []
 
+        # Mapping for processing modes
+        self.processing_options_keys = [
+            "module_mp4_mode_frames",
+            "module_mp4_mode_mp3",
+            "module_mp4_mode_ogg",
+            "module_mp4_mode_split",
+            "module_mp4_mode_removebg",
+            "module_mp4_mode_merge"
+        ]
+        self.mode_key_map = {
+            "Convert to Frames": "module_mp4_mode_frames",
+            "Extract to MP3": "module_mp4_mode_mp3",
+            "Extract to OGG": "module_mp4_mode_ogg",
+            "Split MP4": "module_mp4_mode_split",
+            "Remove Background": "module_mp4_mode_removebg",
+            "Merge Media": "module_mp4_mode_merge"
+        }
+        # Initialize reverse map
+        self.reverse_mode_map = {}
+
         self.create_ui()
 
     def _log_status_safe(self, message):
@@ -76,16 +96,27 @@ class MP4Processor(Module):
             self._log_status(f"Output path set to: {path}")
 
     def _on_processing_mode_changed(self, event=None):
-        selected_mode = self.processing_mode_var.get()
+        selected_mode_display = self.processing_mode_var.get()
+
+        # Map display string back to internal key for logic
+        selected_mode_key = self.reverse_mode_map.get(selected_mode_display)
+
+        # Fallback logic if mapping fails (e.g. initialization)
+        if not selected_mode_key:
+             # Try to find key by checking if selected_mode matches any default English string
+             for k, v in self.mode_key_map.items():
+                 if k == selected_mode_display:
+                     selected_mode_key = v
+                     break
 
         for widget in self.dynamic_options_frame.winfo_children():
             widget.pack_forget()
 
-        if selected_mode == "Convert to Frames":
+        if selected_mode_key == "module_mp4_mode_frames":
             self.frames_options_frame.pack(fill=tk.X, expand=True)
-        elif selected_mode == "Split MP4":
+        elif selected_mode_key == "module_mp4_mode_split":
             self.split_options_frame.pack(fill=tk.X, expand=True)
-        elif selected_mode == "Merge Media":
+        elif selected_mode_key == "module_mp4_mode_merge":
             self.merge_options_frame.pack(fill=tk.BOTH, expand=True)
 
     def _merge_add_files(self):
@@ -546,7 +577,10 @@ class MP4Processor(Module):
         try:
             input_val = self.input_path_var.get()
             output_dir = self.output_path_var.get()
-            mode = self.processing_mode_var.get()
+
+            # Get internal key for mode
+            mode_display = self.processing_mode_var.get()
+            mode = self.reverse_mode_map.get(mode_display, self.mode_key_map.get("Convert to Frames"))
 
             if not output_dir:
                 self._log_status_safe("Error: Output directory must be selected.")
@@ -559,9 +593,9 @@ class MP4Processor(Module):
                     self._log_status_safe(f"Error: Could not create output directory {output_dir}: {e}")
                     return
 
-            self._log_status_safe(f"Mode selected: {mode}")
+            self._log_status_safe(f"Mode selected: {mode_display}")
 
-            if mode == "Merge Media":
+            if mode == "module_mp4_mode_merge":
                 files_to_merge = self.merge_file_list
                 if not files_to_merge or len(files_to_merge) < 2:
                     self._log_status_safe("Error: Please add at least two files to merge.")
@@ -585,7 +619,7 @@ class MP4Processor(Module):
                 self._log_status_safe(f"Error: Input path does not exist: {input_val}")
                 return
 
-            if mode == "Convert to Frames":
+            if mode == "module_mp4_mode_frames":
                 fps_str = self.fps_var.get()
                 try:
                     if int(fps_str) <= 0:
@@ -594,7 +628,7 @@ class MP4Processor(Module):
                 except ValueError:
                     self._log_status_safe("Error: Invalid FPS value. Must be a number.")
                     return
-            elif mode == "Split MP4":
+            elif mode == "module_mp4_mode_split":
                 if not self.split_points_text.get("1.0", tk.END).strip():
                     self._log_status_safe("Error: Split points cannot be empty for Split MP4 mode.")
                     return
@@ -616,15 +650,15 @@ class MP4Processor(Module):
             for video_path in files_to_process:
                 self._log_status_safe(f"--- Processing file: {video_path} ---")
                 current_file_success = False
-                if mode == "Convert to Frames":
+                if mode == "module_mp4_mode_frames":
                     current_file_success = self._process_to_frames(video_path, output_dir, self.fps_var.get(), self.remove_bg_var.get())
-                elif mode == "Extract to MP3":
+                elif mode == "module_mp4_mode_mp3":
                     current_file_success = self._process_to_mp3(video_path, output_dir)
-                elif mode == "Extract to OGG":
+                elif mode == "module_mp4_mode_ogg":
                     current_file_success = self._process_to_ogg(video_path, output_dir)
-                elif mode == "Remove Background":
+                elif mode == "module_mp4_mode_removebg":
                     current_file_success = self._process_remove_background(video_path, output_dir)
-                elif mode == "Split MP4":
+                elif mode == "module_mp4_mode_split":
                     current_file_success = self._process_split_mp4(video_path, output_dir, self.split_points_text.get("1.0", tk.END).strip(), self.segments_to_save_var.get())
                 else:
                     self._log_status_safe(f"Error: Unknown processing mode: {mode}")
@@ -632,9 +666,9 @@ class MP4Processor(Module):
 
                 if not current_file_success:
                     all_files_processed_successfully = False
-                    self._log_status_safe(f"Failed to process {video_path} in {mode} mode.")
+                    self._log_status_safe(f"Failed to process {video_path} in {mode_display} mode.")
                 else:
-                    self._log_status_safe(f"Successfully processed {video_path} in {mode} mode.")
+                    self._log_status_safe(f"Successfully processed {video_path} in {mode_display} mode.")
 
             if all_files_processed_successfully:
                 self._log_status_safe("--- All processing finished successfully. ---")
@@ -650,81 +684,96 @@ class MP4Processor(Module):
     def create_ui(self):
         content_frame = self.get_frame()
 
-        input_frame = ttk.LabelFrame(content_frame, text="Input Selection", padding=(10, 5))
-        input_frame.pack(fill=tk.X, padx=5, pady=5)
-        input_type_rb_frame = ttk.Frame(input_frame)
+        # Keep references for update_language
+        self.input_frame = ttk.LabelFrame(content_frame, text="Input Selection", padding=(10, 5))
+        self.input_frame.pack(fill=tk.X, padx=5, pady=5)
+
+        input_type_rb_frame = ttk.Frame(self.input_frame)
         input_type_rb_frame.pack(fill=tk.X)
-        ttk.Radiobutton(input_type_rb_frame, text="Single File", variable=self.input_type_var, value="file").pack(side=tk.LEFT, padx=5, pady=2)
-        ttk.Radiobutton(input_type_rb_frame, text="Folder", variable=self.input_type_var, value="folder").pack(side=tk.LEFT, padx=5, pady=2)
-        input_path_frame = ttk.Frame(input_frame)
+        self.rb_single = ttk.Radiobutton(input_type_rb_frame, text="Single File", variable=self.input_type_var, value="file")
+        self.rb_single.pack(side=tk.LEFT, padx=5, pady=2)
+        self.rb_folder = ttk.Radiobutton(input_type_rb_frame, text="Folder", variable=self.input_type_var, value="folder")
+        self.rb_folder.pack(side=tk.LEFT, padx=5, pady=2)
+
+        input_path_frame = ttk.Frame(self.input_frame)
         input_path_frame.pack(fill=tk.X, pady=(5,0))
-        browse_input_btn = ttk.Button(input_path_frame, text="Browse Input", command=self._browse_input)
-        browse_input_btn.pack(side=tk.LEFT, padx=5)
+        self.btn_browse_input = ttk.Button(input_path_frame, text="Browse Input", command=self._browse_input)
+        self.btn_browse_input.pack(side=tk.LEFT, padx=5)
         self.input_path_label = ttk.Label(input_path_frame, text="No input selected (not used for Merge)", anchor=tk.W, relief=tk.SUNKEN, padding=(2,2))
         self.input_path_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
-        output_frame = ttk.LabelFrame(content_frame, text="Output Location", padding=(10, 5))
-        output_frame.pack(fill=tk.X, padx=5, pady=5)
-        output_path_browse_frame = ttk.Frame(output_frame)
+        self.output_frame = ttk.LabelFrame(content_frame, text="Output Location", padding=(10, 5))
+        self.output_frame.pack(fill=tk.X, padx=5, pady=5)
+
+        output_path_browse_frame = ttk.Frame(self.output_frame)
         output_path_browse_frame.pack(fill=tk.X)
-        browse_output_btn = ttk.Button(output_path_browse_frame, text="Browse Output", command=self._browse_output)
-        browse_output_btn.pack(side=tk.LEFT, padx=5)
+        self.btn_browse_output = ttk.Button(output_path_browse_frame, text="Browse Output", command=self._browse_output)
+        self.btn_browse_output.pack(side=tk.LEFT, padx=5)
         self.output_path_label = ttk.Label(output_path_browse_frame, text="No output location selected", anchor=tk.W, relief=tk.SUNKEN, padding=(2,2))
         self.output_path_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
-        options_frame = ttk.LabelFrame(content_frame, text="Processing Options", padding=(10, 5))
-        options_frame.pack(fill=tk.X, padx=5, pady=5)
-        processing_mode_label = ttk.Label(options_frame, text="Mode:")
-        processing_mode_label.pack(side=tk.LEFT, padx=(0,5), pady=5)
-        processing_options = ["Convert to Frames", "Extract to MP3", "Extract to OGG", "Split MP4", "Remove Background", "Merge Media"]
-        self.processing_mode_combobox = ttk.Combobox(options_frame, textvariable=self.processing_mode_var, values=processing_options, state="readonly")
+        self.options_frame = ttk.LabelFrame(content_frame, text="Processing Options", padding=(10, 5))
+        self.options_frame.pack(fill=tk.X, padx=5, pady=5)
+        self.lbl_mode = ttk.Label(self.options_frame, text="Mode:")
+        self.lbl_mode.pack(side=tk.LEFT, padx=(0,5), pady=5)
+
+        self.processing_mode_combobox = ttk.Combobox(self.options_frame, textvariable=self.processing_mode_var, state="readonly")
         self.processing_mode_combobox.pack(fill=tk.X, expand=True, padx=5, pady=5)
-        self.processing_mode_combobox.current(0)
         self.processing_mode_combobox.bind("<<ComboboxSelected>>", self._on_processing_mode_changed)
 
         self.dynamic_options_frame = ttk.Frame(content_frame, padding=(5,5))
         self.dynamic_options_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=(0,5))
 
+        # Frames Options
         self.frames_options_frame = ttk.Frame(self.dynamic_options_frame)
-        fps_label = ttk.Label(self.frames_options_frame, text="Target FPS:")
-        fps_label.pack(side=tk.LEFT, padx=(0,5))
+        self.lbl_fps = ttk.Label(self.frames_options_frame, text="Target FPS:")
+        self.lbl_fps.pack(side=tk.LEFT, padx=(0,5))
         self.fps_entry = ttk.Entry(self.frames_options_frame, textvariable=self.fps_var, width=5)
         self.fps_entry.pack(side=tk.LEFT)
         self.remove_bg_var = tk.BooleanVar()
-        self.check_remove_bg = ttk.Checkbutton(self.frames_options_frame, text="去背", variable=self.remove_bg_var)
+        self.check_remove_bg = ttk.Checkbutton(self.frames_options_frame, text="Remove Background", variable=self.remove_bg_var)
         self.check_remove_bg.pack(side=tk.LEFT, padx=5)
 
+        # Split Options
         self.split_options_frame = ttk.Frame(self.dynamic_options_frame)
         split_points_label_frame = ttk.Frame(self.split_options_frame)
         split_points_label_frame.pack(fill=tk.X, pady=(0,2))
-        split_points_label = ttk.Label(split_points_label_frame, text="Split Points (e.g., 0:10-0:20, 0:30-0:45):")
-        split_points_label.pack(side=tk.LEFT)
+        self.lbl_split_points = ttk.Label(split_points_label_frame, text="Split Points (e.g., 0:10-0:20, 0:30-0:45):")
+        self.lbl_split_points.pack(side=tk.LEFT)
         self.split_points_text = tk.Text(self.split_options_frame, height=3, relief=tk.SUNKEN, borderwidth=1)
         self.split_points_text.pack(fill=tk.X, pady=(0,5))
         segments_to_save_frame = ttk.Frame(self.split_options_frame)
         segments_to_save_frame.pack(fill=tk.X)
-        segments_label = ttk.Label(segments_to_save_frame, text="Segments to Save (e.g., 1,3 or blank for all):")
-        segments_label.pack(side=tk.LEFT, padx=(0,5))
+        self.lbl_segments = ttk.Label(segments_to_save_frame, text="Segments to Save (e.g., 1,3 or blank for all):")
+        self.lbl_segments.pack(side=tk.LEFT, padx=(0,5))
         self.segments_to_save_entry = ttk.Entry(segments_to_save_frame, textvariable=self.segments_to_save_var)
         self.segments_to_save_entry.pack(fill=tk.X, expand=True)
 
+        # Merge Options
         self.merge_options_frame = ttk.Frame(self.dynamic_options_frame)
-        list_frame = ttk.LabelFrame(self.merge_options_frame, text="Files to Merge (in order)", padding=(10, 5))
-        list_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-        self.merge_listbox = tk.Listbox(list_frame, selectmode=tk.SINGLE, height=6)
+        self.list_frame = ttk.LabelFrame(self.merge_options_frame, text="Files to Merge (in order)", padding=(10, 5))
+        self.list_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        self.merge_listbox = tk.Listbox(self.list_frame, selectmode=tk.SINGLE, height=6)
         self.merge_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.merge_listbox.yview)
+        scrollbar = ttk.Scrollbar(self.list_frame, orient=tk.VERTICAL, command=self.merge_listbox.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.merge_listbox.config(yscrollcommand=scrollbar.set)
+
         button_frame = ttk.Frame(self.merge_options_frame)
         button_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(button_frame, text="Add Files...", command=self._merge_add_files).pack(side=tk.LEFT, padx=2)
-        ttk.Button(button_frame, text="Remove Selected", command=self._merge_remove_selected).pack(side=tk.LEFT, padx=2)
-        ttk.Button(button_frame, text="Move Up", command=self._merge_move_up).pack(side=tk.LEFT, padx=2)
-        ttk.Button(button_frame, text="Move Down", command=self._merge_move_down).pack(side=tk.LEFT, padx=2)
+        self.btn_add_files = ttk.Button(button_frame, text="Add Files...", command=self._merge_add_files)
+        self.btn_add_files.pack(side=tk.LEFT, padx=2)
+        self.btn_remove_sel = ttk.Button(button_frame, text="Remove Selected", command=self._merge_remove_selected)
+        self.btn_remove_sel.pack(side=tk.LEFT, padx=2)
+        self.btn_up = ttk.Button(button_frame, text="Move Up", command=self._merge_move_up)
+        self.btn_up.pack(side=tk.LEFT, padx=2)
+        self.btn_down = ttk.Button(button_frame, text="Move Down", command=self._merge_move_down)
+        self.btn_down.pack(side=tk.LEFT, padx=2)
+
         output_name_frame = ttk.Frame(self.merge_options_frame)
         output_name_frame.pack(fill=tk.X, pady=(5,0))
-        ttk.Label(output_name_frame, text="Output Filename:").pack(side=tk.LEFT, padx=(0, 5))
+        self.lbl_out_filename = ttk.Label(output_name_frame, text="Output Filename:")
+        self.lbl_out_filename.pack(side=tk.LEFT, padx=(0, 5))
         ttk.Entry(output_name_frame, textvariable=self.merge_output_filename_var).pack(fill=tk.X, expand=True)
 
         self.process_button = ttk.Button(content_frame, text="Start Processing", command=self._start_processing)
@@ -732,10 +781,65 @@ class MP4Processor(Module):
 
         status_label_frame = ttk.Frame(content_frame)
         status_label_frame.pack(fill=tk.X, padx=5, pady=(5,0))
-        status_label = ttk.Label(status_label_frame, text="Status:")
-        status_label.pack(anchor=tk.W)
+        self.lbl_status = ttk.Label(status_label_frame, text="Status:")
+        self.lbl_status.pack(anchor=tk.W)
         self.status_text = tk.Text(content_frame, height=5, state=tk.DISABLED, relief=tk.SUNKEN, borderwidth=1)
         self.status_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=(0,5))
 
+        self.update_language()
         self._on_processing_mode_changed()
         self.shared_state.log(f"MP4Processor UI fully created for module: {self.module_name}", "INFO")
+
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'input_frame', None): return
+
+        self.input_frame.config(text=self.tr("module_mp4_grp_input", "Input Selection"))
+        self.rb_single.config(text=self.tr("module_mp4_rb_single", "Single File"))
+        self.rb_folder.config(text=self.tr("module_mp4_rb_folder", "Folder"))
+        self.btn_browse_input.config(text=self.tr("module_mp4_btn_browse_in", "Browse Input"))
+        if "No input selected" in self.input_path_label.cget("text") or "未選擇" in self.input_path_label.cget("text"):
+             self.input_path_label.config(text=self.tr("module_mp4_lbl_no_input", "No input selected"))
+
+        self.output_frame.config(text=self.tr("module_mp4_grp_output", "Output Location"))
+        self.btn_browse_output.config(text=self.tr("module_mp4_btn_browse_out", "Browse Output"))
+        if "No output" in self.output_path_label.cget("text") or "未選擇" in self.output_path_label.cget("text"):
+             self.output_path_label.config(text=self.tr("module_mp4_lbl_no_output", "No output location selected"))
+
+        self.options_frame.config(text=self.tr("module_mp4_grp_options", "Processing Options"))
+        self.lbl_mode.config(text=self.tr("module_mp4_lbl_mode", "Mode:"))
+
+        # Update combobox values while preserving selection mapping
+        current_key = self.reverse_mode_map.get(self.processing_mode_var.get())
+
+        translated_options = []
+        self.reverse_mode_map = {} # Rebuild map
+
+        for key in self.processing_options_keys:
+            translated = self.tr(key)
+            translated_options.append(translated)
+            self.reverse_mode_map[translated] = key
+
+        self.processing_mode_combobox['values'] = translated_options
+
+        if current_key:
+            # Try to set display value for current key
+            self.processing_mode_var.set(self.tr(current_key))
+        elif not self.processing_mode_var.get():
+             self.processing_mode_combobox.current(0)
+
+        self.lbl_fps.config(text=self.tr("module_mp4_lbl_fps", "Target FPS:"))
+        self.check_remove_bg.config(text=self.tr("module_mp4_chk_removebg", "Remove Background"))
+
+        self.lbl_split_points.config(text=self.tr("module_mp4_lbl_split_points", "Split Points (e.g., 0:10-0:20):"))
+        self.lbl_segments.config(text=self.tr("module_mp4_lbl_segments", "Segments to Save (e.g., 1,3):"))
+
+        self.list_frame.config(text=self.tr("module_mp4_grp_merge_files", "Files to Merge (in order)"))
+        self.btn_add_files.config(text=self.tr("module_mp4_btn_add_files", "Add Files..."))
+        self.btn_remove_sel.config(text=self.tr("module_mp4_btn_remove_sel", "Remove Selected"))
+        self.btn_up.config(text=self.tr("module_mp4_btn_up", "Move Up"))
+        self.btn_down.config(text=self.tr("module_mp4_btn_down", "Move Down"))
+        self.lbl_out_filename.config(text=self.tr("module_mp4_lbl_out_filename", "Output Filename:"))
+
+        self.process_button.config(text=self.tr("module_mp4_btn_start", "Start Processing"))
+        self.lbl_status.config(text=self.tr("module_mp4_lbl_status", "Status:"))

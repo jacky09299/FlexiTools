@@ -77,12 +77,16 @@ class RecipeWheelModule(Module):
         self.recipe_name_label = None
         self.ingredients_text = None
         self.steps_text = None
+        self.spin_button = None
+        self.lbl_ingredients = None
+        self.lbl_steps = None
 
         self.spin_after_id = None
         self.current_spin_recipe_idx = 0
         self.spin_count = 0
 
         self.create_ui()
+        self.update_language()
 
     def create_ui(self):
         self.frame.config(borderwidth=2, relief=tk.GROOVE)
@@ -96,8 +100,8 @@ class RecipeWheelModule(Module):
         self.wheel_label.grid(row=0, column=0, pady=10, sticky="ew")
 
         # Spin button
-        spin_button = ttk.Button(content_frame, text="Spin the Wheel!", command=self.start_spin)
-        spin_button.grid(row=1, column=0, pady=10)
+        self.spin_button = ttk.Button(content_frame, text="Spin the Wheel!", command=self.start_spin)
+        self.spin_button.grid(row=1, column=0, pady=10)
 
         # Separator
         ttk.Separator(content_frame, orient=tk.HORIZONTAL).grid(row=2, column=0, sticky="ew", pady=10)
@@ -112,7 +116,8 @@ class RecipeWheelModule(Module):
         self.recipe_name_label.grid(row=0, column=0, sticky="w", pady=(0,5))
 
         # Ingredients
-        ttk.Label(recipe_display_frame, text="Ingredients:", font=("Helvetica", 12, "bold")).grid(row=1, column=0, sticky="w", pady=(5,2))
+        self.lbl_ingredients = ttk.Label(recipe_display_frame, text="Ingredients:", font=("Helvetica", 12, "bold"))
+        self.lbl_ingredients.grid(row=1, column=0, sticky="w", pady=(5,2))
 
         ing_frame = ttk.Frame(recipe_display_frame) # Frame for text and scrollbar
         ing_frame.grid(row=2, column=0, sticky="nsew", pady=(0,5))
@@ -129,7 +134,8 @@ class RecipeWheelModule(Module):
 
 
         # Steps
-        ttk.Label(recipe_display_frame, text="Steps:", font=("Helvetica", 12, "bold")).grid(row=3, column=0, sticky="w", pady=(5,2))
+        self.lbl_steps = ttk.Label(recipe_display_frame, text="Steps:", font=("Helvetica", 12, "bold"))
+        self.lbl_steps.grid(row=3, column=0, sticky="w", pady=(5,2))
 
         steps_frame = ttk.Frame(recipe_display_frame) # Frame for text and scrollbar
         steps_frame.grid(row=4, column=0, sticky="nsew")
@@ -146,6 +152,23 @@ class RecipeWheelModule(Module):
 
         self.shared_state.log(f"UI for {self.module_name} created.", level=logging.INFO)
 
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'spin_button', None): return
+
+        if self.wheel_label.cget("text") == "Recipe Wheel!" or self.wheel_label.cget("text") == "食譜轉盤！":
+             self.wheel_label.config(text=self.tr("module_recipewheel_lbl_wheel", "Recipe Wheel!"))
+
+        self.spin_button.config(text=self.tr("module_recipewheel_btn_spin", "Spin the Wheel!"))
+        self.lbl_ingredients.config(text=self.tr("module_recipewheel_lbl_ingredients", "Ingredients:"))
+        self.lbl_steps.config(text=self.tr("module_recipewheel_lbl_steps", "Steps:"))
+
+        current_recipe_text = self.recipe_name_label.cget("text")
+        if current_recipe_text.startswith("Recipe:") or current_recipe_text.startswith("食譜:"):
+             # If a recipe is selected, update the prefix
+             recipe_name = current_recipe_text.split(": ", 1)[1] if ": " in current_recipe_text else ""
+             self.recipe_name_label.config(text=f"{self.tr('module_recipewheel_lbl_recipe', 'Recipe: ')}{recipe_name}")
+
     def start_spin(self):
         if self.spin_after_id: # Prevent multiple spins
             self.frame.after_cancel(self.spin_after_id)
@@ -157,7 +180,7 @@ class RecipeWheelModule(Module):
 
     def _perform_spin_animation(self):
         if not self.recipes:
-            self.wheel_label.config(text="No Recipes!")
+            self.wheel_label.config(text=self.tr("module_recipewheel_lbl_no_recipes", "No Recipes!"))
             return
 
         self.wheel_label.config(text=self.recipes[self.current_spin_recipe_idx]["name"])
@@ -174,7 +197,7 @@ class RecipeWheelModule(Module):
 
     def display_recipe(self, recipe):
         self.wheel_label.config(text=recipe["name"]) # Final selected name on wheel
-        self.recipe_name_label.config(text=f"Recipe: {recipe['name']}")
+        self.recipe_name_label.config(text=f"{self.tr('module_recipewheel_lbl_recipe', 'Recipe: ')}{recipe['name']}")
 
         self.ingredients_text.config(state=tk.NORMAL)
         self.ingredients_text.delete('1.0', tk.END)

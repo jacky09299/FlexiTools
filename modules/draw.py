@@ -29,13 +29,14 @@ class DrawingPadModule(Module):
         controls_bar = ttk.Frame(content_frame)
         controls_bar.grid(row=0, column=0, sticky="ew", pady=(0,5))
 
-        clear_button = ttk.Button(controls_bar, text="Clear Canvas", command=self.clear_canvas)
-        clear_button.pack(side=tk.LEFT, padx=(0,5))
+        self.clear_button = ttk.Button(controls_bar, text="Clear Canvas", command=self.clear_canvas)
+        self.clear_button.pack(side=tk.LEFT, padx=(0,5))
 
-        color_button = ttk.Button(controls_bar, text="Pen Color", command=self.choose_color)
-        color_button.pack(side=tk.LEFT, padx=(0,10))
+        self.color_button = ttk.Button(controls_bar, text="Pen Color", command=self.choose_color)
+        self.color_button.pack(side=tk.LEFT, padx=(0,10))
 
-        ttk.Label(controls_bar, text="Pen Width:").pack(side=tk.LEFT, padx=(0,2))
+        self.width_label = ttk.Label(controls_bar, text="Pen Width:")
+        self.width_label.pack(side=tk.LEFT, padx=(0,2))
         pen_width_slider = ttk.Scale(controls_bar, from_=1, to=20, variable=self.pen_width, orient=tk.HORIZONTAL)
         pen_width_slider.pack(side=tk.LEFT, fill=tk.X, expand=True)
         # Display current pen width
@@ -52,6 +53,15 @@ class DrawingPadModule(Module):
         self.canvas.bind("<ButtonRelease-1>", self.stop_draw)
 
         self.shared_state.log(f"UI for {self.module_name} created.", level=logging.INFO)
+
+        self.update_language()
+
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'clear_button', None): return
+        self.clear_button.config(text=self.tr("module_drawingpad_btn_clear", "Clear Canvas"))
+        self.color_button.config(text=self.tr("module_drawingpad_btn_color", "Pen Color"))
+        self.width_label.config(text=self.tr("module_drawingpad_lbl_width", "Pen Width:"))
 
     def start_draw(self, event):
         self.last_x, self.last_y = event.x, event.y
@@ -72,7 +82,8 @@ class DrawingPadModule(Module):
         self.shared_state.log("Drawing canvas cleared.", level=logging.DEBUG)
 
     def choose_color(self):
-        color_code = colorchooser.askcolor(title="Choose pen color", initialcolor=self.pen_color, parent=self.frame)
+        title = self.tr("module_drawingpad_title_color", "Choose pen color")
+        color_code = colorchooser.askcolor(title=title, initialcolor=self.pen_color, parent=self.frame)
         if color_code and color_code[1]:
             self.pen_color = color_code[1]
             self.shared_state.log(f"Pen color changed to: {self.pen_color}", level=logging.DEBUG)

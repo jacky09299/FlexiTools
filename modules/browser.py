@@ -59,6 +59,15 @@ class ChromeBrowser(Module):
 
         self.new_tab() # Create an initial tab
 
+        self.update_language()
+
+    def update_language(self):
+        super().update_language()
+        if hasattr(self, 'status_label'):
+            self.status_label.config(text=self.tr("module_browser_status_ready", "Ready"))
+        # Menu items are regenerated on show_menu, but dialogs and dynamic messages use tr() directly.
+        # Tab titles are dynamic content, generally not translated unless default.
+
     def create_toolbar(self, parent):
         toolbar = ttk.Frame(parent)
         toolbar.pack(fill=tk.X, pady=(0, 2))
@@ -113,7 +122,10 @@ class ChromeBrowser(Module):
 
     def close_tab(self, idx):
         if len(self.tabs) == 1:
-            messagebox.showinfo("提示", "至少要保留一個標籤頁")
+            messagebox.showinfo(
+                self.tr("module_browser_msg_hint", "Hint"),
+                self.tr("module_browser_msg_keep_one_tab", "Keep at least one tab.")
+            )
             return
         tab = self.tabs.pop(idx)
         tab.destroy()
@@ -130,7 +142,7 @@ class ChromeBrowser(Module):
     def create_status_bar(self, parent):
         status_frame = ttk.Frame(parent)
         status_frame.pack(fill=tk.X, side=tk.BOTTOM)
-        self.status_label = ttk.Label(status_frame, text="就緒", relief="sunken")
+        self.status_label = ttk.Label(status_frame, text=self.tr("module_browser_status_ready", "Ready"), relief="sunken")
         self.status_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.progress = ttk.Progressbar(status_frame, mode='indeterminate')
         self.progress.pack(side=tk.RIGHT, padx=(5, 0))
@@ -162,16 +174,16 @@ class ChromeBrowser(Module):
         top_level_window = self.frame.winfo_toplevel()
         menu = tk.Menu(top_level_window, tearoff=0)
         # menu.add_command(label="新視窗", command=self.new_window) # Feature disabled
-        menu.add_command(label="新標籤頁", command=self.new_tab)
+        menu.add_command(label=self.tr("module_browser_menu_new_tab", "New Tab"), command=self.new_tab)
         menu.add_separator()
-        menu.add_command(label="書籤管理", command=self.show_bookmarks)
-        menu.add_command(label="歷史記錄", command=self.show_history)
+        menu.add_command(label=self.tr("module_browser_menu_bookmarks", "Bookmarks"), command=self.show_bookmarks)
+        menu.add_command(label=self.tr("module_browser_menu_history", "History"), command=self.show_history)
         menu.add_separator()
-        menu.add_command(label="開發者工具", command=self.open_dev_tools)
-        menu.add_command(label="檢視原始碼", command=self.view_source)
+        menu.add_command(label=self.tr("module_browser_menu_devtools", "Dev Tools"), command=self.open_dev_tools)
+        menu.add_command(label=self.tr("module_browser_menu_source", "View Source"), command=self.view_source)
         menu.add_separator()
-        menu.add_command(label="設定", command=self.open_settings)
-        menu.add_command(label="關於", command=self.show_about)
+        menu.add_command(label=self.tr("module_browser_menu_settings", "Settings"), command=self.open_settings)
+        menu.add_command(label=self.tr("module_browser_menu_about", "About"), command=self.show_about)
         try:
             menu.tk_popup(self.menu_btn.winfo_rootx(), self.menu_btn.winfo_rooty() + 25)
         finally:
@@ -191,11 +203,15 @@ class ChromeBrowser(Module):
 
     def show_bookmarks(self):
         if not self.bookmarks:
-            messagebox.showinfo("書籤", "沒有書籤", parent=self.frame.winfo_toplevel())
+            messagebox.showinfo(
+                self.tr("module_browser_title_bookmarks", "Bookmarks"),
+                self.tr("module_browser_msg_no_bookmarks", "No bookmarks"),
+                parent=self.frame.winfo_toplevel()
+            )
             return
         top_level_window = self.frame.winfo_toplevel()
         bookmark_window = tk.Toplevel(top_level_window)
-        bookmark_window.title("書籤管理")
+        bookmark_window.title(self.tr("module_browser_title_bookmarks_manager", "Bookmarks Manager"))
         bookmark_window.geometry("400x300")
         listbox = tk.Listbox(bookmark_window, font=("Arial", 10))
         listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -216,11 +232,15 @@ class ChromeBrowser(Module):
 
     def show_history(self):
         if not self.history:
-            messagebox.showinfo("歷史記錄", "沒有歷史記錄", parent=self.frame.winfo_toplevel())
+            messagebox.showinfo(
+                self.tr("module_browser_title_history", "History"),
+                self.tr("module_browser_msg_no_history", "No history"),
+                parent=self.frame.winfo_toplevel()
+            )
             return
         top_level_window = self.frame.winfo_toplevel()
         history_window = tk.Toplevel(top_level_window)
-        history_window.title("歷史記錄")
+        history_window.title(self.tr("module_browser_title_history", "History"))
         history_window.geometry("500x400")
         listbox = tk.Listbox(history_window, font=("Arial", 10))
         listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -242,24 +262,27 @@ class ChromeBrowser(Module):
         self.tabs[self.current_tab].view_source()
 
     def open_settings(self):
-        messagebox.showinfo("設定", "設定功能正在開發中")
+        messagebox.showinfo(
+            self.tr("module_browser_menu_settings", "Settings"),
+            self.tr("module_browser_msg_settings_wip", "Settings feature is under development")
+        )
 
     def show_about(self):
-        about_text = """Chrome瀏覽器克隆版
+        about_text = self.tr("module_browser_about_text", """Chrome Clone
 
-基於 Python tkinter + cefpython3 開發
-版本: 1.0.0
+Based on Python tkinter + cefpython3
+Version: 1.0.0
 
-功能特點:
-• 完整的網頁瀏覽
-• 書籤管理
-• 歷史記錄
-• 開發者工具
-• 縮放控制
-• SSL 指示器
+Features:
+• Web Browsing
+• Bookmarks
+• History
+• Dev Tools
+• Zoom
+• SSL Indicator
 
-開發者: Python 愛好者"""
-        messagebox.showinfo("關於", about_text)
+Developer: Python Enthusiast""")
+        messagebox.showinfo(self.tr("module_browser_menu_about", "About"), about_text)
 
     # def on_closing(self): # This method is being replaced by on_destroy
     #     """參考tkinter_.py，正確釋放所有 CEF browser 與 Tk 資源"""
@@ -478,13 +501,23 @@ class Tab(ttk.Frame):
         if current_url in urls:
             self.browser_app.bookmarks = [b for b in self.browser_app.bookmarks if (b['url'] if isinstance(b, dict) else b) != current_url]
             self.browser_app.bookmark_btn.config(text="☆")
-            messagebox.showinfo("書籤", "已從書籤中移除")
+            messagebox.showinfo(
+                self.browser_app.tr("module_browser_title_bookmarks", "Bookmarks"),
+                self.browser_app.tr("module_browser_msg_bookmark_removed", "Removed from bookmarks")
+            )
         else:
-            title = simpledialog.askstring("添加書籤", "請輸入書籤標題:", initialvalue=current_url)
+            title = simpledialog.askstring(
+                self.browser_app.tr("module_browser_title_add_bookmark", "Add Bookmark"),
+                self.browser_app.tr("module_browser_msg_enter_title", "Enter title:"),
+                initialvalue=current_url
+            )
             if title:
                 self.browser_app.bookmarks.append({"title": title, "url": current_url})
                 self.browser_app.bookmark_btn.config(text="★")
-                messagebox.showinfo("書籤", "已添加到書籤")
+                messagebox.showinfo(
+                    self.browser_app.tr("module_browser_title_bookmarks", "Bookmarks"),
+                    self.browser_app.tr("module_browser_msg_bookmark_added", "Added to bookmarks")
+                )
         self.browser_app.save_bookmarks()
 
     def open_dev_tools(self):
@@ -537,7 +570,7 @@ class ClientHandler:
         try:
             if frame.IsMain():
                 self.tab.is_loading = True
-                self.tab.browser_app.status_label.config(text="正在加載...")
+                self.tab.browser_app.status_label.config(text=self.tab.browser_app.tr("module_browser_status_loading", "Loading..."))
                 self.tab.browser_app.progress.start()
         except Exception as e:
             print(f"OnLoadStart 錯誤: {e}")
@@ -546,12 +579,13 @@ class ClientHandler:
         try:
             if frame.IsMain():
                 self.tab.is_loading = False
-                self.tab.browser_app.status_label.config(text="載入完成")
+                self.tab.browser_app.status_label.config(text=self.tab.browser_app.tr("module_browser_status_loaded", "Loaded"))
                 self.tab.browser_app.progress.stop()
                 url = browser.GetUrl()
                 self.tab.url_var.set(url)
                 try:
-                    title = browser.GetTitle() if hasattr(browser, 'GetTitle') else "新標籤頁"
+                    default_title = self.tab.browser_app.tr("module_browser_tab_new", "New Tab")
+                    title = browser.GetTitle() if hasattr(browser, 'GetTitle') else default_title
                     if title:
                         self.tab.update_title(title[:20] + "..." if len(title) > 20 else title)
                         # self.tab.browser_app.root.title(f"{title} - Chrome瀏覽器") # Module should not set root title
@@ -574,7 +608,8 @@ class ClientHandler:
     def OnLoadError(self, browser, frame, error_code, error_text_out, failed_url):
         try:
             if frame.IsMain():
-                self.tab.browser_app.status_label.config(text=f"載入錯誤: {error_text_out}")
+                err_msg = self.tab.browser_app.tr("module_browser_status_error", "Load Error: {0}", error_text_out)
+                self.tab.browser_app.status_label.config(text=err_msg)
                 self.tab.browser_app.progress.stop()
         except Exception as e:
             print(f"OnLoadError 錯誤: {e}")

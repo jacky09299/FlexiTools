@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import re
-from main import Module # Added import
+from main import Module
 
 # Configuration: Add physical quantities and corresponding units here
 quantity_units = {
@@ -32,12 +32,11 @@ quantity_units = {
     'Amount of Substance': ['mol', 'mmol', 'μmol', 'nmol'],
     'Data Size': ['bit', 'B', 'kB', 'MB', 'GB', 'TB'],
     'Logarithmic': ['dB', 'dBm', 'dBW'],
-    # 你可以根據需要繼續擴充
 }
 
-class PlotGUIModule(Module): # Changed class definition
-    def __init__(self, master, shared_state, module_name, gui_manager): # Modified __init__ signature
-        super().__init__(master, shared_state, module_name, gui_manager) # Call super
+class PlotGUIModule(Module):
+    def __init__(self, master, shared_state, module_name, gui_manager):
+        super().__init__(master, shared_state, module_name, gui_manager)
         self.shared_state = shared_state
         self.gui_manager = gui_manager
 
@@ -63,19 +62,53 @@ class PlotGUIModule(Module): # Changed class definition
         self.var_marker_size = tk.DoubleVar(value=5.0)
         self.var_draw_points = tk.BooleanVar(value=True)
         self.var_draw_lines = tk.BooleanVar(value=False)
-        self.var_show_grid = tk.BooleanVar(value=False) # Default from original code
+        self.var_show_grid = tk.BooleanVar(value=False)
         self.var_x_scale_mode = tk.StringVar(value='Linear')
         self.var_y_scale_mode = tk.StringVar(value='Linear')
         self.var_custom_title = tk.StringVar()
         self.var_show_legend = tk.BooleanVar(value=True)
         self.var_line_width = tk.DoubleVar(value=1.0)
 
+        self.fig, self.ax = plt.subplots(figsize=(6.4, 4.8))
 
-        self.fig, self.ax = plt.subplots(figsize=(6.4, 4.8)) # Keep this early for canvas
+        # Initialize widget references
+        self.btn_load = None
+        self.btn_plot = None
+        self.btn_save = None
+        self.lbl_title = None
+        self.lbl_curves = None
+        self.frame_y = None
+        self.lbl_y_qty = None
+        self.lbl_y_unit = None
+        self.lbl_y_custom = None
+        self.chk_y_use_qty = None
+        self.chk_y_add_unit = None
+        self.chk_y_replace_unit = None
+        self.frame_save = None
+        self.lbl_save_path = None
+        self.btn_browse = None
+        self.frame_style = None
+        self.lbl_marker = None
+        self.chk_points = None
+        self.chk_lines = None
+        self.lbl_linewidth = None
+        self.chk_legend = None
+        self.frame_grid = None
+        self.chk_grid = None
+        self.lbl_xscale = None
+        self.lbl_yscale = None
+        self.frame_x = None
+        self.lbl_x_qty = None
+        self.lbl_x_unit = None
+        self.lbl_x_custom = None
+        self.chk_x_use_qty = None
+        self.chk_x_add_unit = None
+        self.chk_x_replace_unit = None
 
-        self.create_ui() # Call create_ui
+        self.create_ui()
+        self.update_language()
 
-    def create_ui(self): # New method for UI creation
+    def create_ui(self):
         # --- Create a canvas with scrollbars ---
         canvas = tk.Canvas(self.frame)
         scrollbar_y = ttk.Scrollbar(self.frame, orient="vertical", command=canvas.yview)
@@ -97,7 +130,7 @@ class PlotGUIModule(Module): # Changed class definition
         canvas.pack(side="left", fill="both", expand=True)
 
 
-        # --- Main layout frames (now inside scrollable_frame) ---
+        # --- Main layout frames ---
         self.frame_top = ttk.Frame(scrollable_frame)
         self.frame_top.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
 
@@ -113,7 +146,7 @@ class PlotGUIModule(Module): # Changed class definition
         self.frame_bottom = ttk.Frame(scrollable_frame)
         self.frame_bottom.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
 
-        # --- Top controls: Load (左), Plot (左下), 曲線選擇 (右) ---
+        # --- Top controls ---
         frame_left_top = ttk.Frame(self.frame_top)
         frame_left_top.pack(side=tk.LEFT, anchor='n')
 
@@ -130,97 +163,121 @@ class PlotGUIModule(Module): # Changed class definition
         frame_right_top = ttk.Frame(self.frame_top)
         frame_right_top.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5,0))
 
-        ttk.Label(frame_right_top, text="Custom Title:").pack(anchor='w', padx=2)
+        self.lbl_title = ttk.Label(frame_right_top, text="Custom Title:")
+        self.lbl_title.pack(anchor='w', padx=2)
         self.entry_title = ttk.Entry(frame_right_top, textvariable=self.var_custom_title)
         self.entry_title.pack(fill=tk.X, padx=2, pady=(0, 5))
 
-        ttk.Label(frame_right_top, text="Select curves to plot:").pack(anchor='w', padx=2)
+        self.lbl_curves = ttk.Label(frame_right_top, text="Select curves to plot:")
+        self.lbl_curves.pack(anchor='w', padx=2)
         self.listbox = tk.Listbox(frame_right_top, selectmode=tk.MULTIPLE, exportselection=False, height=4)
         self.listbox.pack(fill=tk.X, padx=2, expand=True)
 
-        # --- Y axis controls (left, vertically centered) ---
-        frame_y = ttk.LabelFrame(self.frame_left, text="Y Axis")
-        frame_y.pack(anchor='center', pady=0, expand=True)
-        ttk.Label(frame_y, text="Quantity:").grid(row=0, column=0, sticky='e')
-        self.om_y_qty = ttk.OptionMenu(frame_y, self.var_y_qty, 'None', *quantity_units.keys(), command=self.update_y_units) # Added 'None' as initial
+        # --- Y axis controls ---
+        self.frame_y = ttk.LabelFrame(self.frame_left, text="Y Axis")
+        self.frame_y.pack(anchor='center', pady=0, expand=True)
+
+        self.lbl_y_qty = ttk.Label(self.frame_y, text="Quantity:")
+        self.lbl_y_qty.grid(row=0, column=0, sticky='e')
+        self.om_y_qty = ttk.OptionMenu(self.frame_y, self.var_y_qty, 'None', *quantity_units.keys(), command=self.update_y_units)
         self.om_y_qty.grid(row=0, column=1, sticky='w')
-        ttk.Label(frame_y, text="Unit:").grid(row=1, column=0, sticky='e')
-        self.om_y_unit = ttk.OptionMenu(frame_y, self.var_y_unit, '')
+
+        self.lbl_y_unit = ttk.Label(self.frame_y, text="Unit:")
+        self.lbl_y_unit.grid(row=1, column=0, sticky='e')
+        self.om_y_unit = ttk.OptionMenu(self.frame_y, self.var_y_unit, '')
         self.om_y_unit.grid(row=1, column=1, sticky='w')
-        ttk.Label(frame_y, text="Custom label:").grid(row=2, column=0, sticky='e')
-        self.entry_y_label = ttk.Entry(frame_y)
+
+        self.lbl_y_custom = ttk.Label(self.frame_y, text="Custom label:")
+        self.lbl_y_custom.grid(row=2, column=0, sticky='e')
+        self.entry_y_label = ttk.Entry(self.frame_y)
         self.entry_y_label.grid(row=2, column=1, sticky='we')
-        self.chk_y_use_qty = ttk.Checkbutton(frame_y, text="以Quantity為標籤", variable=self.var_y_use_qty)
+
+        self.chk_y_use_qty = ttk.Checkbutton(self.frame_y, text="Use Qty as Label", variable=self.var_y_use_qty)
         self.chk_y_use_qty.grid(row=3, column=0, columnspan=2, sticky='w')
-        self.chk_y_add_unit = ttk.Checkbutton(frame_y, text="附加單位", variable=self.var_y_add_unit)
+        self.chk_y_add_unit = ttk.Checkbutton(self.frame_y, text="Append Unit", variable=self.var_y_add_unit)
         self.chk_y_add_unit.grid(row=4, column=0, columnspan=2, sticky='w')
-        self.chk_y_replace_unit = ttk.Checkbutton(frame_y, text="取代單位", variable=self.var_y_replace_unit)
+        self.chk_y_replace_unit = ttk.Checkbutton(self.frame_y, text="Replace Unit", variable=self.var_y_replace_unit)
         self.chk_y_replace_unit.grid(row=5, column=0, columnspan=2, sticky='w')
 
-        # --- Save options (left, below Y axis) ---
-        frame_save = ttk.LabelFrame(self.frame_left, text="Save Options")
-        frame_save.pack(anchor='n', pady=5, fill=tk.X)
-        ttk.Label(frame_save, text="Path:").grid(row=0, column=0, sticky='w')
-        entry_save = ttk.Entry(frame_save, textvariable=self.var_save_path, width=20) # Reduced width
+        # --- Save options ---
+        self.frame_save = ttk.LabelFrame(self.frame_left, text="Save Options")
+        self.frame_save.pack(anchor='n', pady=5, fill=tk.X)
+        self.lbl_save_path = ttk.Label(self.frame_save, text="Path:")
+        self.lbl_save_path.grid(row=0, column=0, sticky='w')
+        entry_save = ttk.Entry(self.frame_save, textvariable=self.var_save_path, width=20)
         entry_save.grid(row=1, column=0, sticky='ew')
-        btn_browse = ttk.Button(frame_save, text="Browse...", command=self.select_save_path)
-        btn_browse.grid(row=1, column=1, sticky='w', padx=(2,0))
-        frame_save.columnconfigure(0, weight=1)
+        self.btn_browse = ttk.Button(self.frame_save, text="Browse...", command=self.select_save_path)
+        self.btn_browse.grid(row=1, column=1, sticky='w', padx=(2,0))
+        self.frame_save.columnconfigure(0, weight=1)
 
-        # --- Plot style options (left, below save) ---
-        frame_style = ttk.LabelFrame(self.frame_left, text="Plot Style")
-        frame_style.pack(anchor='n', pady=5, fill=tk.X)
-        ttk.Label(frame_style, text="Marker Size:").grid(row=0, column=0, sticky='w')
-        ttk.Entry(frame_style, textvariable=self.var_marker_size, width=8).grid(row=0, column=1, sticky='e')
-        ttk.Checkbutton(frame_style, text="Draw Points", variable=self.var_draw_points).grid(row=1, column=0, columnspan=2, sticky='w')
-        ttk.Checkbutton(frame_style, text="Draw Lines", variable=self.var_draw_lines).grid(row=2, column=0, columnspan=2, sticky='w')
-        ttk.Label(frame_style, text="Line Width:").grid(row=3, column=0, sticky='w')
-        ttk.Entry(frame_style, textvariable=self.var_line_width, width=8).grid(row=3, column=1, sticky='e')
-        ttk.Checkbutton(frame_style, text="Show Legend", variable=self.var_show_legend).grid(row=4, column=0, columnspan=2, sticky='w')
+        # --- Plot style options ---
+        self.frame_style = ttk.LabelFrame(self.frame_left, text="Plot Style")
+        self.frame_style.pack(anchor='n', pady=5, fill=tk.X)
+        self.lbl_marker = ttk.Label(self.frame_style, text="Marker Size:")
+        self.lbl_marker.grid(row=0, column=0, sticky='w')
+        ttk.Entry(self.frame_style, textvariable=self.var_marker_size, width=8).grid(row=0, column=1, sticky='e')
+        self.chk_points = ttk.Checkbutton(self.frame_style, text="Draw Points", variable=self.var_draw_points)
+        self.chk_points.grid(row=1, column=0, columnspan=2, sticky='w')
+        self.chk_lines = ttk.Checkbutton(self.frame_style, text="Draw Lines", variable=self.var_draw_lines)
+        self.chk_lines.grid(row=2, column=0, columnspan=2, sticky='w')
+        self.lbl_linewidth = ttk.Label(self.frame_style, text="Line Width:")
+        self.lbl_linewidth.grid(row=3, column=0, sticky='w')
+        ttk.Entry(self.frame_style, textvariable=self.var_line_width, width=8).grid(row=3, column=1, sticky='e')
+        self.chk_legend = ttk.Checkbutton(self.frame_style, text="Show Legend", variable=self.var_show_legend)
+        self.chk_legend.grid(row=4, column=0, columnspan=2, sticky='w')
 
-        # --- Grid and Scale options (left, below style) ---
-        frame_grid = ttk.LabelFrame(self.frame_left, text="Grid & Scale")
-        frame_grid.pack(anchor='n', pady=5, fill=tk.X)
+        # --- Grid and Scale options ---
+        self.frame_grid = ttk.LabelFrame(self.frame_left, text="Grid & Scale")
+        self.frame_grid.pack(anchor='n', pady=5, fill=tk.X)
 
         scale_modes = ['Linear', 'Logarithmic Axis']
 
-        ttk.Checkbutton(frame_grid, text="Show Grid", variable=self.var_show_grid).grid(row=0, column=0, columnspan=2, sticky='w')
+        self.chk_grid = ttk.Checkbutton(self.frame_grid, text="Show Grid", variable=self.var_show_grid)
+        self.chk_grid.grid(row=0, column=0, columnspan=2, sticky='w')
 
-        ttk.Label(frame_grid, text="X Scale:").grid(row=1, column=0, sticky='w')
-        om_x_scale = ttk.OptionMenu(frame_grid, self.var_x_scale_mode, self.var_x_scale_mode.get(), *scale_modes)
+        self.lbl_xscale = ttk.Label(self.frame_grid, text="X Scale:")
+        self.lbl_xscale.grid(row=1, column=0, sticky='w')
+        om_x_scale = ttk.OptionMenu(self.frame_grid, self.var_x_scale_mode, self.var_x_scale_mode.get(), *scale_modes)
         om_x_scale.grid(row=1, column=1, sticky='ew')
 
-        ttk.Label(frame_grid, text="Y Scale:").grid(row=2, column=0, sticky='w')
-        om_y_scale = ttk.OptionMenu(frame_grid, self.var_y_scale_mode, self.var_y_scale_mode.get(), *scale_modes)
+        self.lbl_yscale = ttk.Label(self.frame_grid, text="Y Scale:")
+        self.lbl_yscale.grid(row=2, column=0, sticky='w')
+        om_y_scale = ttk.OptionMenu(self.frame_grid, self.var_y_scale_mode, self.var_y_scale_mode.get(), *scale_modes)
         om_y_scale.grid(row=2, column=1, sticky='ew')
 
-        frame_grid.columnconfigure(1, weight=1)
+        self.frame_grid.columnconfigure(1, weight=1)
 
-        # --- Plot area (center) ---
-        # self.fig, self.ax are initialized in __init__
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.frame_plot) # Parent to self.frame_plot
+        # --- Plot area ---
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.frame_plot)
         self.canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH)
 
-        # --- X axis controls (bottom, horizontally centered) ---
-        frame_x = ttk.LabelFrame(self.frame_bottom, text="X Axis")
-        frame_x.pack(anchor='center', pady=0)
-        ttk.Label(frame_x, text="Quantity:").grid(row=0, column=0, sticky='e')
-        self.om_x_qty = ttk.OptionMenu(frame_x, self.var_x_qty, 'None', *quantity_units.keys(), command=self.update_x_units) # Added 'None' as initial
+        # --- X axis controls ---
+        self.frame_x = ttk.LabelFrame(self.frame_bottom, text="X Axis")
+        self.frame_x.pack(anchor='center', pady=0)
+
+        self.lbl_x_qty = ttk.Label(self.frame_x, text="Quantity:")
+        self.lbl_x_qty.grid(row=0, column=0, sticky='e')
+        self.om_x_qty = ttk.OptionMenu(self.frame_x, self.var_x_qty, 'None', *quantity_units.keys(), command=self.update_x_units)
         self.om_x_qty.grid(row=0, column=1, sticky='w')
-        ttk.Label(frame_x, text="Unit:").grid(row=0, column=2, sticky='e')
-        self.om_x_unit = ttk.OptionMenu(frame_x, self.var_x_unit, '')
+
+        self.lbl_x_unit = ttk.Label(self.frame_x, text="Unit:")
+        self.lbl_x_unit.grid(row=0, column=2, sticky='e')
+        self.om_x_unit = ttk.OptionMenu(self.frame_x, self.var_x_unit, '')
         self.om_x_unit.grid(row=0, column=3, sticky='w')
-        ttk.Label(frame_x, text="Custom label:").grid(row=1, column=0, sticky='e')
-        self.entry_x_label = ttk.Entry(frame_x)
+
+        self.lbl_x_custom = ttk.Label(self.frame_x, text="Custom label:")
+        self.lbl_x_custom.grid(row=1, column=0, sticky='e')
+        self.entry_x_label = ttk.Entry(self.frame_x)
         self.entry_x_label.grid(row=1, column=1, sticky='we')
-        self.chk_x_use_qty = ttk.Checkbutton(frame_x, text="以Quantity為標籤", variable=self.var_x_use_qty)
+
+        self.chk_x_use_qty = ttk.Checkbutton(self.frame_x, text="Use Qty as Label", variable=self.var_x_use_qty)
         self.chk_x_use_qty.grid(row=2, column=0, columnspan=2, sticky='w')
-        self.chk_x_add_unit = ttk.Checkbutton(frame_x, text="附加單位", variable=self.var_x_add_unit)
+        self.chk_x_add_unit = ttk.Checkbutton(self.frame_x, text="Append Unit", variable=self.var_x_add_unit)
         self.chk_x_add_unit.grid(row=2, column=2, columnspan=2, sticky='w')
-        self.chk_x_replace_unit = ttk.Checkbutton(frame_x, text="取代單位", variable=self.var_x_replace_unit)
+        self.chk_x_replace_unit = ttk.Checkbutton(self.frame_x, text="Replace Unit", variable=self.var_x_replace_unit)
         self.chk_x_replace_unit.grid(row=3, column=0, columnspan=4, sticky='w')
 
-        # Set initial values for OptionMenus if not already set by load_excel
+        # Set initial values
         if not self.var_x_qty.get():
             self.var_x_qty.set(list(quantity_units.keys())[0])
             self.update_x_units(self.var_x_qty.get())
@@ -228,6 +285,47 @@ class PlotGUIModule(Module): # Changed class definition
             self.var_y_qty.set(list(quantity_units.keys())[0])
             self.update_y_units(self.var_y_qty.get())
 
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'btn_load', None): return
+
+        self.btn_load.config(text=self.tr("module_plotgui_btn_load", "Load Excel"))
+        self.btn_plot.config(text=self.tr("module_plotgui_btn_plot", "Plot"))
+        self.btn_save.config(text=self.tr("module_plotgui_btn_save", "Save Plot"))
+        self.lbl_title.config(text=self.tr("module_plotgui_lbl_title", "Custom Title:"))
+        self.lbl_curves.config(text=self.tr("module_plotgui_lbl_curves", "Select curves to plot:"))
+
+        self.frame_y.config(text=self.tr("module_plotgui_grp_y", "Y Axis"))
+        self.lbl_y_qty.config(text=self.tr("module_plotgui_lbl_qty", "Quantity:"))
+        self.lbl_y_unit.config(text=self.tr("module_plotgui_lbl_unit", "Unit:"))
+        self.lbl_y_custom.config(text=self.tr("module_plotgui_lbl_custom", "Custom label:"))
+        self.chk_y_use_qty.config(text=self.tr("module_plotgui_chk_use_qty", "Use Qty as Label"))
+        self.chk_y_add_unit.config(text=self.tr("module_plotgui_chk_add_unit", "Append Unit"))
+        self.chk_y_replace_unit.config(text=self.tr("module_plotgui_chk_replace_unit", "Replace Unit"))
+
+        self.frame_save.config(text=self.tr("module_plotgui_grp_save", "Save Options"))
+        self.lbl_save_path.config(text=self.tr("module_plotgui_lbl_path", "Path:"))
+        self.btn_browse.config(text=self.tr("module_plotgui_btn_browse", "Browse..."))
+
+        self.frame_style.config(text=self.tr("module_plotgui_grp_style", "Plot Style"))
+        self.lbl_marker.config(text=self.tr("module_plotgui_lbl_marker", "Marker Size:"))
+        self.chk_points.config(text=self.tr("module_plotgui_chk_points", "Draw Points"))
+        self.chk_lines.config(text=self.tr("module_plotgui_chk_lines", "Draw Lines"))
+        self.lbl_linewidth.config(text=self.tr("module_plotgui_lbl_linewidth", "Line Width:"))
+        self.chk_legend.config(text=self.tr("module_plotgui_chk_legend", "Show Legend"))
+
+        self.frame_grid.config(text=self.tr("module_plotgui_grp_grid", "Grid & Scale"))
+        self.chk_grid.config(text=self.tr("module_plotgui_chk_grid", "Show Grid"))
+        self.lbl_xscale.config(text=self.tr("module_plotgui_lbl_xscale", "X Scale:"))
+        self.lbl_yscale.config(text=self.tr("module_plotgui_lbl_yscale", "Y Scale:"))
+
+        self.frame_x.config(text=self.tr("module_plotgui_grp_x", "X Axis"))
+        self.lbl_x_qty.config(text=self.tr("module_plotgui_lbl_qty", "Quantity:"))
+        self.lbl_x_unit.config(text=self.tr("module_plotgui_lbl_unit", "Unit:"))
+        self.lbl_x_custom.config(text=self.tr("module_plotgui_lbl_custom", "Custom label:"))
+        self.chk_x_use_qty.config(text=self.tr("module_plotgui_chk_use_qty", "Use Qty as Label"))
+        self.chk_x_add_unit.config(text=self.tr("module_plotgui_chk_add_unit", "Append Unit"))
+        self.chk_x_replace_unit.config(text=self.tr("module_plotgui_chk_replace_unit", "Replace Unit"))
 
     def load_excel(self):
         file_path = filedialog.askopenfilename(
@@ -248,21 +346,19 @@ class PlotGUIModule(Module): # Changed class definition
             self.listbox.insert(tk.END, col)
             self.listbox.selection_set(i)
 
-        # Set default quantities if not already set, which might trigger unit updates
-        # This ensures that even if create_ui sets a default, load_excel can override
-        # or set it if it was still empty.
+        # Set default quantities
         current_x_qty = self.var_x_qty.get()
-        if not current_x_qty or current_x_qty == 'None': # Check if it's 'None' or empty
+        if not current_x_qty or current_x_qty == 'None':
             default_x_qty = list(quantity_units.keys())[0]
-            if default_x_qty == 'None' and len(quantity_units.keys()) > 1: # Prefer not 'None' if others exist
+            if default_x_qty == 'None' and len(quantity_units.keys()) > 1:
                  default_x_qty = list(quantity_units.keys())[1]
             self.var_x_qty.set(default_x_qty)
             self.update_x_units(default_x_qty)
 
         current_y_qty = self.var_y_qty.get()
-        if not current_y_qty or current_y_qty == 'None': # Check if it's 'None' or empty
+        if not current_y_qty or current_y_qty == 'None':
             default_y_qty = list(quantity_units.keys())[0]
-            if default_y_qty == 'None' and len(quantity_units.keys()) > 1: # Prefer not 'None' if others exist
+            if default_y_qty == 'None' and len(quantity_units.keys()) > 1:
                 default_y_qty = list(quantity_units.keys())[1]
             self.var_y_qty.set(default_y_qty)
             self.update_y_units(default_y_qty)
@@ -292,11 +388,11 @@ class PlotGUIModule(Module): # Changed class definition
 
     def plot_data(self):
         if self.df is None:
-            messagebox.showwarning("No Data", "Please load an Excel file first.")
+            messagebox.showwarning("No Data", self.tr("module_plotgui_msg_no_data", "Please load an Excel file first."))
             return
         sel = self.listbox.curselection()
         if not sel:
-            messagebox.showwarning("No Selection", "Please select at least one curve to plot.")
+            messagebox.showwarning("No Selection", self.tr("module_plotgui_msg_no_sel", "Please select at least one curve to plot."))
             return
 
         self.fig.clear()
@@ -304,7 +400,7 @@ class PlotGUIModule(Module): # Changed class definition
 
         x_data = self.df[self.x_col]
 
-        # --- Plotting logic with new style options ---
+        # --- Plotting logic ---
         linestyle = '-' if self.var_draw_lines.get() else 'None'
         marker = 'o' if self.var_draw_points.get() else 'None'
         markersize = self.var_marker_size.get()
@@ -337,7 +433,6 @@ class PlotGUIModule(Module): # Changed class definition
 
         if custom_x_axis_label:
             final_x_label_text = custom_x_axis_label
-            # If custom label, units depend on checkboxes
             if add_selected_x_unit_to_label and selected_x_unit:
                 final_x_unit_text = selected_x_unit
         elif use_selected_x_qty_as_label and selected_x_qty_name != 'None':
@@ -350,7 +445,7 @@ class PlotGUIModule(Module): # Changed class definition
                 final_x_unit_text = selected_x_unit
             elif x_unit_from_col_header:
                 final_x_unit_text = x_unit_from_col_header
-            elif add_selected_x_unit_to_label and selected_x_unit : # Fallback if col header has no unit
+            elif add_selected_x_unit_to_label and selected_x_unit :
                  final_x_unit_text = selected_x_unit
 
 
@@ -361,7 +456,6 @@ class PlotGUIModule(Module): # Changed class definition
 
 
         # --- Y axis label logic ---
-        # Default Y label to first selected curve name if not using quantity/custom
         first_selected_y_col_name = self.curve_cols[sel[0]] if sel else "Y"
         y_label_from_col_header = re.sub(r"\s*\(.*?\)", "", first_selected_y_col_name).strip()
         y_unit_match_from_col_header = re.search(r"\((.*?)\)", first_selected_y_col_name)
@@ -385,13 +479,13 @@ class PlotGUIModule(Module): # Changed class definition
             final_y_label_text = selected_y_qty_name
             if add_selected_y_unit_to_label and selected_y_unit:
                 final_y_unit_text = selected_y_unit
-        else: # Use (first selected) column header
+        else: # Use column header
             final_y_label_text = y_label_from_col_header
             if replace_col_header_y_unit_with_selected and add_selected_y_unit_to_label and selected_y_unit:
                 final_y_unit_text = selected_y_unit
             elif y_unit_from_col_header:
                 final_y_unit_text = y_unit_from_col_header
-            elif add_selected_y_unit_to_label and selected_y_unit: # Fallback if col header has no unit
+            elif add_selected_y_unit_to_label and selected_y_unit:
                 final_y_unit_text = selected_y_unit
 
 
@@ -430,11 +524,8 @@ class PlotGUIModule(Module): # Changed class definition
             self.ax.grid(False)
 
         self.canvas.draw()
-        # The savefig call is now removed from here and will be in save_plot
 
     def select_save_path(self):
-        """Opens a file dialog to select the save path for the plot."""
-        # Suggest a filename and extension
         file_path = filedialog.asksaveasfilename(
             defaultextension=".png",
             filetypes=[
@@ -451,18 +542,15 @@ class PlotGUIModule(Module): # Changed class definition
             self.var_save_path.set(file_path)
 
     def save_plot(self):
-        """Saves the current plot to the path specified in the UI."""
         save_path = self.var_save_path.get()
         if not save_path:
             messagebox.showerror("Save Error", "No save path specified.")
             return
 
         try:
-            # Using a tight bbox is often good for saved figures.
             self.fig.savefig(save_path, dpi=300, bbox_inches='tight')
-            messagebox.showinfo("Success", f"Plot saved successfully to:\n{save_path}")
+            msg = self.tr("module_plotgui_msg_save_success", "Plot saved successfully to:\n{0}").format(save_path)
+            messagebox.showinfo("Success", msg)
         except Exception as e:
-            messagebox.showerror("Save Plot Error", f"Could not save plot to '{save_path}':\n{e}")
-
-
-# Removed __main__ block
+            msg = self.tr("module_plotgui_msg_save_error", "Could not save plot to '{0}':\n{1}").format(save_path, e)
+            messagebox.showerror("Save Plot Error", msg)

@@ -52,10 +52,9 @@ class PdfProcessorModule(Module):
         self.tab_extract_text = ttk.Frame(self.notebook)
 
         # Add tabs to the notebook
-        self.notebook.add(self.tab_split, text="Split PDF")
+        self.notebook.add(self.tab_split, text="Split PDF") # Text will be updated in update_language
         self.notebook.add(self.tab_merge, text="Merge PDFs")
         self.notebook.add(self.tab_compress, text="Compress PDF")
-        # self.notebook.add(self.tab_rotate, text="Rotate Pages") # SKIPPED
         self.notebook.add(self.tab_watermark, text="Add Watermark")
         self.notebook.add(self.tab_extract_text, text="Extract Text")
 
@@ -68,31 +67,39 @@ class PdfProcessorModule(Module):
         split_frame.pack(expand=True, fill=tk.BOTH)
 
         # Input PDF
-        ttk.Label(split_frame, text="Input PDF:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.lbl_split_input = ttk.Label(split_frame, text="Input PDF:")
+        self.lbl_split_input.grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.split_input_pdf_path_var = tk.StringVar()
         ttk.Entry(split_frame, textvariable=self.split_input_pdf_path_var, width=50, state="readonly").grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Button(split_frame, text="Browse...", command=self._select_input_pdf_split).grid(row=0, column=2, padx=5, pady=5)
+        self.btn_split_browse = ttk.Button(split_frame, text="Browse...", command=self._select_input_pdf_split)
+        self.btn_split_browse.grid(row=0, column=2, padx=5, pady=5)
 
         # Page Ranges
-        ttk.Label(split_frame, text="Page Ranges (e.g., 1-5, 8, 10-12):").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.lbl_split_ranges = ttk.Label(split_frame, text="Page Ranges (e.g., 1-5, 8, 10-12):")
+        self.lbl_split_ranges.grid(row=1, column=0, padx=5, pady=5, sticky="w")
         self.split_page_ranges_var = tk.StringVar()
         ttk.Entry(split_frame, textvariable=self.split_page_ranges_var, width=50).grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
         # Output Folder Selection
-        ttk.Label(split_frame, text="Output Folder:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        self.lbl_split_out_folder = ttk.Label(split_frame, text="Output Folder:")
+        self.lbl_split_out_folder.grid(row=3, column=0, padx=5, pady=5, sticky="w")
         self.split_output_folder_var = tk.StringVar()
         ttk.Entry(split_frame, textvariable=self.split_output_folder_var, width=50, state="readonly").grid(row=3, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Button(split_frame, text="Choose Folder...", command=self._select_split_output_folder).grid(row=3, column=2, padx=5, pady=5)
+        self.btn_split_choose_folder = ttk.Button(split_frame, text="Choose Folder...", command=self._select_split_output_folder)
+        self.btn_split_choose_folder.grid(row=3, column=2, padx=5, pady=5)
 
         # Output Naming Pattern
-        ttk.Label(split_frame, text="Output Pattern:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        self.lbl_split_pattern = ttk.Label(split_frame, text="Output Pattern:")
+        self.lbl_split_pattern.grid(row=4, column=0, padx=5, pady=5, sticky="w")
         self.split_output_pattern_var = tk.StringVar(value="{basename}_part{i}.pdf") # Changed default
         ttk.Entry(split_frame, textvariable=self.split_output_pattern_var, width=50).grid(row=4, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Label(split_frame, text="Placeholders: {i}, {filename}, {basename}, {start}, {end}").grid(row=5, column=1, padx=5, pady=2, sticky="w")
+        self.lbl_split_placeholders = ttk.Label(split_frame, text="Placeholders: {i}, {filename}, {basename}, {start}, {end}")
+        self.lbl_split_placeholders.grid(row=5, column=1, padx=5, pady=2, sticky="w")
 
 
         # Split Button
-        ttk.Button(split_frame, text="Split PDF", command=self._execute_split_pdf).grid(row=6, column=1, padx=5, pady=10)
+        self.btn_split_execute = ttk.Button(split_frame, text="Split PDF", command=self._execute_split_pdf)
+        self.btn_split_execute.grid(row=6, column=1, padx=5, pady=10)
 
         # Status Label
         self.split_status_var = tk.StringVar()
@@ -111,10 +118,14 @@ class PdfProcessorModule(Module):
         list_controls_frame = ttk.Frame(merge_frame)
         list_controls_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(list_controls_frame, text="Add PDF(s)...", command=self._add_pdfs_to_merge_list).pack(side=tk.LEFT, padx=2)
-        ttk.Button(list_controls_frame, text="Remove Selected", command=self._remove_selected_pdf_from_merge_list).pack(side=tk.LEFT, padx=2)
-        ttk.Button(list_controls_frame, text="Move Up", command=lambda: self._move_merge_list_item(-1)).pack(side=tk.LEFT, padx=2)
-        ttk.Button(list_controls_frame, text="Move Down", command=lambda: self._move_merge_list_item(1)).pack(side=tk.LEFT, padx=2)
+        self.btn_merge_add = ttk.Button(list_controls_frame, text="Add PDF(s)...", command=self._add_pdfs_to_merge_list)
+        self.btn_merge_add.pack(side=tk.LEFT, padx=2)
+        self.btn_merge_remove = ttk.Button(list_controls_frame, text="Remove Selected", command=self._remove_selected_pdf_from_merge_list)
+        self.btn_merge_remove.pack(side=tk.LEFT, padx=2)
+        self.btn_merge_up = ttk.Button(list_controls_frame, text="Move Up", command=lambda: self._move_merge_list_item(-1))
+        self.btn_merge_up.pack(side=tk.LEFT, padx=2)
+        self.btn_merge_down = ttk.Button(list_controls_frame, text="Move Down", command=lambda: self._move_merge_list_item(1))
+        self.btn_merge_down.pack(side=tk.LEFT, padx=2)
 
         self.merge_pdf_listbox = tk.Listbox(merge_frame, selectmode=tk.SINGLE, width=70, height=10)
         self.merge_pdf_listbox.pack(pady=5, fill=tk.BOTH, expand=True)
@@ -126,13 +137,16 @@ class PdfProcessorModule(Module):
         # Output File
         output_frame_merge = ttk.Frame(merge_frame)
         output_frame_merge.pack(fill=tk.X, pady=5)
-        ttk.Label(output_frame_merge, text="Output Merged PDF:").pack(side=tk.LEFT, padx=5)
+        self.lbl_merge_out = ttk.Label(output_frame_merge, text="Output Merged PDF:")
+        self.lbl_merge_out.pack(side=tk.LEFT, padx=5)
         self.merge_output_pdf_path_var = tk.StringVar()
         ttk.Entry(output_frame_merge, textvariable=self.merge_output_pdf_path_var, width=50, state="readonly").pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
-        ttk.Button(output_frame_merge, text="Browse...", command=self._select_output_merged_pdf).pack(side=tk.LEFT, padx=5)
+        self.btn_merge_browse = ttk.Button(output_frame_merge, text="Browse...", command=self._select_output_merged_pdf)
+        self.btn_merge_browse.pack(side=tk.LEFT, padx=5)
 
         # Merge Button
-        ttk.Button(merge_frame, text="Merge PDFs", command=self._execute_merge_pdfs).pack(pady=10)
+        self.btn_merge_execute = ttk.Button(merge_frame, text="Merge PDFs", command=self._execute_merge_pdfs)
+        self.btn_merge_execute.pack(pady=10)
 
         # Status Label
         self.merge_status_var = tk.StringVar()
@@ -149,23 +163,28 @@ class PdfProcessorModule(Module):
         compress_frame.pack(expand=True, fill=tk.BOTH)
 
         # Input PDF
-        ttk.Label(compress_frame, text="Input PDF:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.lbl_comp_input = ttk.Label(compress_frame, text="Input PDF:")
+        self.lbl_comp_input.grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.compress_input_pdf_path_var = tk.StringVar()
         ttk.Entry(compress_frame, textvariable=self.compress_input_pdf_path_var, width=50, state="readonly").grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Button(compress_frame, text="Browse...", command=self._select_input_pdf_compress).grid(row=0, column=2, padx=5, pady=5)
+        self.btn_comp_browse_in = ttk.Button(compress_frame, text="Browse...", command=self._select_input_pdf_compress)
+        self.btn_comp_browse_in.grid(row=0, column=2, padx=5, pady=5)
 
         # Output PDF
-        ttk.Label(compress_frame, text="Output Compressed PDF:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.lbl_comp_output = ttk.Label(compress_frame, text="Output Compressed PDF:")
+        self.lbl_comp_output.grid(row=1, column=0, padx=5, pady=5, sticky="w")
         self.compress_output_pdf_path_var = tk.StringVar()
         ttk.Entry(compress_frame, textvariable=self.compress_output_pdf_path_var, width=50, state="readonly").grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Button(compress_frame, text="Browse...", command=self._select_output_compressed_pdf).grid(row=1, column=2, padx=5, pady=5)
+        self.btn_comp_browse_out = ttk.Button(compress_frame, text="Browse...", command=self._select_output_compressed_pdf)
+        self.btn_comp_browse_out.grid(row=1, column=2, padx=5, pady=5)
 
         # Compress options (placeholder for future, e.g., remove metadata checkbox)
         # self.compress_remove_metadata_var = tk.BooleanVar(value=False)
         # ttk.Checkbutton(compress_frame, text="Attempt to remove all metadata", variable=self.compress_remove_metadata_var).grid(row=2, column=1, padx=5, pady=5, sticky="w")
 
         # Compress Button
-        ttk.Button(compress_frame, text="Compress PDF", command=self._execute_compress_pdf).grid(row=3, column=1, padx=5, pady=10)
+        self.btn_comp_execute = ttk.Button(compress_frame, text="Compress PDF", command=self._execute_compress_pdf)
+        self.btn_comp_execute.grid(row=3, column=1, padx=5, pady=10)
 
         # Status Label
         self.compress_status_var = tk.StringVar()
@@ -184,46 +203,56 @@ class PdfProcessorModule(Module):
         water_frame.pack(expand=True, fill=tk.BOTH)
 
         # Input PDF
-        ttk.Label(water_frame, text="Input PDF:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.lbl_wm_input = ttk.Label(water_frame, text="Input PDF:")
+        self.lbl_wm_input.grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.watermark_input_pdf_path_var = tk.StringVar()
         ttk.Entry(water_frame, textvariable=self.watermark_input_pdf_path_var, width=40, state="readonly").grid(row=0, column=1, columnspan=2, padx=5, pady=5, sticky="ew")
-        ttk.Button(water_frame, text="Browse...", command=self._select_input_pdf_watermark).grid(row=0, column=3, padx=5, pady=5)
+        self.btn_wm_browse_in = ttk.Button(water_frame, text="Browse...", command=self._select_input_pdf_watermark)
+        self.btn_wm_browse_in.grid(row=0, column=3, padx=5, pady=5)
 
         # Watermark Text
-        ttk.Label(water_frame, text="Watermark Text:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.lbl_wm_text = ttk.Label(water_frame, text="Watermark Text:")
+        self.lbl_wm_text.grid(row=1, column=0, padx=5, pady=5, sticky="w")
         self.watermark_text_var = tk.StringVar(value="CONFIDENTIAL")
         ttk.Entry(water_frame, textvariable=self.watermark_text_var, width=50).grid(row=1, column=1, columnspan=3, padx=5, pady=5, sticky="ew")
 
         # Font Options Frame
-        font_opts_frame = ttk.LabelFrame(water_frame, text="Formatting", padding="5")
-        font_opts_frame.grid(row=2, column=0, columnspan=4, padx=5, pady=5, sticky="ew")
+        self.font_opts_frame = ttk.LabelFrame(water_frame, text="Formatting", padding="5")
+        self.font_opts_frame.grid(row=2, column=0, columnspan=4, padx=5, pady=5, sticky="ew")
 
-        ttk.Label(font_opts_frame, text="Font:").grid(row=0, column=0, padx=5, pady=2, sticky="w")
+        self.lbl_wm_font = ttk.Label(self.font_opts_frame, text="Font:")
+        self.lbl_wm_font.grid(row=0, column=0, padx=5, pady=2, sticky="w")
         self.watermark_font_var = tk.StringVar(value="Helvetica")
-        self.watermark_font_combo = ttk.Combobox(font_opts_frame, textvariable=self.watermark_font_var, values=["Helvetica", "Times-Roman", "Courier", "Helvetica-Bold", "Times-Bold"], state="readonly", width=15)
+        self.watermark_font_combo = ttk.Combobox(self.font_opts_frame, textvariable=self.watermark_font_var, values=["Helvetica", "Times-Roman", "Courier", "Helvetica-Bold", "Times-Bold"], state="readonly", width=15)
         self.watermark_font_combo.grid(row=0, column=1, padx=5, pady=2, sticky="w")
 
-        ttk.Label(font_opts_frame, text="Size:").grid(row=0, column=2, padx=5, pady=2, sticky="w")
+        self.lbl_wm_size = ttk.Label(self.font_opts_frame, text="Size:")
+        self.lbl_wm_size.grid(row=0, column=2, padx=5, pady=2, sticky="w")
         self.watermark_fontsize_var = tk.StringVar(value="48")
-        ttk.Entry(font_opts_frame, textvariable=self.watermark_fontsize_var, width=5).grid(row=0, column=3, padx=5, pady=2, sticky="w")
+        ttk.Entry(self.font_opts_frame, textvariable=self.watermark_fontsize_var, width=5).grid(row=0, column=3, padx=5, pady=2, sticky="w")
 
-        ttk.Label(font_opts_frame, text="Opacity (0.1-1.0):").grid(row=0, column=4, padx=5, pady=2, sticky="w")
+        self.lbl_wm_opacity = ttk.Label(self.font_opts_frame, text="Opacity (0.1-1.0):")
+        self.lbl_wm_opacity.grid(row=0, column=4, padx=5, pady=2, sticky="w")
         self.watermark_opacity_var = tk.StringVar(value="0.3") # String for Entry
-        ttk.Entry(font_opts_frame, textvariable=self.watermark_opacity_var, width=5).grid(row=0, column=5, padx=5, pady=2, sticky="w")
+        ttk.Entry(self.font_opts_frame, textvariable=self.watermark_opacity_var, width=5).grid(row=0, column=5, padx=5, pady=2, sticky="w")
 
         # Page Selection
-        ttk.Label(water_frame, text="Pages (e.g., all, 1, 3-5):").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        self.lbl_wm_pages = ttk.Label(water_frame, text="Pages (e.g., all, 1, 3-5):")
+        self.lbl_wm_pages.grid(row=3, column=0, padx=5, pady=5, sticky="w")
         self.watermark_pages_var = tk.StringVar(value="all")
         ttk.Entry(water_frame, textvariable=self.watermark_pages_var, width=50).grid(row=3, column=1, columnspan=3, padx=5, pady=5, sticky="ew")
 
         # Output PDF
-        ttk.Label(water_frame, text="Output PDF:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        self.lbl_wm_out = ttk.Label(water_frame, text="Output PDF:")
+        self.lbl_wm_out.grid(row=4, column=0, padx=5, pady=5, sticky="w")
         self.watermark_output_pdf_path_var = tk.StringVar()
         ttk.Entry(water_frame, textvariable=self.watermark_output_pdf_path_var, width=40, state="readonly").grid(row=4, column=1, columnspan=2, padx=5, pady=5, sticky="ew")
-        ttk.Button(water_frame, text="Browse...", command=self._select_output_watermarked_pdf).grid(row=4, column=3, padx=5, pady=5)
+        self.btn_wm_browse_out = ttk.Button(water_frame, text="Browse...", command=self._select_output_watermarked_pdf)
+        self.btn_wm_browse_out.grid(row=4, column=3, padx=5, pady=5)
 
         # Add Watermark Button
-        ttk.Button(water_frame, text="Add Watermark", command=self._execute_add_watermark).grid(row=5, column=1, columnspan=2, padx=5, pady=10)
+        self.btn_wm_execute = ttk.Button(water_frame, text="Add Watermark", command=self._execute_add_watermark)
+        self.btn_wm_execute.grid(row=5, column=1, columnspan=2, padx=5, pady=10)
 
         # Status Label
         self.watermark_status_var = tk.StringVar()
@@ -240,24 +269,30 @@ class PdfProcessorModule(Module):
         extract_frame.pack(expand=True, fill=tk.BOTH)
 
         # Input PDF
-        ttk.Label(extract_frame, text="Input PDF:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.lbl_ext_input = ttk.Label(extract_frame, text="Input PDF:")
+        self.lbl_ext_input.grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.extract_input_pdf_path_var = tk.StringVar()
         ttk.Entry(extract_frame, textvariable=self.extract_input_pdf_path_var, width=50, state="readonly").grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Button(extract_frame, text="Browse...", command=self._select_input_pdf_extract_text).grid(row=0, column=2, padx=5, pady=5)
+        self.btn_ext_browse_in = ttk.Button(extract_frame, text="Browse...", command=self._select_input_pdf_extract_text)
+        self.btn_ext_browse_in.grid(row=0, column=2, padx=5, pady=5)
 
         # Page Ranges for Extract
-        ttk.Label(extract_frame, text="Pages (e.g., all, 1-5, 8, 10-12):").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.lbl_ext_pages = ttk.Label(extract_frame, text="Pages (e.g., all, 1-5, 8, 10-12):")
+        self.lbl_ext_pages.grid(row=1, column=0, padx=5, pady=5, sticky="w")
         self.extract_page_ranges_var = tk.StringVar(value="all")
         ttk.Entry(extract_frame, textvariable=self.extract_page_ranges_var, width=50).grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
         # Output TXT File
-        ttk.Label(extract_frame, text="Output Text File (.txt):").grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        self.lbl_ext_out = ttk.Label(extract_frame, text="Output Text File (.txt):")
+        self.lbl_ext_out.grid(row=2, column=0, padx=5, pady=5, sticky="w")
         self.extract_output_txt_path_var = tk.StringVar()
         ttk.Entry(extract_frame, textvariable=self.extract_output_txt_path_var, width=50, state="readonly").grid(row=2, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Button(extract_frame, text="Browse...", command=self._select_output_txt_file_extract_text).grid(row=2, column=2, padx=5, pady=5)
+        self.btn_ext_browse_out = ttk.Button(extract_frame, text="Browse...", command=self._select_output_txt_file_extract_text)
+        self.btn_ext_browse_out.grid(row=2, column=2, padx=5, pady=5)
 
         # Extract Text Button
-        ttk.Button(extract_frame, text="Extract Text to File", command=self._execute_extract_text).grid(row=3, column=1, padx=5, pady=10)
+        self.btn_ext_execute = ttk.Button(extract_frame, text="Extract Text to File", command=self._execute_extract_text)
+        self.btn_ext_execute.grid(row=3, column=1, padx=5, pady=10)
 
         # Status Label
         self.extract_status_var = tk.StringVar()
@@ -266,6 +301,65 @@ class PdfProcessorModule(Module):
         extract_frame.columnconfigure(1, weight=1)
 
         self.shared_state.log(f"Tabbed UI for {self.module_name} created.")
+        self.update_language()
+
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'notebook', None): return
+
+        # Update Tab Titles
+        self.notebook.tab(self.tab_split, text=self.tr("module_pdf_tab_split", "Split PDF"))
+        self.notebook.tab(self.tab_merge, text=self.tr("module_pdf_tab_merge", "Merge PDFs"))
+        self.notebook.tab(self.tab_compress, text=self.tr("module_pdf_tab_compress", "Compress PDF"))
+        self.notebook.tab(self.tab_watermark, text=self.tr("module_pdf_tab_watermark", "Add Watermark"))
+        self.notebook.tab(self.tab_extract_text, text=self.tr("module_pdf_tab_extract", "Extract Text"))
+
+        # Split Tab
+        self.lbl_split_input.config(text=self.tr("module_pdf_lbl_input_pdf", "Input PDF:"))
+        self.btn_split_browse.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
+        self.lbl_split_ranges.config(text=self.tr("module_pdf_lbl_ranges", "Page Ranges (e.g., 1-5, 8):"))
+        self.lbl_split_out_folder.config(text=self.tr("module_pdf_lbl_out_folder", "Output Folder:"))
+        self.btn_split_choose_folder.config(text=self.tr("module_pdf_btn_choose_folder", "Choose Folder..."))
+        self.lbl_split_pattern.config(text=self.tr("module_pdf_lbl_pattern", "Output Pattern:"))
+        self.lbl_split_placeholders.config(text=self.tr("module_pdf_lbl_placeholders", "Placeholders: {i}, {filename}, {basename}, {start}, {end}"))
+        self.btn_split_execute.config(text=self.tr("module_pdf_btn_split", "Split PDF"))
+
+        # Merge Tab
+        self.btn_merge_add.config(text=self.tr("module_pdf_btn_add_pdfs", "Add PDF(s)..."))
+        self.btn_merge_remove.config(text=self.tr("module_pdf_btn_remove_sel", "Remove Selected"))
+        self.btn_merge_up.config(text=self.tr("module_pdf_btn_move_up", "Move Up"))
+        self.btn_merge_down.config(text=self.tr("module_pdf_btn_move_down", "Move Down"))
+        self.lbl_merge_out.config(text=self.tr("module_pdf_lbl_out_merged", "Output Merged PDF:"))
+        self.btn_merge_browse.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
+        self.btn_merge_execute.config(text=self.tr("module_pdf_btn_merge", "Merge PDFs"))
+
+        # Compress Tab
+        self.lbl_comp_input.config(text=self.tr("module_pdf_lbl_input_pdf", "Input PDF:"))
+        self.btn_comp_browse_in.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
+        self.lbl_comp_output.config(text=self.tr("module_pdf_lbl_out_compressed", "Output Compressed PDF:"))
+        self.btn_comp_browse_out.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
+        self.btn_comp_execute.config(text=self.tr("module_pdf_btn_compress", "Compress PDF"))
+
+        # Watermark Tab
+        self.lbl_wm_input.config(text=self.tr("module_pdf_lbl_input_pdf", "Input PDF:"))
+        self.btn_wm_browse_in.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
+        self.lbl_wm_text.config(text=self.tr("module_pdf_lbl_wm_text", "Watermark Text:"))
+        self.font_opts_frame.config(text=self.tr("module_pdf_grp_formatting", "Formatting"))
+        self.lbl_wm_font.config(text=self.tr("module_pdf_lbl_font", "Font:"))
+        self.lbl_wm_size.config(text=self.tr("module_pdf_lbl_size", "Size:"))
+        self.lbl_wm_opacity.config(text=self.tr("module_pdf_lbl_opacity", "Opacity (0.1-1.0):"))
+        self.lbl_wm_pages.config(text=self.tr("module_pdf_lbl_pages", "Pages (e.g., all, 1, 3-5):"))
+        self.lbl_wm_out.config(text=self.tr("module_pdf_lbl_out_pdf", "Output PDF:"))
+        self.btn_wm_browse_out.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
+        self.btn_wm_execute.config(text=self.tr("module_pdf_btn_watermark", "Add Watermark"))
+
+        # Extract Tab
+        self.lbl_ext_input.config(text=self.tr("module_pdf_lbl_input_pdf", "Input PDF:"))
+        self.btn_ext_browse_in.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
+        self.lbl_ext_pages.config(text=self.tr("module_pdf_lbl_pages", "Pages (e.g., all, 1-5):"))
+        self.lbl_ext_out.config(text=self.tr("module_pdf_lbl_out_txt", "Output Text File (.txt):"))
+        self.btn_ext_browse_out.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
+        self.btn_ext_execute.config(text=self.tr("module_pdf_btn_extract", "Extract Text to File"))
 
     # Methods for PDF operations (split, merge, compress, rotate, watermark, extract) will be added later.
 

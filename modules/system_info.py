@@ -11,10 +11,10 @@ class SystemInfoModule(Module):
         super().__init__(master, shared_state, module_name, gui_manager)
         self.cpu_label = None
         self.mem_label = None
+        self.lbl_cpu_title = None
+        self.lbl_mem_title = None
         self.after_id = None
         # Try to install psutil if not already present.
-        # This is a simple way; a more robust solution might involve checking return codes
-        # or using a dedicated package management step in a real CI/CD.
         try:
             import psutil
         except ImportError:
@@ -25,15 +25,12 @@ class SystemInfoModule(Module):
                 # Ensure pip is available and use it to install psutil
                 subprocess.check_call([sys.executable, "-m", "pip", "install", "psutil"])
                 self.shared_state.log("psutil installed successfully.", level=logging.INFO)
-                # Need to re-import after installation for the current session
-                # This is tricky; ideally, restart the app or ensure it's installed before first run.
-                # For this context, we'll log and proceed; the module might not work until next run.
-                # A better approach for the subtask would be to run pip install psutil as a separate shell command first.
             except Exception as e:
                 self.shared_state.log(f"Failed to install psutil: {e}", level=logging.ERROR)
                 # UI will show error or no data if psutil isn't available.
 
         self.create_ui()
+        self.update_language()
 
     def create_ui(self):
         self.frame.config(borderwidth=2, relief=tk.GROOVE)
@@ -43,13 +40,15 @@ class SystemInfoModule(Module):
 
         cpu_frame = ttk.Frame(content_frame)
         cpu_frame.pack(fill=tk.X)
-        ttk.Label(cpu_frame, text="CPU Usage:").pack(side=tk.LEFT, padx=(0, 5))
+        self.lbl_cpu_title = ttk.Label(cpu_frame, text="CPU Usage:")
+        self.lbl_cpu_title.pack(side=tk.LEFT, padx=(0, 5))
         self.cpu_label = ttk.Label(cpu_frame, text="N/A", font=("Helvetica", 10))
         self.cpu_label.pack(side=tk.LEFT)
 
         mem_frame = ttk.Frame(content_frame)
         mem_frame.pack(fill=tk.X, pady=(5,0))
-        ttk.Label(mem_frame, text="Memory Usage:").pack(side=tk.LEFT, padx=(0, 5))
+        self.lbl_mem_title = ttk.Label(mem_frame, text="Memory Usage:")
+        self.lbl_mem_title.pack(side=tk.LEFT, padx=(0, 5))
         self.mem_label = ttk.Label(mem_frame, text="N/A", font=("Helvetica", 10))
         self.mem_label.pack(side=tk.LEFT)
 
@@ -58,10 +57,23 @@ class SystemInfoModule(Module):
             self.update_info()
             self.shared_state.log(f"UI for {self.module_name} created and initial info displayed.", level=logging.INFO)
         except ImportError:
-            self.cpu_label.config(text="Error: psutil not loaded")
-            self.mem_label.config(text="Error: psutil not loaded")
+            err_msg = self.tr("module_systeminfo_err_psutil", "Error: psutil not loaded")
+            self.cpu_label.config(text=err_msg)
+            self.mem_label.config(text=err_msg)
             self.shared_state.log("psutil still not available after attempted install. SystemInfo module may not function.", level=logging.ERROR)
 
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'lbl_cpu_title', None): return
+
+        self.lbl_cpu_title.config(text=self.tr("module_systeminfo_lbl_cpu", "CPU Usage:"))
+        self.lbl_mem_title.config(text=self.tr("module_systeminfo_lbl_mem", "Memory Usage:"))
+
+        # If error state, translate error message
+        if self.cpu_label.cget("text").startswith("Error"):
+             err_msg = self.tr("module_systeminfo_err_psutil", "Error: psutil not loaded")
+             self.cpu_label.config(text=err_msg)
+             self.mem_label.config(text=err_msg)
 
     def update_info(self):
         try:
@@ -78,8 +90,6 @@ class SystemInfoModule(Module):
             # Schedule next update
             self.after_id = self.frame.after(2500, self.update_info) # Update every 2.5 seconds
         except ImportError:
-            # This case should ideally be handled by create_ui showing an error.
-            # If it reaches here, it means psutil was available then disappeared, which is unlikely.
             if self.cpu_label and self.cpu_label.winfo_exists():
                 self.cpu_label.config(text="Error")
             if self.mem_label and self.mem_label.winfo_exists():

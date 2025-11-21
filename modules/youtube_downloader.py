@@ -23,7 +23,21 @@ class YoutubeDownloaderModule(Module):
         self.current_ydl = None
         self.current_url_index = 0  # 追蹤當前下載的 URL 索引
         self.total_urls = 0  # 總 URL 數量
+
+        # Initialize widget references
+        self.folder_label = None
+        self.folder_btn = None
+        self.url_label = None
+        self.help_text = None
+        self.load_txt_btn = None
+        self.format_label = None
+        self.quality_label = None
+        self.download_button = None
+        self.skip_button = None
+        self.stop_button = None
+
         self.create_ui()
+        self.update_language()
         self.check_dependencies()
 
     def create_ui(self):
@@ -35,28 +49,28 @@ class YoutubeDownloaderModule(Module):
         # 資料夾選擇 - 移到最上面
         folder_frame = ttk.Frame(content_frame)
         folder_frame.pack(fill=tk.X, pady=(0, 10))
-        folder_label = ttk.Label(folder_frame, text="Download Folder:")
-        folder_label.pack(side=tk.LEFT, padx=(0, 5))
+        self.folder_label = ttk.Label(folder_frame, text="Download Folder:")
+        self.folder_label.pack(side=tk.LEFT, padx=(0, 5))
         self.folder_path_var = tk.StringVar(value="")
         folder_entry = ttk.Entry(folder_frame, textvariable=self.folder_path_var, state="readonly")
         folder_entry.pack(side=tk.LEFT, expand=True, fill=tk.X)
-        folder_btn = ttk.Button(folder_frame, text="Select...", command=self.select_download_folder)
-        folder_btn.pack(side=tk.LEFT, padx=(5, 0))
+        self.folder_btn = ttk.Button(folder_frame, text="Select...", command=self.select_download_folder)
+        self.folder_btn.pack(side=tk.LEFT, padx=(5, 0))
 
         # URL輸入框 - 支援多行及任何類型的URL，包含播放清單項目選擇
         url_frame = ttk.Frame(content_frame)
         url_frame.pack(fill=tk.BOTH, pady=5, expand=True)
         
-        url_label = ttk.Label(url_frame, text="YouTube URLs (one per line):")
-        url_label.pack(anchor=tk.W)
+        self.url_label = ttk.Label(url_frame, text="YouTube URLs (one per line):")
+        self.url_label.pack(anchor=tk.W)
         
         # 使用說明
-        help_text = ttk.Label(url_frame, text="Format examples:\n" + 
+        self.help_text = ttk.Label(url_frame, text="Format examples:\n" +
                              "• Single video: https://www.youtube.com/watch?v=VIDEO_ID\n" +
                              "• Full playlist: https://www.youtube.com/playlist?list=PLAYLIST_ID\n" +
                              "• Playlist with specific items: https://www.youtube.com/playlist?list=PLAYLIST_ID [2-5,7,10-12]",
                              font=("TkDefaultFont", 8), foreground="gray")
-        help_text.pack(anchor=tk.W, pady=(0, 5))
+        self.help_text.pack(anchor=tk.W, pady=(0, 5))
         
         url_text_frame = ttk.Frame(url_frame)
         url_text_frame.pack(fill=tk.BOTH, expand=True)
@@ -69,15 +83,15 @@ class YoutubeDownloaderModule(Module):
         self.url_text.config(yscrollcommand=url_scrollbar.set)
         
         # 載入txt按鈕
-        load_txt_btn = ttk.Button(url_frame, text="Load .txt", command=self.load_txt)
-        load_txt_btn.pack(anchor=tk.E, pady=(2, 0))
+        self.load_txt_btn = ttk.Button(url_frame, text="Load .txt", command=self.load_txt)
+        self.load_txt_btn.pack(anchor=tk.E, pady=(2, 0))
 
         # Format Selection
         format_frame = ttk.Frame(content_frame)
         format_frame.pack(fill=tk.X, pady=5)
         
-        format_label = ttk.Label(format_frame, text="Format:")
-        format_label.pack(side=tk.LEFT, padx=(0, 5))
+        self.format_label = ttk.Label(format_frame, text="Format:")
+        self.format_label.pack(side=tk.LEFT, padx=(0, 5))
 
         self.format_var = tk.StringVar(value="mp4")
         format_combo = ttk.Combobox(format_frame, textvariable=self.format_var, 
@@ -85,8 +99,8 @@ class YoutubeDownloaderModule(Module):
         format_combo.pack(side=tk.LEFT, padx=(0, 5))
 
         # Quality Selection
-        quality_label = ttk.Label(format_frame, text="Quality:")
-        quality_label.pack(side=tk.LEFT, padx=(10, 5))
+        self.quality_label = ttk.Label(format_frame, text="Quality:")
+        self.quality_label.pack(side=tk.LEFT, padx=(10, 5))
 
         self.quality_var = tk.StringVar(value="best")
         quality_combo = ttk.Combobox(format_frame, textvariable=self.quality_var,
@@ -116,6 +130,24 @@ class YoutubeDownloaderModule(Module):
 
         self.shared_state.log(f"UI for {self.module_name} created.", level=logging.INFO)
 
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'folder_label', None): return
+
+        self.folder_label.config(text=self.tr("module_ytdl_lbl_folder", "Download Folder:"))
+        self.folder_btn.config(text=self.tr("module_ytdl_btn_select", "Select..."))
+        self.url_label.config(text=self.tr("module_ytdl_lbl_urls", "YouTube URLs (one per line):"))
+        self.help_text.config(text=self.tr("module_ytdl_lbl_help", "Format examples:\n..."))
+        self.load_txt_btn.config(text=self.tr("module_ytdl_btn_load", "Load .txt"))
+        self.format_label.config(text=self.tr("module_ytdl_lbl_format", "Format:"))
+        self.quality_label.config(text=self.tr("module_ytdl_lbl_quality", "Quality:"))
+        self.download_button.config(text=self.tr("module_ytdl_btn_download", "Download All"))
+        self.skip_button.config(text=self.tr("module_ytdl_btn_skip", "Skip Current URL"))
+        self.stop_button.config(text=self.tr("module_ytdl_btn_stop", "Stop All"))
+
+        if self.status_label.cget("text") in ["Status: Ready", "狀態: 就緒"]:
+             self.status_label.config(text=self.tr("module_ytdl_status_ready", "Status: Ready"))
+
     def select_download_folder(self):
         folder = filedialog.askdirectory(parent=self.frame)
         if folder:
@@ -141,10 +173,10 @@ class YoutubeDownloaderModule(Module):
         try:
             import yt_dlp
             self.ytdlp_available = True
-            self.update_status("Status: Ready (yt-dlp available)")
+            self.update_status(f"{self.tr('module_ytdl_status_ready', 'Status: Ready')} (yt-dlp available)")
         except ImportError:
             self.ytdlp_available = False
-            self.update_status("Status: yt-dlp not available. Please install yt-dlp.")
+            self.update_status(self.tr("module_ytdl_err_ytdl", "yt-dlp not available. Please install yt-dlp."))
 
     def parse_url_line(self, line):
         """解析URL行，提取URL和播放清單項目範圍"""
@@ -209,22 +241,22 @@ class YoutubeDownloaderModule(Module):
         """統一下載函數，使用yt-dlp處理所有類型的URL"""
         try:
             if not self.ytdlp_available:
-                messagebox.showerror("Error", "yt-dlp is not available. Please install yt-dlp.", parent=self.frame)
+                messagebox.showerror("Error", self.tr("module_ytdl_err_ytdl", "yt-dlp is not available."), parent=self.frame)
                 return
                 
             # 取得所有URL
             urls_text = self.url_text.get("1.0", tk.END).strip()
             if not urls_text:
-                messagebox.showerror("Error", "Please enter at least one YouTube URL.", parent=self.frame)
+                messagebox.showerror("Error", self.tr("module_ytdl_err_no_url", "Please enter at least one YouTube URL."), parent=self.frame)
                 return
             
             if not self.download_dir:
-                messagebox.showerror("Error", "Please select a download folder.", parent=self.frame)
+                messagebox.showerror("Error", self.tr("module_ytdl_err_no_folder", "Please select a download folder."), parent=self.frame)
                 return
 
             lines = [line.strip() for line in urls_text.splitlines() if line.strip()]
             if not lines:
-                messagebox.showerror("Error", "Please enter at least one YouTube URL.", parent=self.frame)
+                messagebox.showerror("Error", self.tr("module_ytdl_err_no_url", "Please enter at least one YouTube URL."), parent=self.frame)
                 return
 
             self.total_urls = len(lines)

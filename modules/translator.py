@@ -31,7 +31,7 @@ class FloatingWindow:
         # 創建新的浮動視窗
         self.window = tk.Toplevel(self.parent.frame)
         self.window.withdraw()  # 先隱藏視窗，防止閃爍
-        self.window.title("")
+        self.window.title(self.parent.tr("module_translator_win_title", "Translation Result (Draggable)"))
         
         # 設定視窗屬性：無邊框、置頂
         self.window.overrideredirect(True)
@@ -48,7 +48,7 @@ class FloatingWindow:
         title_bar.pack_propagate(False)
         
         # 標題文字
-        title_label = tk.Label(title_bar, text="翻譯結果 (可拖曳)", 
+        title_label = tk.Label(title_bar, text=self.parent.tr("module_translator_win_title", "Translation Result (Draggable)"),
                              bg='#34495e', fg='#ecf0f1', 
                              font=('Microsoft YaHei', 9))
         title_label.pack(side='left', padx=5, pady=2)
@@ -78,7 +78,7 @@ class FloatingWindow:
         else:
             display_original = original_text
             
-        original_label = tk.Label(frame, text=f"原文: {display_original}", 
+        original_label = tk.Label(frame, text=f"Original: {display_original}",
                                 bg='#34495e', fg='#bdc3c7', 
                                 font=('Microsoft YaHei', 9), 
                                 wraplength=400, justify='left')
@@ -219,12 +219,31 @@ class TranslatorModule(Module):
         self.executor = ThreadPoolExecutor(max_workers=2)
         self.keyboard_listener = None
         
+        # Initialize widget references
+        self.controls_frame = None
+        self.lbl_target = None
+        self.remove_newline_check = None
+        self.mode_frame = None
+        self.lbl_mode = None
+        self.rb_float = None
+        self.rb_main = None
+        self.font_size_label = None
+        self.lbl_font_size = None
+        self.toggle_btn = None
+        self.status_label = None
+        self.manual_input_frame = None
+        self.manual_btn = None
+        self.instruction_frame = None
+        self.instruction_label = None
+        self.result_frame = None
+
         # 浮動視窗
         self.floating_window = FloatingWindow(self)
         self.font_size = tk.IntVar(value=11)
         
         # 建立介面
         self.create_ui()
+        self.update_language()
         
     def create_ui(self):
         # 主框架
@@ -240,15 +259,16 @@ class TranslatorModule(Module):
         right_panel.grid(row=0, column=1, sticky="nsew")
         
         # --- 左側控制面板 ---
-        controls_frame = ttk.LabelFrame(left_panel, text="控制項")
-        controls_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
-        controls_frame.columnconfigure(0, weight=1)
+        self.controls_frame = ttk.LabelFrame(left_panel, text="Controls")
+        self.controls_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        self.controls_frame.columnconfigure(0, weight=1)
 
         # 目標語言選擇
-        ttk.Label(controls_frame, text="翻譯目標語言:").grid(row=0, column=0, sticky=tk.W, pady=5, padx=5)
+        self.lbl_target = ttk.Label(self.controls_frame, text="Target Language:")
+        self.lbl_target.grid(row=0, column=0, sticky=tk.W, pady=5, padx=5)
         
         self.language_var = tk.StringVar()
-        self.language_combo = ttk.Combobox(controls_frame, textvariable=self.language_var)
+        self.language_combo = ttk.Combobox(self.controls_frame, textvariable=self.language_var)
         
         # 常用語言清單
         common_languages = {
@@ -277,84 +297,107 @@ class TranslatorModule(Module):
         
         # 移除換行勾選框
         self.remove_newline_var = tk.BooleanVar(value=True)
-        self.remove_newline_check = ttk.Checkbutton(controls_frame, 
-                                                    text="移除換行 (翻譯前)",
+        self.remove_newline_check = ttk.Checkbutton(self.controls_frame,
+                                                    text="Remove newlines",
                                                     variable=self.remove_newline_var)
         self.remove_newline_check.grid(row=2, column=0, sticky=tk.W, padx=5, pady=(5,0))
         
         # 顯示模式選擇
-        mode_frame = ttk.Frame(controls_frame)
-        mode_frame.grid(row=3, column=0, pady=10, sticky="ew", padx=5)
+        self.mode_frame = ttk.Frame(self.controls_frame)
+        self.mode_frame.grid(row=3, column=0, pady=10, sticky="ew", padx=5)
         
-        ttk.Label(mode_frame, text="顯示模式:").pack(side="left")
+        self.lbl_mode = ttk.Label(self.mode_frame, text="Display Mode:")
+        self.lbl_mode.pack(side="left")
         
         self.display_mode = tk.StringVar(value="floating")
-        ttk.Radiobutton(mode_frame, text="浮動", variable=self.display_mode, 
-                       value="floating").pack(side="left", padx=5)
-        ttk.Radiobutton(mode_frame, text="主視窗", variable=self.display_mode, 
-                       value="main").pack(side="left")
+        self.rb_float = ttk.Radiobutton(self.mode_frame, text="Float", variable=self.display_mode,
+                       value="floating")
+        self.rb_float.pack(side="left", padx=5)
+        self.rb_main = ttk.Radiobutton(self.mode_frame, text="Main Window", variable=self.display_mode,
+                       value="main")
+        self.rb_main.pack(side="left")
 
         # 浮動視窗字體大小
-        font_size_frame = ttk.Frame(controls_frame)
+        font_size_frame = ttk.Frame(self.controls_frame)
         font_size_frame.grid(row=4, column=0, pady=5, sticky="ew", padx=5)
-        ttk.Label(font_size_frame, text="浮動視窗字體:").pack(side="left")
+        self.lbl_font_size = ttk.Label(font_size_frame, text="Floating Font:")
+        self.lbl_font_size.pack(side="left")
         self.font_size_scale = ttk.Scale(font_size_frame, from_=8, to=50, orient=tk.HORIZONTAL, variable=self.font_size, command=self.update_font_label)
         self.font_size_scale.pack(side="left", expand=True, fill="x", padx=5)
         self.font_size_label = ttk.Label(font_size_frame, text=f"{self.font_size.get()}pt")
         self.font_size_label.pack(side="left")
         
         # 啟用/停用翻譯按鈕
-        self.toggle_btn = ttk.Button(controls_frame, text="啟用翻譯", command=self.toggle_translation)
+        self.toggle_btn = ttk.Button(self.controls_frame, text="Enable Translate", command=self.toggle_translation)
         self.toggle_btn.grid(row=5, column=0, pady=10)
         
         # 狀態標籤
-        self.status_label = ttk.Label(controls_frame, text="翻譯未啟用", foreground="red", anchor="center")
+        self.status_label = ttk.Label(self.controls_frame, text="Disabled", foreground="red", anchor="center")
         self.status_label.grid(row=6, column=0, pady=5, sticky="ew")
         
         # 手動輸入框
-        manual_input_frame = ttk.LabelFrame(left_panel, text="手動翻譯")
-        manual_input_frame.grid(row=1, column=0, sticky="ew")
-        manual_input_frame.columnconfigure(0, weight=1)
+        self.manual_input_frame = ttk.LabelFrame(left_panel, text="Manual Translate")
+        self.manual_input_frame.grid(row=1, column=0, sticky="ew")
+        self.manual_input_frame.columnconfigure(0, weight=1)
 
-        self.input_text = tk.Text(manual_input_frame, height=5, wrap=tk.WORD)
+        self.input_text = tk.Text(self.manual_input_frame, height=5, wrap=tk.WORD)
         self.input_text.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         
-        manual_btn = ttk.Button(manual_input_frame, text="翻譯輸入的文字", command=self.manual_translate)
-        manual_btn.grid(row=1, column=0, pady=(0, 5))
+        self.manual_btn = ttk.Button(self.manual_input_frame, text="Translate Input", command=self.manual_translate)
+        self.manual_btn.grid(row=1, column=0, pady=(0, 5))
 
         # --- 右側面板 ---
         right_panel.rowconfigure(1, weight=1)
         right_panel.columnconfigure(0, weight=1)
 
         # 說明文字
-        instruction_frame = ttk.LabelFrame(right_panel, text="使用說明")
-        instruction_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        self.instruction_frame = ttk.LabelFrame(right_panel, text="Instructions")
+        self.instruction_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
 
-        instruction_text = """1. 點擊「啟用翻譯」
-2. 在任何地方反白文字後按 Ctrl+C
-3. 翻譯結果會根據顯示模式呈現
-
-顯示模式:
-- 浮動: 結果在滑鼠旁彈出
-- 主視窗: 結果顯示於此處"""
+        instruction_text = "..." # Placeholder, updated in update_language
         
-        instruction_label = ttk.Label(instruction_frame, text=instruction_text, justify=tk.LEFT)
-        instruction_label.pack(anchor="w", padx=5, pady=5)
+        self.instruction_label = ttk.Label(self.instruction_frame, text=instruction_text, justify=tk.LEFT)
+        self.instruction_label.pack(anchor="w", padx=5, pady=5)
 
         # 翻譯結果顯示區域
-        result_frame = ttk.LabelFrame(right_panel, text="翻譯紀錄")
-        result_frame.grid(row=1, column=0, sticky="nsew")
-        result_frame.rowconfigure(0, weight=1)
-        result_frame.columnconfigure(0, weight=1)
+        self.result_frame = ttk.LabelFrame(right_panel, text="History")
+        self.result_frame.grid(row=1, column=0, sticky="nsew")
+        self.result_frame.rowconfigure(0, weight=1)
+        self.result_frame.columnconfigure(0, weight=1)
 
-        self.result_text = tk.Text(result_frame, wrap=tk.WORD, font=("Arial", 10))
+        self.result_text = tk.Text(self.result_frame, wrap=tk.WORD, font=("Arial", 10))
         
-        scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL, command=self.result_text.yview)
+        scrollbar = ttk.Scrollbar(self.result_frame, orient=tk.VERTICAL, command=self.result_text.yview)
         self.result_text.configure(yscrollcommand=scrollbar.set)
 
         self.result_text.grid(row=0, column=0, sticky="nsew", padx=(5,0), pady=5)
         scrollbar.grid(row=0, column=1, sticky="ns", padx=(0,5), pady=5)
         
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'controls_frame', None): return
+
+        self.controls_frame.config(text=self.tr("module_translator_grp_controls", "Controls"))
+        self.lbl_target.config(text=self.tr("module_translator_lbl_target", "Target Language:"))
+        self.remove_newline_check.config(text=self.tr("module_translator_chk_remove_newline", "Remove newlines (pre-translate)"))
+        self.lbl_mode.config(text=self.tr("module_translator_lbl_mode", "Display Mode:"))
+        self.rb_float.config(text=self.tr("module_translator_rb_float", "Float"))
+        self.rb_main.config(text=self.tr("module_translator_rb_main", "Main Window"))
+        self.lbl_font_size.config(text=self.tr("module_translator_lbl_font_size", "Floating Font:"))
+
+        if self.is_translating:
+            self.toggle_btn.config(text=self.tr("module_translator_btn_toggle_off", "Disable Translate"))
+            self.status_label.config(text=self.tr("module_translator_status_on", "Enabled - Highlight & Ctrl+C"))
+        else:
+            self.toggle_btn.config(text=self.tr("module_translator_btn_toggle_on", "Enable Translate"))
+            self.status_label.config(text=self.tr("module_translator_status_off", "Disabled"))
+
+        self.manual_input_frame.config(text=self.tr("module_translator_grp_manual", "Manual Translate"))
+        self.manual_btn.config(text=self.tr("module_translator_btn_translate_manual", "Translate Input"))
+        self.instruction_frame.config(text=self.tr("module_translator_grp_help", "Instructions"))
+        self.instruction_label.config(text=self.tr("module_translator_help_text", "1. Click 'Enable Translate'\n2. Highlight text..."))
+        self.result_frame.config(text=self.tr("module_translator_grp_history", "History"))
+
     def toggle_translation(self):
         if not self.is_translating:
             self.start_translation()
@@ -363,8 +406,8 @@ class TranslatorModule(Module):
     
     def start_translation(self):
         self.is_translating = True
-        self.toggle_btn.config(text="停用翻譯")
-        self.status_label.config(text="翻譯已啟用 - 反白文字後按Ctrl+C", foreground="green")
+        self.toggle_btn.config(text=self.tr("module_translator_btn_toggle_off", "Disable Translate"))
+        self.status_label.config(text=self.tr("module_translator_status_on", "Enabled - Highlight & Ctrl+C"), foreground="green")
         
         # 啟動剪貼簿監控
         self.monitor_thread = threading.Thread(target=self.monitor_clipboard, daemon=True)
@@ -379,8 +422,8 @@ class TranslatorModule(Module):
         
     def stop_translation(self):
         self.is_translating = False
-        self.toggle_btn.config(text="啟用翻譯")
-        self.status_label.config(text="翻譯未啟用", foreground="red")
+        self.toggle_btn.config(text=self.tr("module_translator_btn_toggle_on", "Enable Translate"))
+        self.status_label.config(text=self.tr("module_translator_status_off", "Disabled"), foreground="red")
         
         # 停止監聽器
         if self.keyboard_listener:
@@ -559,9 +602,9 @@ class TranslatorModule(Module):
         
         # 同時也在主視窗顯示（作為備份記錄）
         timestamp = time.strftime("%H:%M:%S")
-        result_info = f"[{timestamp}] 翻譯至 {self.language_var.get()}\n"
-        result_info += f"原文: {original_text}\n"
-        result_info += f"譯文: {processed_translated_text}\n"
+        result_info = f"[{timestamp}] -> {self.language_var.get()}\n"
+        result_info += f"Src: {original_text}\n"
+        result_info += f"Dst: {processed_translated_text}\n"
         result_info += "-" * 50 + "\n"
         
         self.result_text.insert(tk.END, result_info)

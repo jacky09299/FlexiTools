@@ -375,66 +375,79 @@ class FitterModule(Module):
         self.plot_canvases = {}
         self.figures = [] # Keep track of figures
         self.analyzer = None
-        # self.status_var = tk.StringVar(value="Initializing...") # Module class has self.update_status
+
+        # Initialize widget references
+        self.file_frame = None
+        self.lbl_path = None
+        self.browse_button = None
+        self.params_frame = None
+        self.chk_check = None
+        self.lbl_left = None
+        self.lbl_right = None
+        self.clear_boundaries_button = None
+        self.lbl_outdir = None
+        self.run_button = None
+        self.notebook = None
+        self.full_spectrum_frame = None
+        self.magnitude_frame = None
+        self.phase_frame = None
+        self.log_frame = None
 
         self.shared_state.log(f"FitterModule '{self.module_name}' initialized.")
         self.create_ui()
+        self.update_language()
 
     def create_ui(self):
         # Create a main content frame within self.frame
-        # This new frame will house all module-specific UI elements,
-        # allowing the base Module class to manage its title bar and resize handle
-        # without interference.
         module_main_content_frame = ttk.Frame(self.frame)
         module_main_content_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        # Styles - consider if this is needed or handled by main.py
-        # self.style = ttk.Style() # If enabling, ensure it doesn't clash with main.py
-        # self.style.configure("TButton", font=("Arial", 10))
-        # ... other style configurations
-
         # 文件框架 - now parented to module_main_content_frame
-        file_frame = ttk.LabelFrame(module_main_content_frame, text="檔案選擇", padding=(10, 5))
-        file_frame.pack(fill="x", padx=10, pady=5)
+        self.file_frame = ttk.LabelFrame(module_main_content_frame, text="File Selection", padding=(10, 5))
+        self.file_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Label(file_frame, text="檔案路徑:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
-        self.file_entry = ttk.Entry(file_frame, textvariable=self.file_path, width=50)
+        self.lbl_path = ttk.Label(self.file_frame, text="File Path:")
+        self.lbl_path.grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        self.file_entry = ttk.Entry(self.file_frame, textvariable=self.file_path, width=50)
         self.file_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
-        file_frame.grid_columnconfigure(1, weight=1) # Make entry expand
+        self.file_frame.grid_columnconfigure(1, weight=1) # Make entry expand
 
-        self.browse_button = ttk.Button(file_frame, text="瀏覽...", command=self.browse_file)
+        self.browse_button = ttk.Button(self.file_frame, text="Browse...", command=self.browse_file)
         self.browse_button.grid(row=0, column=2, sticky="e", padx=5, pady=5)
 
         # 參數框架 - now parented to module_main_content_frame
-        params_frame = ttk.LabelFrame(module_main_content_frame, text="分析參數", padding=(10, 5))
-        params_frame.pack(fill="x", padx=10, pady=5)
+        self.params_frame = ttk.LabelFrame(module_main_content_frame, text="Analysis Parameters", padding=(10, 5))
+        self.params_frame.pack(fill="x", padx=10, pady=5)
 
         # 檢查模式
-        ttk.Checkbutton(params_frame, text="僅檢查模式 (--check)", variable=self.check_only).grid(
-            row=0, column=0, columnspan=3, sticky="w", padx=5, pady=5) # Span 3 columns
+        self.chk_check = ttk.Checkbutton(self.params_frame, text="Check Only Mode (--check)", variable=self.check_only)
+        self.chk_check.grid(row=0, column=0, columnspan=3, sticky="w", padx=5, pady=5) # Span 3 columns
 
         # 頻率範圍
-        ttk.Label(params_frame, text="左側頻率邊界 (GHz):").grid(row=1, column=0, sticky="w", padx=5, pady=5)
-        self.left_freq_entry = ttk.Entry(params_frame, textvariable=self.left_freq, width=15)
+        self.lbl_left = ttk.Label(self.params_frame, text="Left Freq Boundary (GHz):")
+        self.lbl_left.grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        self.left_freq_entry = ttk.Entry(self.params_frame, textvariable=self.left_freq, width=15)
         self.left_freq_entry.grid(row=1, column=1, sticky="w", padx=5, pady=5)
 
-        ttk.Label(params_frame, text="右側頻率邊界 (GHz):").grid(row=2, column=0, sticky="w", padx=5, pady=5)
-        self.right_freq_entry = ttk.Entry(params_frame, textvariable=self.right_freq, width=15)
+        self.lbl_right = ttk.Label(self.params_frame, text="Right Freq Boundary (GHz):")
+        self.lbl_right.grid(row=2, column=0, sticky="w", padx=5, pady=5)
+        self.right_freq_entry = ttk.Entry(self.params_frame, textvariable=self.right_freq, width=15)
         self.right_freq_entry.grid(row=2, column=1, sticky="w", padx=5, pady=5)
         
         # 清空邊界按鈕
-        self.clear_boundaries_button = ttk.Button(params_frame, text="清空邊界", command=self.clear_frequency_boundaries)
+        self.clear_boundaries_button = ttk.Button(self.params_frame, text="Clear Boundaries", command=self.clear_frequency_boundaries)
         self.clear_boundaries_button.grid(row=1, column=2, rowspan=2, padx=5, pady=5, sticky="w")
 
-        ttk.Label(params_frame, text="輸出目錄:").grid(row=3, column=0, sticky="w", padx=5, pady=5)
-        self.output_dir_entry = ttk.Entry(params_frame, textvariable=self.output_dir, width=15) # Renamed to avoid conflict if any
+        self.lbl_outdir = ttk.Label(self.params_frame, text="Output Dir:")
+        self.lbl_outdir.grid(row=3, column=0, sticky="w", padx=5, pady=5)
+        self.output_dir_entry = ttk.Entry(self.params_frame, textvariable=self.output_dir, width=15)
         self.output_dir_entry.grid(row=3, column=1, sticky="w", padx=5, pady=5)
 
         # 按鈕框架 - now parented to module_main_content_frame
         button_frame = ttk.Frame(module_main_content_frame)
         button_frame.pack(fill="x", pady=10, padx=10)
 
-        self.run_button = ttk.Button(button_frame, text="執行分析", command=self.run_analysis)
+        self.run_button = ttk.Button(button_frame, text="Run Analysis", command=self.run_analysis)
         self.run_button.pack(side="right", padx=5)
 
         # 圖形和輸出框架（使用Notebook） - now parented to module_main_content_frame
@@ -443,19 +456,19 @@ class FitterModule(Module):
 
         # 全頻譜圖標籤頁
         self.full_spectrum_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.full_spectrum_frame, text="全頻譜圖")
+        self.notebook.add(self.full_spectrum_frame, text="Full Spectrum")
 
         # 振幅擬合圖標籤頁
         self.magnitude_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.magnitude_frame, text="振幅擬合")
+        self.notebook.add(self.magnitude_frame, text="Magnitude Fit")
 
         # 相位擬合圖標籤頁
         self.phase_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.phase_frame, text="相位擬合")
+        self.notebook.add(self.phase_frame, text="Phase Fit")
 
         # 輸出日誌標籤頁
         self.log_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.log_frame, text="輸出日誌")
+        self.notebook.add(self.log_frame, text="Log")
 
         # 輸出文字區域
         self.output_text = tk.Text(self.log_frame, wrap=tk.WORD)
@@ -470,6 +483,28 @@ class FitterModule(Module):
         self.frame.bind('<Return>', lambda event: self.run_analysis())
 
         self.shared_state.log(f"FitterModule '{self.module_name}' UI constructed.")
+
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'file_frame', None): return
+
+        self.file_frame.config(text=self.tr("module_fitter_grp_file", "File Selection"))
+        self.lbl_path.config(text=self.tr("module_fitter_lbl_path", "File Path:"))
+        self.browse_button.config(text=self.tr("module_fitter_btn_browse", "Browse..."))
+
+        self.params_frame.config(text=self.tr("module_fitter_grp_params", "Analysis Parameters"))
+        self.chk_check.config(text=self.tr("module_fitter_chk_check", "Check Only Mode (--check)"))
+        self.lbl_left.config(text=self.tr("module_fitter_lbl_left", "Left Freq Boundary (GHz):"))
+        self.lbl_right.config(text=self.tr("module_fitter_lbl_right", "Right Freq Boundary (GHz):"))
+        self.clear_boundaries_button.config(text=self.tr("module_fitter_btn_clear", "Clear Boundaries"))
+        self.lbl_outdir.config(text=self.tr("module_fitter_lbl_outdir", "Output Dir:"))
+
+        self.run_button.config(text=self.tr("module_fitter_btn_run", "Run Analysis"))
+
+        self.notebook.tab(self.full_spectrum_frame, text=self.tr("module_fitter_tab_full", "Full Spectrum"))
+        self.notebook.tab(self.magnitude_frame, text=self.tr("module_fitter_tab_mag", "Magnitude Fit"))
+        self.notebook.tab(self.phase_frame, text=self.tr("module_fitter_tab_phase", "Phase Fit"))
+        self.notebook.tab(self.log_frame, text=self.tr("module_fitter_tab_log", "Log"))
 
     def on_destroy(self):
         # Resource cleanup, e.g., closing plots
@@ -495,16 +530,16 @@ class FitterModule(Module):
         """執行共振器分析"""
         file_path_str = self.file_path.get().strip()
         if not file_path_str:
-            messagebox.showerror("錯誤", "請選擇一個數據檔案", parent=self.frame)
+            messagebox.showerror("Error", self.tr("module_fitter_msg_no_file", "Please select a data file"), parent=self.frame)
             return
 
         if not os.path.exists(file_path_str):
-            messagebox.showerror("錯誤", f"檔案不存在: {file_path_str}", parent=self.frame)
+            messagebox.showerror("Error", f"File not found: {file_path_str}", parent=self.frame)
             return
 
         self.clear_plots()
         self.output_text.delete(1.0, tk.END)
-        self.shared_state.log("Fitter: 正在分析...", level="INFO")
+        self.shared_state.log("Fitter: Analyzing...", level="INFO")
         if hasattr(self, 'run_button'): # Check if run_button exists
             self.run_button.config(state="disabled")
 
@@ -516,9 +551,9 @@ class FitterModule(Module):
             try:
                 left_freq_val = float(self.left_freq.get().strip())
             except ValueError:
-                messagebox.showerror("錯誤", "左側頻率必須是一個有效的數字", parent=self.frame)
+                messagebox.showerror("Error", self.tr("module_fitter_msg_invalid_freq", "Frequency must be a valid number"), parent=self.frame)
                 if hasattr(self, 'run_button'): self.run_button.config(state="normal")
-                self.shared_state.log("Fitter: 錯誤: 左側頻率無效", level="ERROR")
+                self.shared_state.log("Fitter: Error: Invalid left frequency", level="ERROR")
                 return
 
         right_freq_val = None
@@ -526,9 +561,9 @@ class FitterModule(Module):
             try:
                 right_freq_val = float(self.right_freq.get().strip())
             except ValueError:
-                messagebox.showerror("錯誤", "右側頻率必須是一個有效的數字", parent=self.frame)
+                messagebox.showerror("Error", self.tr("module_fitter_msg_invalid_freq", "Frequency must be a valid number"), parent=self.frame)
                 if hasattr(self, 'run_button'): self.run_button.config(state="normal")
-                self.shared_state.log("Fitter: 錯誤: 右側頻率無效", level="ERROR")
+                self.shared_state.log("Fitter: Error: Invalid right frequency", level="ERROR")
                 return
 
         self.shared_state.log(f"Running analysis for {file_path_str}. Output: {output_dir_val}, Check only: {check_only_val}, L-Freq: {left_freq_val}, R-Freq: {right_freq_val}")
@@ -553,7 +588,7 @@ class FitterModule(Module):
             self.frame.after(0, self.create_and_display_full_spectrum)
 
             if check_only:
-                self.frame.after(0, lambda: self.shared_state.log("Fitter: 分析完成 (僅檢查模式)", level="DEBUG"))
+                self.frame.after(0, lambda: self.shared_state.log("Fitter: Analysis complete (check only mode)", level="DEBUG"))
                 if hasattr(self, 'run_button'): self.frame.after(0, lambda: self.run_button.config(state="normal"))
                 if hasattr(self, 'notebook') and hasattr(self, 'full_spectrum_frame'): self.frame.after(0, lambda: self.notebook.select(self.full_spectrum_frame))
                 self.shared_state.log("Analysis complete (check only mode).")
@@ -570,15 +605,15 @@ class FitterModule(Module):
             self.log_message(lmfit.fit_report(self.analyzer.circle_result) + "\n")
             self.frame.after(0, self.create_and_display_circle_fit)
 
-            self.frame.after(0, lambda: self.shared_state.log("Fitter: 分析完成", level="INFO"))
+            self.frame.after(0, lambda: self.shared_state.log("Fitter: Analysis complete", level="INFO"))
             if hasattr(self, 'notebook') and hasattr(self, 'full_spectrum_frame'): self.frame.after(0, lambda: self.notebook.select(self.full_spectrum_frame))
             self.shared_state.log("Analysis complete.")
 
         except Exception as e:
             import traceback
-            error_message = f"執行時發生錯誤: {str(e)}\n詳細錯誤: {traceback.format_exc()}\n"
+            error_message = f"Error during execution: {str(e)}\nDetails: {traceback.format_exc()}\n"
             self.log_message(error_message)
-            self.frame.after(0, lambda: self.shared_state.log("Fitter: 發生錯誤", level="ERROR"))
+            self.frame.after(0, lambda: self.shared_state.log("Fitter: Error occurred", level="ERROR"))
             self.shared_state.log(f"Error during analysis: {error_message}", level="error")
         finally:
             if hasattr(self, 'run_button'): self.frame.after(0, lambda: self.run_button.config(state="normal"))
@@ -590,9 +625,9 @@ class FitterModule(Module):
                 full_spectrum_fig = self.analyzer.create_full_magnitude_plot()
                 self.display_plot(full_spectrum_fig, self.full_spectrum_frame, "全頻譜圖")
             except Exception as e:
-                error_msg = f"創建全頻譜圖時發生錯誤: {e}\n"
+                error_msg = f"Error creating full spectrum plot: {e}\n"
                 self.log_message(error_msg)
-                self.shared_state.log("Fitter: 創建全頻譜圖錯誤", level="ERROR")
+                self.shared_state.log("Fitter: Error creating full spectrum plot", level="ERROR")
                 self.shared_state.log(error_msg, level="error") # This logs the detailed error too
 
 
@@ -603,9 +638,9 @@ class FitterModule(Module):
                 magnitude_fig = self.analyzer.create_magnitude_fit_plot()
                 self.display_plot(magnitude_fig, self.magnitude_frame, "振幅擬合")
             except Exception as e:
-                error_msg = f"創建振幅擬合圖時發生錯誤: {e}\n"
+                error_msg = f"Error creating magnitude fit plot: {e}\n"
                 self.log_message(error_msg)
-                self.shared_state.log("Fitter: 創建振幅擬合圖錯誤", level="ERROR")
+                self.shared_state.log("Fitter: Error creating magnitude fit plot", level="ERROR")
                 self.shared_state.log(error_msg, level="error") # This logs the detailed error too
 
     def create_and_display_circle_fit(self):
@@ -615,9 +650,9 @@ class FitterModule(Module):
                 circle_fig = self.analyzer.create_circle_fit_plot()
                 self.display_plot(circle_fig, self.phase_frame, "相位擬合")
             except Exception as e:
-                error_msg = f"創建相位擬合圖時發生錯誤: {e}\n"
+                error_msg = f"Error creating phase fit plot: {e}\n"
                 self.log_message(error_msg)
-                self.shared_state.log("Fitter: 創建相位擬合圖錯誤", level="ERROR")
+                self.shared_state.log("Fitter: Error creating phase fit plot", level="ERROR")
                 self.shared_state.log(error_msg, level="error") # This logs the detailed error too
 
     def display_plot(self, figure, frame, title):
@@ -688,20 +723,5 @@ class FitterModule(Module):
 
     def show_help(self, event=None):
         """顯示說明信息"""
-        help_text = """使用說明:
-
-1. 檔案選擇: 點擊"瀏覽..."按鈕選擇要分析的CSV檔案。
-2. 分析參數:
-   - 僅檢查模式: 勾選後只會顯示全頻譜圖而不進行擬合。
-   - 左側/右側頻率: 設置擬合的頻率範圍(單位:GHz)，留空表示自動檢測。
-     - 新功能: 在「全頻譜圖」或「振幅擬合」圖上，左鍵點擊可設定左邊界，右鍵點擊可設定右邊界。
-   - 輸出目錄: 設置圖像輸出的目錄。
-   - 清空邊界: 點擊按鈕可同時清空左右邊界的輸入值。
-3. 點擊"執行分析"或按 Enter 鍵開始處理。
-4. 在標籤頁中可查看不同的圖形結果和分析日誌。
-5. 您可以連續分析多個檔案，無需關閉程序。
-6. 將滑鼠移至圖上時，右上角會顯示當前坐標位置。
-
-提示: 完整分析會生成多個圖像，包括振幅擬合和相位擬合結果，這些圖形會顯示在不同標籤頁中，並同時保存到指定目錄。
-"""
-        messagebox.showinfo("使用說明", help_text, parent=self.frame)
+        help_text = self.tr("module_fitter_msg_help", "Instructions:\n\n1. Select File...")
+        messagebox.showinfo("Help", help_text, parent=self.frame)

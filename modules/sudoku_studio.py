@@ -15,6 +15,11 @@ class SudokuStudioModule(Module):
         self.initial_puzzle = None # Stores the puzzle with 0s for empty cells
         self.solution = None # Stores the solved puzzle
 
+        # Initialize widget references
+        self.new_game_button = None
+        self.check_button = None
+        self.reset_button = None
+
         # Using a fixed known solvable puzzle and its solution for simplicity
         # In a real app, this would involve a generation algorithm.
         self.predefined_puzzles = [
@@ -47,6 +52,7 @@ class SudokuStudioModule(Module):
 
         self.create_ui()
         self.load_new_game()
+        self.update_language()
 
     def create_ui(self):
         self.frame.config(borderwidth=2, relief=tk.GROOVE)
@@ -90,16 +96,24 @@ class SudokuStudioModule(Module):
         controls_frame = ttk.Frame(content_frame, padding="5")
         controls_frame.grid(row=0, column=1, sticky="ns", padx=5, pady=5)
 
-        new_game_button = ttk.Button(controls_frame, text="New Game", command=self.load_new_game)
-        new_game_button.pack(pady=5, fill=tk.X)
+        self.new_game_button = ttk.Button(controls_frame, text="New Game", command=self.load_new_game)
+        self.new_game_button.pack(pady=5, fill=tk.X)
 
-        check_button = ttk.Button(controls_frame, text="Check Solution", command=self.check_solution)
-        check_button.pack(pady=5, fill=tk.X)
+        self.check_button = ttk.Button(controls_frame, text="Check Solution", command=self.check_solution)
+        self.check_button.pack(pady=5, fill=tk.X)
 
-        reset_button = ttk.Button(controls_frame, text="Reset Puzzle", command=self.reset_puzzle)
-        reset_button.pack(pady=5, fill=tk.X)
+        self.reset_button = ttk.Button(controls_frame, text="Reset Puzzle", command=self.reset_puzzle)
+        self.reset_button.pack(pady=5, fill=tk.X)
 
         self.shared_state.log(f"UI for {self.module_name} created.", level=logging.INFO)
+
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'new_game_button', None): return
+
+        self.new_game_button.config(text=self.tr("module_sudoku_btn_new", "New Game"))
+        self.check_button.config(text=self.tr("module_sudoku_btn_check", "Check Solution"))
+        self.reset_button.config(text=self.tr("module_sudoku_btn_reset", "Reset Puzzle"))
 
     def validate_input(self, P):
         # Allow empty string (for clearing) or a single digit from 1-9
@@ -134,7 +148,7 @@ class SudokuStudioModule(Module):
 
     def check_solution(self):
         if not self.solution:
-            messagebox.showwarning("No Solution", "No puzzle solution is loaded.", parent=self.frame)
+            messagebox.showwarning("No Solution", self.tr("module_sudoku_msg_no_sol", "No puzzle solution is loaded."), parent=self.frame)
             return
 
         is_complete = True
@@ -176,11 +190,11 @@ class SudokuStudioModule(Module):
 
 
         if not is_complete and is_correct: # Partially filled but all entries so far are correct
-            messagebox.showinfo("In Progress", "So far so good! Keep going.", parent=self.frame)
+            messagebox.showinfo("In Progress", self.tr("module_sudoku_msg_progress", "So far so good! Keep going."), parent=self.frame)
         elif not is_correct:
-            messagebox.showerror("Incorrect", "Some numbers are incorrect. Check the highlighted cells.", parent=self.frame)
+            messagebox.showerror("Incorrect", self.tr("module_sudoku_msg_incorrect", "Some numbers are incorrect. Check the highlighted cells."), parent=self.frame)
         elif is_complete and is_correct:
-            messagebox.showinfo("Congratulations!", "You solved the Sudoku puzzle correctly!", parent=self.frame)
+            messagebox.showinfo("Congratulations!", self.tr("module_sudoku_msg_congrats", "You solved the Sudoku puzzle correctly!"), parent=self.frame)
 
         self.shared_state.log(f"Solution check: Complete={is_complete}, Correct={is_correct}", level=logging.DEBUG)
 

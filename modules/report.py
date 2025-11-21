@@ -26,10 +26,16 @@ class ReportModule(Module):
         self.sheet_names = []
         self.current_sheet_name = None
 
+        # Initialize widget references
+        self.load_button = None
+        self.sheet_label = None
+        self.status_info_label = None
+
         if pd is None:
             self.shared_state.log("Pandas library not found. Excel loading will not be available.", logging.ERROR)
 
         self.create_ui()
+        self.update_language()
 
     def create_ui(self):
         self.frame.config(borderwidth=2, relief=tk.GROOVE)
@@ -38,10 +44,10 @@ class ReportModule(Module):
         controls_frame = ttk.Frame(self.frame)
         controls_frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
 
-        load_button = ttk.Button(controls_frame, text="Load Excel File", command=self.load_excel_file_dialog)
-        load_button.pack(side=tk.LEFT, padx=(0, 5))
+        self.load_button = ttk.Button(controls_frame, text="", command=self.load_excel_file_dialog)
+        self.load_button.pack(side=tk.LEFT, padx=(0, 5))
 
-        self.sheet_label = ttk.Label(controls_frame, text="Sheet:")
+        self.sheet_label = ttk.Label(controls_frame, text="")
         self.sheet_label.pack(side=tk.LEFT, padx=(5,0))
         self.sheet_var = tk.StringVar()
         self.sheet_selector = ttk.Combobox(controls_frame, textvariable=self.sheet_var, state="readonly", width=15)
@@ -71,30 +77,38 @@ class ReportModule(Module):
             self.tree.destroy()
             vsb.destroy()
             hsb.destroy()
-            status_label = ttk.Label(tree_frame, text="Pandas library not installed.\nExcel display unavailable.", justify=tk.CENTER)
+            status_label = ttk.Label(tree_frame, text=self.tr("module_report_err_pandas", "Error: Pandas library not found."), justify=tk.CENTER)
             status_label.grid(row=0, column=0, sticky="nsew")
             self.sheet_label.pack_forget()
             self.sheet_selector.pack_forget()
-            load_button.config(state=tk.DISABLED)
+            self.load_button.config(state=tk.DISABLED)
 
 
         # Status label (replaces old info_label)
-        self.status_info_label = ttk.Label(controls_frame, text="No Excel file loaded.")
+        self.status_info_label = ttk.Label(controls_frame, text="")
         self.status_info_label.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
         # Update shared state
         self.shared_state.set(f"{self.module_name}_initialized", True)
         self.shared_state.log(f"UI for {self.module_name} created.")
-        # self.shared_state.add_observer("system_status", self.on_system_status_change) # Removed for this example
+
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'load_button', None): return
+
+        self.load_button.config(text=self.tr("module_report_btn_load", "Load Excel File"))
+        self.sheet_label.config(text=self.tr("module_report_lbl_sheet", "Sheet:"))
+        if not self.excel_filepath:
+            self.status_info_label.config(text=self.tr("module_report_status_no_file", "No Excel file loaded."))
 
     def load_excel_file_dialog(self):
         if pd is None:
             self.shared_state.log("Pandas is not installed, cannot load Excel.", logging.ERROR)
-            self.status_info_label.config(text="Error: Pandas library not found.")
+            self.status_info_label.config(text=self.tr("module_report_err_pandas", "Error: Pandas library not found."))
             return
 
         filepath = filedialog.askopenfilename(
-            title="Select Excel File",
+            title=self.tr("module_report_btn_select", "Select Excel File"),
             filetypes=(("Excel files", "*.xlsx *.xls"),
                        ("All files", "*.*"))
         )
@@ -114,14 +128,15 @@ class ReportModule(Module):
                 self.sheet_selector.config(state="readonly" if len(self.sheet_names) > 0 else tk.DISABLED) # Allow selection if multiple sheets
             else:
                 self.shared_state.log(f"No sheets found in Excel file: {self.excel_filepath}", logging.WARNING)
-                self.status_info_label.config(text=f"No sheets in: {os.path.basename(self.excel_filepath)}")
+                msg = self.tr("module_report_status_no_sheets", "No sheets in: {0}").format(os.path.basename(self.excel_filepath))
+                self.status_info_label.config(text=msg)
                 self.sheet_selector.config(state=tk.DISABLED)
                 self.clear_treeview()
 
 
         except Exception as e:
             self.shared_state.log(f"Error reading Excel file '{self.excel_filepath}': {e}", logging.ERROR)
-            self.status_info_label.config(text=f"Error loading: {os.path.basename(self.excel_filepath)}. See console.")
+            self.status_info_label.config(text=self.tr("module_report_err_read", "Error reading Excel file"))
             self.clear_treeview()
             self.sheet_selector.config(state=tk.DISABLED)
             self.sheet_selector['values'] = []
@@ -140,11 +155,12 @@ class ReportModule(Module):
         try:
             self.dataframe = pd.read_excel(self.excel_filepath, sheet_name=sheet_name)
             self.populate_treeview()
-            self.status_info_label.config(text=f"Loaded: {os.path.basename(self.excel_filepath)} [{sheet_name}]")
+            msg = self.tr("module_report_status_loaded", "Loaded: {0} [{1}]").format(os.path.basename(self.excel_filepath), sheet_name)
+            self.status_info_label.config(text=msg)
             self.shared_state.log(f"Sheet '{sheet_name}' from '{self.excel_filepath}' loaded.", logging.INFO)
         except Exception as e:
             self.shared_state.log(f"Error loading sheet '{sheet_name}': {e}", logging.ERROR)
-            self.status_info_label.config(text=f"Error loading sheet: {sheet_name}. See console.")
+            self.status_info_label.config(text=self.tr("module_report_err_read", "Error reading Excel file"))
             self.clear_treeview()
 
     def clear_treeview(self):
@@ -196,6 +212,8 @@ if __name__ == '__main__':
             def get_frame(self): return self.frame
             def create_ui(self): ttk.Label(self.frame, text=f"Content for {self.module_name}").pack()
             def on_destroy(self): self.shared_state.log(f"MockModule '{self.module_name}' destroyed.")
+            def tr(self, key, default=None, **kwargs): return default # Mock tr
+            def update_language(self): pass
         globals()['Module'] = MainModule
 
     class MockSharedState:

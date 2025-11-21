@@ -128,6 +128,20 @@ class CMDModule(Module):
         self.force_terminate_btn.pack(side=tk.LEFT, padx=5)
         
         self.init_cmd_process()
+
+        self.update_language()
+
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'deactivate_btn', None): return
+
+        self.deactivate_btn.config(text=self.tr("module_cmd_btn_deactivate", "Switch to Normal CMD"))
+        self.activate_btn.config(text=self.tr("module_cmd_btn_activate_base", "Switch to Conda(base)"))
+        self.activate_env_btn.config(text=self.tr("module_cmd_btn_switch", "Switch"))
+        self.cd_btn.config(text=self.tr("module_cmd_btn_cd", "Change Directory"))
+        self.run_py_btn.config(text=self.tr("module_cmd_btn_run_py", "Run Python File"))
+        self.create_env_btn.config(text=self.tr("module_cmd_btn_create_env", "Create Conda Env"))
+        self.force_terminate_btn.config(text=self.tr("module_cmd_btn_force_stop", "Force Stop Command"))
         self.start_output_threads()
         
         # self.root.protocol("WM_DELETE_WINDOW", self.on_closing) # Removed
@@ -456,32 +470,33 @@ class CMDModule(Module):
 
     # --- 新增: 切換目錄功能 ---
     def change_directory(self):
-        folder = filedialog.askdirectory(title="選擇目錄")
+        title = self.tr("module_cmd_dialog_cd_title", "Select Directory")
+        folder = filedialog.askdirectory(title=title)
         if folder:
             if self.process and self.process.poll() is None:
                 try:
                     self.process.stdin.write(f'cd /d "{folder}"\n')
                     self.process.stdin.flush()
                 except Exception as e:
-                    self.append_output(f"\n切換目錄時出錯: {str(e)}\n")
+                    self.append_output(f"\nError changing directory: {str(e)}\n")
                     self.restart_cmd_process()
 
     # 新增：彈出建立Conda環境的對話框
     def open_create_env_dialog(self):
         dialog = tk.Toplevel(self.master)
-        dialog.title("建立Conda環境")
+        dialog.title(self.tr("module_cmd_dialog_env_title", "Create Conda Env"))
         dialog.grab_set()
         dialog.resizable(False, False)
 
-        tk.Label(dialog, text="環境名稱:").grid(row=0, column=0, sticky="e", padx=5, pady=5)
+        tk.Label(dialog, text=self.tr("module_cmd_lbl_env_name", "Env Name:")).grid(row=0, column=0, sticky="e", padx=5, pady=5)
         name_entry = tk.Entry(dialog, width=20)
         name_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        tk.Label(dialog, text="Python版本 (可選):").grid(row=1, column=0, sticky="e", padx=5, pady=5)
+        tk.Label(dialog, text=self.tr("module_cmd_lbl_py_ver", "Python Ver (Opt):")).grid(row=1, column=0, sticky="e", padx=5, pady=5)
         python_entry = tk.Entry(dialog, width=20)
         python_entry.grid(row=1, column=1, padx=5, pady=5)
 
-        tk.Label(dialog, text="套件 (以空格分隔，可選):").grid(row=2, column=0, sticky="e", padx=5, pady=5)
+        tk.Label(dialog, text=self.tr("module_cmd_lbl_pkgs", "Packages (Space sep, Opt):")).grid(row=2, column=0, sticky="e", padx=5, pady=5)
         pkgs_entry = tk.Entry(dialog, width=30)
         pkgs_entry.grid(row=2, column=1, padx=5, pady=5)
 
@@ -490,7 +505,10 @@ class CMDModule(Module):
             python_ver = python_entry.get().strip()
             pkgs = pkgs_entry.get().strip()
             if not env_name:
-                messagebox.showerror("錯誤", "請輸入環境名稱")
+                messagebox.showerror(
+                    self.tr("module_cmd_msg_error", "Error"),
+                    self.tr("module_cmd_msg_enter_name", "Please enter environment name")
+                )
                 return
             args = [env_name]
             if python_ver:
@@ -502,8 +520,8 @@ class CMDModule(Module):
 
         btn_frame = tk.Frame(dialog)
         btn_frame.grid(row=3, column=0, columnspan=2, pady=10)
-        tk.Button(btn_frame, text="建立", command=on_create, width=8).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text="取消", command=dialog.destroy, width=8).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame, text=self.tr("module_cmd_btn_create", "Create"), command=on_create, width=8).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame, text=self.tr("module_cmd_btn_cancel", "Cancel"), command=dialog.destroy, width=8).pack(side=tk.LEFT, padx=5)
 
     # 新增：執行 conda create 指令
     def create_conda_env(self, args):
@@ -537,8 +555,9 @@ class CMDModule(Module):
 
     # 新增：執行Python檔案功能
     def run_python_file(self):
+        title = self.tr("module_cmd_dialog_run_py", "Select Python File")
         file_path = filedialog.askopenfilename(
-            title="選擇Python檔案",
+            title=title,
             filetypes=[("Python Files", "*.py"), ("All Files", "*.*")]
         )
         if file_path:

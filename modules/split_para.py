@@ -22,8 +22,23 @@ class CSVProcessorApp(Module):
         self.split_values = ['1um', '2um', '3um', '4um'] + [f'{i}um' for i in range(5, 151, 5)]
         self.selected_values = {v: tk.BooleanVar(value=True) for v in self.split_values}
         
+        # Initialize widget references
+        self.lbl_input = None
+        self.lbl_output = None
+        self.grp_params = None
+        self.lbl_prefix = None
+        self.lbl_splitparam = None
+        self.lbl_paramlabel = None
+        self.lbl_suffix = None
+        self.values_frame = None
+        self.btn_select_all = None
+        self.btn_deselect_all = None
+        self.btn_process = None
+        self.status_label = None
+
         # Create UI
         self.create_ui()
+        self.update_language()
     
     def create_ui(self):
         main_frame = ttk.Frame(self.frame, padding="10")
@@ -33,25 +48,31 @@ class CSVProcessorApp(Module):
         file_frame = ttk.LabelFrame(main_frame, text="Input/Output Settings", padding="10")
         file_frame.pack(fill=tk.X, padx=5, pady=5)
         
-        ttk.Label(file_frame, text="Input CSV File:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.lbl_input = ttk.Label(file_frame, text="Input CSV File:")
+        self.lbl_input.grid(row=0, column=0, sticky=tk.W, pady=5)
         ttk.Entry(file_frame, textvariable=self.input_file_var, width=40).grid(row=0, column=1, padx=5, pady=5)
         ttk.Button(file_frame, text="Browse...", command=self.browse_input_file).grid(row=0, column=2, padx=5, pady=5)
         
-        ttk.Label(file_frame, text="Output Directory:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.lbl_output = ttk.Label(file_frame, text="Output Directory:")
+        self.lbl_output.grid(row=1, column=0, sticky=tk.W, pady=5)
         ttk.Entry(file_frame, textvariable=self.output_dir_var, width=40).grid(row=1, column=1, padx=5, pady=5)
         ttk.Button(file_frame, text="Browse...", command=self.browse_output_dir).grid(row=1, column=2, padx=5, pady=5)
         
         # 新增自訂參數區
-        params_frame = ttk.LabelFrame(main_frame, text="Filename Parameters", padding="10")
-        params_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Label(params_frame, text="Prefix:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        ttk.Entry(params_frame, textvariable=self.prefix_var, width=18).grid(row=0, column=1, sticky=tk.W, padx=5, pady=5)
-        ttk.Label(params_frame, text="Split Param:").grid(row=0, column=2, sticky=tk.W, pady=5, padx=(20,0))
-        ttk.Entry(params_frame, textvariable=self.split_param_var, width=10).grid(row=0, column=3, sticky=tk.W, padx=5, pady=5)
-        ttk.Label(params_frame, text="Param Label:").grid(row=0, column=4, sticky=tk.W, pady=5, padx=(20,0))
-        ttk.Entry(params_frame, textvariable=self.split_param_label_var, width=10).grid(row=0, column=5, sticky=tk.W, padx=5, pady=5)
-        ttk.Label(params_frame, text="Suffix:").grid(row=0, column=6, sticky=tk.W, pady=5, padx=(20,0))
-        ttk.Entry(params_frame, textvariable=self.suffix_var, width=10).grid(row=0, column=7, sticky=tk.W, padx=5, pady=5)
+        self.grp_params = ttk.LabelFrame(main_frame, text="Filename Parameters", padding="10")
+        self.grp_params.pack(fill=tk.X, padx=5, pady=5)
+        self.lbl_prefix = ttk.Label(self.grp_params, text="Prefix:")
+        self.lbl_prefix.grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Entry(self.grp_params, textvariable=self.prefix_var, width=18).grid(row=0, column=1, sticky=tk.W, padx=5, pady=5)
+        self.lbl_splitparam = ttk.Label(self.grp_params, text="Split Param:")
+        self.lbl_splitparam.grid(row=0, column=2, sticky=tk.W, pady=5, padx=(20,0))
+        ttk.Entry(self.grp_params, textvariable=self.split_param_var, width=10).grid(row=0, column=3, sticky=tk.W, padx=5, pady=5)
+        self.lbl_paramlabel = ttk.Label(self.grp_params, text="Param Label:")
+        self.lbl_paramlabel.grid(row=0, column=4, sticky=tk.W, pady=5, padx=(20,0))
+        ttk.Entry(self.grp_params, textvariable=self.split_param_label_var, width=10).grid(row=0, column=5, sticky=tk.W, padx=5, pady=5)
+        self.lbl_suffix = ttk.Label(self.grp_params, text="Suffix:")
+        self.lbl_suffix.grid(row=0, column=6, sticky=tk.W, pady=5, padx=(20,0))
+        ttk.Entry(self.grp_params, textvariable=self.suffix_var, width=10).grid(row=0, column=7, sticky=tk.W, padx=5, pady=5)
         # 移除 L 與 t 輸入框
         
         # 切割值選擇區
@@ -65,14 +86,34 @@ class CSVProcessorApp(Module):
         # Bottom section: Process button and status
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(button_frame, text="Process Data", command=self.process_data).pack(side=tk.LEFT, padx=5)
+        self.btn_process = ttk.Button(button_frame, text="Process Data", command=self.process_data)
+        self.btn_process.pack(side=tk.LEFT, padx=5)
         # Removed Exit button
         
         # Status bar
         status_frame = ttk.Frame(main_frame, relief=tk.SUNKEN, borderwidth=1)
         status_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=5)
-        ttk.Label(status_frame, textvariable=self.status_var).pack(anchor=tk.W, padx=5)
+        self.status_label = ttk.Label(status_frame, textvariable=self.status_var)
+        self.status_label.pack(anchor=tk.W, padx=5)
     
+    def update_language(self):
+        super().update_language()
+        if not getattr(self, 'lbl_input', None): return
+
+        self.lbl_input.config(text=self.tr("module_splitpara_lbl_input", "Input CSV File:"))
+        self.lbl_output.config(text=self.tr("module_splitpara_lbl_output", "Output Directory:"))
+        self.grp_params.config(text=self.tr("module_splitpara_grp_params", "Filename Parameters"))
+        self.lbl_prefix.config(text=self.tr("module_splitpara_lbl_prefix", "Prefix:"))
+        self.lbl_splitparam.config(text=self.tr("module_splitpara_lbl_splitparam", "Split Param:"))
+        self.lbl_paramlabel.config(text=self.tr("module_splitpara_lbl_paramlabel", "Param Label:"))
+        self.lbl_suffix.config(text=self.tr("module_splitpara_lbl_suffix", "Suffix:"))
+        self.update_values_frame_title()
+        if self.btn_select_all: self.btn_select_all.config(text=self.tr("module_splitpara_btn_select_all", "Select All"))
+        if self.btn_deselect_all: self.btn_deselect_all.config(text=self.tr("module_splitpara_btn_deselect_all", "Deselect All"))
+        self.btn_process.config(text=self.tr("module_splitpara_btn_process", "Process Data"))
+        if self.status_var.get() == "Ready to process data":
+             self.status_var.set(self.tr("module_splitpara_status_ready", "Ready to process data"))
+
     def create_values_checkboxes(self):
         # 清空舊內容
         for widget in self.values_frame.winfo_children():
@@ -92,8 +133,10 @@ class CSVProcessorApp(Module):
         # Buttons for selecting/deselecting all
         buttons_frame = ttk.Frame(scrollable_frame)
         buttons_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(buttons_frame, text="Select All", command=self.select_all).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Deselect All", command=self.deselect_all).pack(side=tk.LEFT, padx=5)
+        self.btn_select_all = ttk.Button(buttons_frame, text=self.tr("module_splitpara_btn_select_all", "Select All"), command=self.select_all)
+        self.btn_select_all.pack(side=tk.LEFT, padx=5)
+        self.btn_deselect_all = ttk.Button(buttons_frame, text=self.tr("module_splitpara_btn_deselect_all", "Deselect All"), command=self.deselect_all)
+        self.btn_deselect_all.pack(side=tk.LEFT, padx=5)
         # Add checkboxes
         values_container = ttk.Frame(scrollable_frame)
         values_container.pack(fill=tk.BOTH, expand=True, pady=5)
@@ -110,7 +153,9 @@ class CSVProcessorApp(Module):
                 row += 1
 
     def update_values_frame_title(self, *args):
-        self.values_frame.config(text=f"{self.split_param_var.get()} Values to Process")
+        default_title = f"{self.split_param_var.get()} Values to Process"
+        translated_format = self.tr("module_splitpara_grp_values", "{0} Values to Process")
+        self.values_frame.config(text=translated_format.format(self.split_param_var.get()))
     
     def browse_input_file(self):
         filename = filedialog.askopenfilename(
@@ -154,13 +199,13 @@ class CSVProcessorApp(Module):
         
         # Validation
         if not input_file:
-            messagebox.showerror("Error", "Please select an input CSV file", parent=self.frame)
+            messagebox.showerror("Error", self.tr("module_splitpara_msg_no_input", "Please select an input CSV file"), parent=self.frame)
             return
         
         # 不再檢查 L
         selected_values = [v for v in self.split_values if self.selected_values[v].get()]
         if not selected_values:
-            messagebox.showerror("Error", "Please select at least one value", parent=self.frame)
+            messagebox.showerror("Error", self.tr("module_splitpara_msg_no_values", "Please select at least one value"), parent=self.frame)
             return
         
         try:
@@ -209,11 +254,13 @@ class CSVProcessorApp(Module):
         
         # Final status
         if error_count == 0:
-            self.status_var.set(f"Completed! {success_count} files processed successfully")
-            messagebox.showinfo("Success", f"All {success_count} files were processed successfully.", parent=self.frame)
+            msg = self.tr("module_splitpara_msg_success", "All {0} files were processed successfully.").format(success_count)
+            self.status_var.set(msg)
+            messagebox.showinfo("Success", msg, parent=self.frame)
         else:
-            self.status_var.set(f"Completed with errors. {success_count} successful, {error_count} errors")
-            messagebox.showwarning("Warning", f"Completed with {error_count} errors. {success_count} files were processed successfully.", parent=self.frame)
+            msg = self.tr("module_splitpara_msg_error", "Completed with {0} errors. {1} files were processed successfully.").format(error_count, success_count)
+            self.status_var.set(msg)
+            messagebox.showwarning("Warning", msg, parent=self.frame)
 
 # if __name__ == "__main__":
 #     root = tk.Tk()
