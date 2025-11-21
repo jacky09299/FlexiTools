@@ -1339,8 +1339,9 @@ class ModularGUI:
         self.modules_menu.delete(0, tk.END)
         for module_name in sorted(self.available_module_classes.keys()):
             if module_name not in self.hidden_modules:
+                display_name = self.loc_manager.get(f"module_{module_name.lower()}_title", module_name)
                 self.modules_menu.add_command(
-                    label=f"Add {module_name}",
+                    label=display_name,
                     command=lambda mn=module_name: self.add_module_from_menu(mn)
                 )
 
@@ -1405,7 +1406,8 @@ class ModularGUI:
         for module_name in all_modules:
             var = tk.BooleanVar(value=(module_name not in self.hidden_modules))
             self.module_vars[module_name] = var
-            ttk.Checkbutton(scrollable_frame, text=module_name, variable=var).pack(anchor="w", padx=5, pady=2)
+            display_name = self.loc_manager.get(f"module_{module_name.lower()}_title", module_name)
+            ttk.Checkbutton(scrollable_frame, text=display_name, variable=var).pack(anchor="w", padx=5, pady=2)
 
         btn_frame = ttk.Frame(dialog)
         btn_frame.pack(fill="x", pady=10, padx=10)
@@ -1517,7 +1519,7 @@ class ModularGUI:
         self.context_menu.add_separator()
         for module_name in sorted(self.available_module_classes.keys()):
             display_name = self.loc_manager.get(f"module_{module_name.lower()}_title", module_name)
-            self.context_menu.add_command(label=f"Add {display_name}", command=lambda mn=module_name: self.add_module_from_menu(mn))
+            self.context_menu.add_command(label=display_name, command=lambda mn=module_name: self.add_module_from_menu(mn))
         try: self.context_menu.tk_popup(event.x_root, event.y_root)
         finally: self.context_menu.grab_release()
 
