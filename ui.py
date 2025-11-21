@@ -461,6 +461,18 @@ class ModularGUI:
         self.root = root
         self.shared_state = shared_state # Use passed shared_state
 
+        self.saves_dir = get_saves_dir()
+        self.shared_state.log(f"Application saves directory set to: {self.saves_dir}", "INFO")
+
+        # Initialize Localization Manager
+        self.loc_manager = LocalizationManager(self.shared_state)
+
+        # Load settings (including language)
+        self.settings = self.load_settings()
+        saved_lang = self.settings.get("language", "zh_TW") # Default to Traditional Chinese per request
+        self.loc_manager.load_locale(saved_lang)
+        self.shared_state.set("language", saved_lang)
+
         self.root.overrideredirect(True)
         try: # Try to set icon, ignore if fails (e.g. file not found)
             root.iconbitmap("tools.ico")
@@ -538,18 +550,6 @@ class ModularGUI:
         # Register log callback with shared_state
         if self.shared_state:
             self.shared_state.set_log_callback(self.update_status_bar_log)
-
-        self.saves_dir = get_saves_dir()
-        self.shared_state.log(f"Application saves directory set to: {self.saves_dir}", "INFO")
-
-        # Initialize Localization Manager
-        self.loc_manager = LocalizationManager(self.shared_state)
-
-        # Load settings (including language)
-        self.settings = self.load_settings()
-        saved_lang = self.settings.get("language", "zh_TW") # Default to Traditional Chinese per request
-        self.loc_manager.load_locale(saved_lang)
-        self.shared_state.set("language", saved_lang)
 
         self.menu_frame = tk.Frame(self.content_frame, bg=COLOR_MENU_BAR_BG)
         self.menu_frame.pack(fill="x", side="top")
