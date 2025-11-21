@@ -15,7 +15,12 @@ class PyGuiRunner(Module):
         self.target_file = ""
         self.is_external_script = False
         self.input_widgets = []
-        self.scripts_dir = os.path.join("modules", "saves", "py_gui_runners")
+
+        if self.gui_manager and hasattr(self.gui_manager, 'saves_dir'):
+             self.scripts_dir = os.path.join(self.gui_manager.saves_dir, "py_gui_runners")
+        else:
+             self.scripts_dir = os.path.join("modules", "saves", "py_gui_runners")
+
         os.makedirs(self.scripts_dir, exist_ok=True)
 
         # Initialize widget references

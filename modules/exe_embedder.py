@@ -37,7 +37,12 @@ class ExeEmbedderModule(Module):
         self.embedded_hwnd = None
         self.is_external_script = False
         self.target_file = None # Will hold the path to the exe to be run
-        self.scripts_dir = os.path.join("modules", "saves", "exe_embedders")
+
+        if self.gui_manager and hasattr(self.gui_manager, 'saves_dir'):
+             self.scripts_dir = os.path.join(self.gui_manager.saves_dir, "exe_embedders")
+        else:
+             self.scripts_dir = os.path.join("modules", "saves", "exe_embedders")
+
         os.makedirs(self.scripts_dir, exist_ok=True)
 
         self.create_ui()
