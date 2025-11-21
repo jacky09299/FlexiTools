@@ -1,19 +1,24 @@
 {
+    "__comment_menu__": "--- Main Menu Items ---",
     "menu_modules": "Modules",
     "menu_profiles": "Profiles",
+    "menu_help": "Help",
+    "menu_language": "Language",
+
+    "__comment_menu_sub__": "--- Sub Menu Items ---",
     "menu_save_profile": "Save Current Layout as Profile...",
     "menu_load_profile": "Load Profile...",
     "menu_manage_profiles": "Manage Profiles...",
-    "menu_help": "Help",
     "menu_manage_modules": "Manage Modules...",
     "menu_check_updates": "Check for Updates...",
-    "menu_language": "Language",
     "menu_lang_en": "English",
     "menu_lang_zh": "Traditional Chinese",
 
+    "__comment_status__": "--- Status Bar ---",
     "status_ready": "Ready",
     "status_maximized": "Maximized",
 
+    "__comment_dialogs__": "--- Dialogs ---",
     "dialog_save_profile_title": "Save Profile",
     "dialog_save_profile_prompt": "Enter profile name:",
     "dialog_load_profile_title": "Load Profile",
@@ -25,6 +30,7 @@
     "dialog_manage_modules_title": "Manage Modules",
     "dialog_manage_modules_prompt": "Select modules to show in the 'Modules' menu:",
 
+    "__comment_messages__": "--- Messages ---",
     "msg_profile_saved": "Profile saved as {0}",
     "msg_profile_deleted": "Profile {0} deleted",
     "msg_save_success": "Success",
@@ -39,13 +45,17 @@
     "err_profile_load": "Could not load profile: {0}",
     "err_profile_not_found": "Profile not found.",
 
+    "__comment_buttons__": "--- Common Buttons ---",
     "btn_save": "Save",
     "btn_cancel": "Cancel",
     "btn_ok": "OK",
 
+    "__comment_modules__": "--- Module Titles (lowercase key) ---",
     "module_clock_title": "Clock",
-    "module_unit_converter_title": "Unit Converter",
+    "module_unitconverter_title": "Unit Converter",
+    "module_template_title": "Template Module",
 
+    "__comment_module_unitconverter__": "--- Unit Converter Module ---",
     "uc_category": "Category:",
     "uc_conversion": "Conversion:",
     "uc_input": "Input:",
@@ -64,5 +74,11 @@
     "uc_conv_kg_to_lb": "Kilograms to Pounds",
     "uc_conv_lb_to_kg": "Pounds to Kilograms",
     "uc_conv_g_to_oz": "Grams to Ounces",
-    "uc_conv_oz_to_g": "Ounces to Grams"
+    "uc_conv_oz_to_g": "Ounces to Grams",
+
+    "__comment_module_template__": "--- Template Module ---",
+    "module_template_label": "This is a template module.",
+    "module_template_btn": "Click Me!",
+    "module_template_msg_title": "Template Module",
+    "module_template_msg_body": "Hello from the template module!"
 }

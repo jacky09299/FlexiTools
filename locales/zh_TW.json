@@ -1,19 +1,24 @@
 {
+    "__comment_menu__": "--- 主選單項目 ---",
     "menu_modules": "模組",
     "menu_profiles": "設定檔",
+    "menu_help": "說明",
+    "menu_language": "語言",
+
+    "__comment_menu_sub__": "--- 子選單項目 ---",
     "menu_save_profile": "儲存目前佈局為設定檔...",
     "menu_load_profile": "載入設定檔...",
     "menu_manage_profiles": "管理設定檔...",
-    "menu_help": "說明",
     "menu_manage_modules": "管理模組...",
     "menu_check_updates": "檢查更新...",
-    "menu_language": "語言",
     "menu_lang_en": "英文",
     "menu_lang_zh": "繁體中文",
 
+    "__comment_status__": "--- 狀態列 ---",
     "status_ready": "就緒",
     "status_maximized": "最大化",
 
+    "__comment_dialogs__": "--- 對話框 ---",
     "dialog_save_profile_title": "儲存設定檔",
     "dialog_save_profile_prompt": "請輸入設定檔名稱：",
     "dialog_load_profile_title": "載入設定檔",
@@ -25,6 +30,7 @@
     "dialog_manage_modules_title": "管理模組",
     "dialog_manage_modules_prompt": "請選擇要在「模組」選單中顯示的模組：",
 
+    "__comment_messages__": "--- 訊息 ---",
     "msg_profile_saved": "設定檔已儲存為 {0}",
     "msg_profile_deleted": "設定檔 {0} 已刪除",
     "msg_save_success": "儲存成功",
@@ -39,13 +45,17 @@
     "err_profile_load": "無法載入設定檔：{0}",
     "err_profile_not_found": "找不到設定檔。",
 
+    "__comment_buttons__": "--- 通用按鈕 ---",
     "btn_save": "儲存",
     "btn_cancel": "取消",
     "btn_ok": "確定",
 
+    "__comment_modules__": "--- 模組標題 (小寫 key) ---",
     "module_clock_title": "時鐘",
-    "module_unit_converter_title": "單位轉換器",
+    "module_unitconverter_title": "單位轉換器",
+    "module_template_title": "範本模組",
 
+    "__comment_module_unitconverter__": "--- 單位轉換器模組 ---",
     "uc_category": "類別：",
     "uc_conversion": "轉換：",
     "uc_input": "輸入：",
@@ -64,5 +74,11 @@
     "uc_conv_kg_to_lb": "公斤 轉 磅",
     "uc_conv_lb_to_kg": "磅 轉 公斤",
     "uc_conv_g_to_oz": "公克 轉 盎司",
-    "uc_conv_oz_to_g": "盎司 轉 公克"
+    "uc_conv_oz_to_g": "盎司 轉 公克",
+
+    "__comment_module_template__": "--- 範本模組 ---",
+    "module_template_label": "這是一個範本模組。",
+    "module_template_btn": "點我！",
+    "module_template_msg_title": "範本模組",
+    "module_template_msg_body": "來自範本模組的問候！"
 }
