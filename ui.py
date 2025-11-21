@@ -47,6 +47,7 @@ except ImportError:
         return fallback_dir
 
 
+from localization import LocalizationManager
 from shared_state import SharedState
 from style_manager import (
     COLOR_PRIMARY_BG,
@@ -121,6 +122,25 @@ class Module:
         self.is_maximized = False
 
         self.shared_state.log(f"Module '{self.module_name}' initialized with title bar.")
+
+        # Initial translation of title if possible
+        self.update_language()
+
+    def tr(self, key, default=None, **kwargs):
+        """Helper to get translated string from gui_manager's localization manager."""
+        if self.gui_manager and hasattr(self.gui_manager, 'loc_manager'):
+            return self.gui_manager.loc_manager.get(key, default, **kwargs)
+        return default if default is not None else key
+
+    def update_language(self):
+        """Override this method to update UI text when language changes."""
+        if hasattr(self, 'title_label'):
+            # Try to translate the module title based on its name
+            # E.g. "Clock" -> module_clock_title
+            # If not found, use the original module_name
+            key = f"module_{self.module_name.lower()}_title"
+            translated_title = self.tr(key, self.module_name)
+            self.title_label.config(text=translated_title)
 
     def close_module_action(self):
         if self.gui_manager:
@@ -433,12 +453,14 @@ class CustomLayoutManager(AnimatedCanvas):
 class ModularGUI:
     CONFIG_FILE = "layout_config.json"
     VISIBILITY_CONFIG_FILE = "module_visibility.json"
+    SETTINGS_FILE = "settings.json"
     PROFILE_PREFIX = "layout_profile_"
     PROFILE_SUFFIX = ".json"
 
     def __init__(self, root, shared_state: SharedState): # Added shared_state parameter
         self.root = root
         self.shared_state = shared_state # Use passed shared_state
+
         self.root.overrideredirect(True)
         try: # Try to set icon, ignore if fails (e.g. file not found)
             root.iconbitmap("tools.ico")
@@ -509,7 +531,7 @@ class ModularGUI:
         self.status_bar.pack(fill="x", side="bottom")
         self.status_bar.pack_propagate(False)
 
-        self.status_label = tk.Label(self.status_bar, text="就緒",
+        self.status_label = tk.Label(self.status_bar, text=self.loc_manager.get("status_ready"),
                                     bg=COLOR_TITLE_BAR_BG, fg="white", font=("Arial", 8))
         self.status_label.pack(side="left", padx=10, pady=4)
 
@@ -520,35 +542,57 @@ class ModularGUI:
         self.saves_dir = get_saves_dir()
         self.shared_state.log(f"Application saves directory set to: {self.saves_dir}", "INFO")
 
+        # Initialize Localization Manager
+        self.loc_manager = LocalizationManager(self.shared_state)
+
+        # Load settings (including language)
+        self.settings = self.load_settings()
+        saved_lang = self.settings.get("language", "zh_TW") # Default to Traditional Chinese per request
+        self.loc_manager.load_locale(saved_lang)
+        self.shared_state.set("language", saved_lang)
+
         self.menu_frame = tk.Frame(self.content_frame, bg=COLOR_MENU_BAR_BG)
         self.menu_frame.pack(fill="x", side="top")
 
+        # Modules Menu
         self.modules_menu = tk.Menu(self.root, tearoff=0)
-        self.modules_menubutton = tk.Menubutton(self.menu_frame, text="Modules", menu=self.modules_menu,
+        self.modules_menubutton = tk.Menubutton(self.menu_frame, text=self.loc_manager.get("menu_modules"), menu=self.modules_menu,
                                                 bg=COLOR_MENU_BAR_BG, fg=COLOR_MENU_BUTTON_FG, activebackground=COLOR_MENU_BUTTON_ACTIVE_BG, activeforeground="white",
                                                 relief="flat", padx=10, pady=5)
         self.modules_menubutton.pack(side="left")
         self.modules_menubutton.bind("<Button-1>", lambda e: self.modules_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
 
+        # Profile Menu
         self.profile_menu = tk.Menu(self.root, tearoff=0)
-        self.profile_menubutton = tk.Menubutton(self.menu_frame, text="設定檔", menu=self.profile_menu,
+        self.profile_menubutton = tk.Menubutton(self.menu_frame, text=self.loc_manager.get("menu_profiles"), menu=self.profile_menu,
                                                  bg=COLOR_MENU_BAR_BG, fg=COLOR_MENU_BUTTON_FG, activebackground=COLOR_MENU_BUTTON_ACTIVE_BG, activeforeground="white",
                                                  relief="flat", padx=10, pady=5)
         self.profile_menubutton.pack(side="left")
         self.profile_menubutton.bind("<Button-1>", lambda e: self.profile_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
-        self.profile_menu.add_command(label="儲存目前佈局為設定檔...", command=self.save_profile_dialog)
-        self.profile_menu.add_command(label="載入設定檔...", command=self.load_profile_dialog)
+        self.profile_menu.add_command(label=self.loc_manager.get("menu_save_profile"), command=self.save_profile_dialog)
+        self.profile_menu.add_command(label=self.loc_manager.get("menu_load_profile"), command=self.load_profile_dialog)
         self.profile_menu.add_separator()
-        self.profile_menu.add_command(label="管理設定檔...", command=self.manage_profiles_dialog)
+        self.profile_menu.add_command(label=self.loc_manager.get("menu_manage_profiles"), command=self.manage_profiles_dialog)
 
+        # Help Menu
         self.help_menu = tk.Menu(self.root, tearoff=0)
-        self.help_menubutton = tk.Menubutton(self.menu_frame, text="Help", menu=self.help_menu,
+        self.help_menubutton = tk.Menubutton(self.menu_frame, text=self.loc_manager.get("menu_help"), menu=self.help_menu,
                                              bg=COLOR_MENU_BAR_BG, fg=COLOR_MENU_BUTTON_FG, activebackground=COLOR_MENU_BUTTON_ACTIVE_BG, activeforeground="white",
                                              relief="flat", padx=10, pady=5)
         self.help_menubutton.pack(side="left")
         self.help_menubutton.bind("<Button-1>", lambda e: self.help_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
-        self.help_menu.add_command(label="Manage Modules...", command=self.manage_modules_dialog)
-        self.help_menu.add_command(label="Check for Updates...", command=self.ui_check_for_updates_manual)
+        self.help_menu.add_command(label=self.loc_manager.get("menu_manage_modules"), command=self.manage_modules_dialog)
+        self.help_menu.add_command(label=self.loc_manager.get("menu_check_updates"), command=self.ui_check_for_updates_manual)
+
+        # Language Menu
+        self.language_menu = tk.Menu(self.root, tearoff=0)
+        self.language_menubutton = tk.Menubutton(self.menu_frame, text=self.loc_manager.get("menu_language"), menu=self.language_menu,
+                                             bg=COLOR_MENU_BAR_BG, fg=COLOR_MENU_BUTTON_FG, activebackground=COLOR_MENU_BUTTON_ACTIVE_BG, activeforeground="white",
+                                             relief="flat", padx=10, pady=5)
+        self.language_menubutton.pack(side="left")
+        self.language_menubutton.bind("<Button-1>", lambda e: self.language_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
+        self.language_menu.add_command(label=self.loc_manager.get("menu_lang_en"), command=lambda: self.switch_language("en_US"))
+        self.language_menu.add_command(label=self.loc_manager.get("menu_lang_zh"), command=lambda: self.switch_language("zh_TW"))
 
         self.shared_state.log("ModularGUI initialized.")
 
@@ -624,6 +668,9 @@ class ModularGUI:
         self.shared_state.log("Setting up layout...")
         self.setup_default_layout()
         self.shared_state.update_splash_progress(90) # Progress after layout setup
+
+        # Add observer for language changes to trigger UI updates
+        self.shared_state.add_observer("language", self._on_language_changed_event)
 
         self.root.after(1000, self.ui_check_for_updates_startup)
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -793,6 +840,75 @@ class ModularGUI:
             except tk.TclError: pass
         status = update_manager.check_for_updates(force_check=force_check)
         self.root.after(0, self._handle_update_check_result, status, is_manual_check)
+
+    def _on_language_changed_event(self, key, value):
+        if key == "language":
+            self.update_language()
+
+    def switch_language(self, lang_code):
+        if self.shared_state.get("language") != lang_code:
+            self.shared_state.set("language", lang_code)
+            # Also save it
+            self.settings["language"] = lang_code
+            self.save_settings()
+            self.shared_state.log(f"Language switched to {lang_code}", "INFO")
+
+    def update_language(self):
+        """Refreshes the UI strings based on current language."""
+        # Update Main Menu Titles
+        self.modules_menubutton.config(text=self.loc_manager.get("menu_modules"))
+        self.profile_menubutton.config(text=self.loc_manager.get("menu_profiles"))
+        self.help_menubutton.config(text=self.loc_manager.get("menu_help"))
+        self.language_menubutton.config(text=self.loc_manager.get("menu_language"))
+
+        # Rebuild menus to update labels
+        self.refresh_modules_menu()
+
+        # Profile Menu
+        self.profile_menu.entryconfigure(0, label=self.loc_manager.get("menu_save_profile"))
+        self.profile_menu.entryconfigure(1, label=self.loc_manager.get("menu_load_profile"))
+        # Separator is at index 2
+        self.profile_menu.entryconfigure(3, label=self.loc_manager.get("menu_manage_profiles"))
+
+        # Help Menu
+        self.help_menu.entryconfigure(0, label=self.loc_manager.get("menu_manage_modules"))
+        self.help_menu.entryconfigure(1, label=self.loc_manager.get("menu_check_updates"))
+
+        # Language Menu
+        self.language_menu.entryconfigure(0, label=self.loc_manager.get("menu_lang_en"))
+        self.language_menu.entryconfigure(1, label=self.loc_manager.get("menu_lang_zh"))
+
+        # Status Bar
+        self.status_label.config(text=self.loc_manager.get("status_ready"))
+
+        # Update Modules
+        for module_data in self.loaded_modules.values():
+            instance = module_data.get('instance')
+            if instance:
+                try:
+                    instance.update_language()
+                except Exception as e:
+                    self.shared_state.log(f"Error updating language for module {module_data.get('instance_id')}: {e}", "ERROR")
+
+        self.shared_state.log("UI language updated.", "DEBUG")
+
+    def load_settings(self):
+        path = os.path.join(self.saves_dir, self.SETTINGS_FILE)
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                self.shared_state.log(f"Failed to load settings: {e}", "ERROR")
+        return {}
+
+    def save_settings(self):
+        path = os.path.join(self.saves_dir, self.SETTINGS_FILE)
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(self.settings, f, indent=2)
+        except Exception as e:
+            self.shared_state.log(f"Failed to save settings: {e}", "ERROR")
 
     def setup_bindings(self):
         self.title_bar.bind("<Button-1>", self.start_move)
@@ -1102,22 +1218,37 @@ class ModularGUI:
             return False
 
     def save_profile_dialog(self):
-        name = simpledialog.askstring("儲存設定檔", "請輸入設定檔名稱：", parent=self.root)
+        name = simpledialog.askstring(
+            self.loc_manager.get("dialog_save_profile_title"),
+            self.loc_manager.get("dialog_save_profile_prompt"),
+            parent=self.root
+        )
         if not name: return
         filename = f"{self.PROFILE_PREFIX}{name}{self.PROFILE_SUFFIX}"
         path = os.path.join(self.saves_dir, filename)
         config = self._get_current_layout_config()
         try:
             with open(path, "w", encoding="utf-8") as f: json.dump(config, f, indent=2)
-            messagebox.showinfo("儲存成功", f"設定檔已儲存為 {filename}", parent=self.root)
-        except Exception as e: messagebox.showerror("儲存失敗", f"無法儲存設定檔：{e}", parent=self.root)
+            msg = self.loc_manager.get("msg_profile_saved", name)
+            messagebox.showinfo(self.loc_manager.get("msg_save_success"), msg, parent=self.root)
+        except Exception as e:
+            msg = self.loc_manager.get("err_profile_save", str(e))
+            messagebox.showerror(self.loc_manager.get("msg_save_fail"), msg, parent=self.root)
 
     def load_profile_dialog(self):
         profiles = self._list_profiles()
         if not profiles:
-            messagebox.showinfo("無設定檔", "目前沒有可用的設定檔。", parent=self.root)
+            messagebox.showinfo(
+                self.loc_manager.get("dialog_no_profiles_title"),
+                self.loc_manager.get("dialog_no_profiles_msg"),
+                parent=self.root
+            )
             return
-        sel = self._choose_profile_dialog(profiles, "載入設定檔", "請選擇要載入的設定檔：")
+        sel = self._choose_profile_dialog(
+            profiles,
+            self.loc_manager.get("dialog_load_profile_title"),
+            self.loc_manager.get("dialog_load_profile_prompt")
+        )
         if not sel: return
         filename = f"{self.PROFILE_PREFIX}{sel}{self.PROFILE_SUFFIX}"
         path = os.path.join(self.saves_dir, filename)
@@ -1126,16 +1257,27 @@ class ModularGUI:
     def manage_profiles_dialog(self):
         profiles = self._list_profiles()
         if not profiles:
-            messagebox.showinfo("無設定檔", "目前沒有可用的設定檔。", parent=self.root)
+            messagebox.showinfo(
+                self.loc_manager.get("dialog_no_profiles_title"),
+                self.loc_manager.get("dialog_no_profiles_msg"),
+                parent=self.root
+            )
             return
-        sel = self._choose_profile_dialog(profiles, "刪除設定檔", "請選擇要刪除的設定檔：")
+        sel = self._choose_profile_dialog(
+            profiles,
+            self.loc_manager.get("dialog_delete_profile_title"),
+            self.loc_manager.get("dialog_delete_profile_prompt")
+        )
         if not sel: return
         filename = f"{self.PROFILE_PREFIX}{sel}{self.PROFILE_SUFFIX}"
         path = os.path.join(self.saves_dir, filename)
         try:
             os.remove(path)
-            messagebox.showinfo("刪除成功", f"設定檔 {filename} 已刪除", parent=self.root)
-        except Exception as e: messagebox.showerror("刪除失敗", f"無法刪除設定檔：{e}", parent=self.root)
+            msg = self.loc_manager.get("msg_profile_deleted", sel)
+            messagebox.showinfo(self.loc_manager.get("msg_delete_success"), msg, parent=self.root)
+        except Exception as e:
+            msg = self.loc_manager.get("err_profile_delete", str(e))
+            messagebox.showerror(self.loc_manager.get("msg_delete_fail"), msg, parent=self.root)
 
     def _choose_profile_dialog(self, profiles, title, prompt):
         dialog = tk.Toplevel(self.root)
@@ -1364,15 +1506,18 @@ class ModularGUI:
 
     def show_context_menu(self, event):
         self.context_menu.delete(0, tk.END)
-        self.context_menu.add_command(label="Toggle Module Visibility:", state=tk.DISABLED)
+        # "Toggle Module Visibility:" doesn't have a key yet, I'll add one or just use "Modules"
+        self.context_menu.add_command(label=self.loc_manager.get("menu_modules"), state=tk.DISABLED)
         self.context_menu.add_separator()
         for instance_id, mod_data in self.loaded_modules.items():
             is_visible = mod_data.get('frame_wrapper') and mod_data.get('frame_wrapper').winfo_exists()
             prefix = "[x]" if is_visible else "[ ]"
+            # instance_id includes ID, maybe translate the name part? For now leave ID as is.
             self.context_menu.add_command(label=f"{prefix} {instance_id}", command=lambda iid=instance_id: self.toggle_module_visibility(iid))
         self.context_menu.add_separator()
         for module_name in sorted(self.available_module_classes.keys()):
-            self.context_menu.add_command(label=f"Add {module_name}", command=lambda mn=module_name: self.add_module_from_menu(mn))
+            display_name = self.loc_manager.get(f"module_{module_name.lower()}_title", module_name)
+            self.context_menu.add_command(label=f"Add {display_name}", command=lambda mn=module_name: self.add_module_from_menu(mn))
         try: self.context_menu.tk_popup(event.x_root, event.y_root)
         finally: self.context_menu.grab_release()
 
@@ -1598,11 +1743,11 @@ class ModularGUI:
         self.max_btn.config(text="🗗")
         screen_width = self.root.winfo_screenwidth(); screen_height = self.root.winfo_screenheight()
         self.root.geometry(f"{screen_width}x{screen_height-40}+0+0") # Adjust for taskbar
-        self.status_label.config(text="最大化")
+        self.status_label.config(text=self.loc_manager.get("status_maximized"))
 
     def restore_window_custom(self):
         self.is_maximized = False; self.max_btn.config(text="🗖")
-        self.root.geometry(self.normal_geometry); self.status_label.config(text="就緒")
+        self.root.geometry(self.normal_geometry); self.status_label.config(text=self.loc_manager.get("status_ready"))
 
     def close_window(self): self.on_closing()
 

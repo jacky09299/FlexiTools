@@ -33,6 +33,12 @@ class ClockModule(Module):
         self.shared_state.log(f"UI for {self.module_name} created.", level=logging.INFO) # Use logging constant
         self.update_time()
 
+    def update_language(self):
+        """Update UI text when language changes."""
+        super().update_language() # Updates title
+        # Clock module has no other text to translate, but if it did:
+        # self.some_label.config(text=self.tr("some_key"))
+
     def update_time(self):
         current_time = time.strftime('%H:%M:%S')
         if self.time_label and self.time_label.winfo_exists(): # Check if widget exists

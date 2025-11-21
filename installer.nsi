@@ -656,7 +656,12 @@ Function .onInit
 
   ; 檢查是否已安裝
   ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"
-  StrCmp $R0 "" first_install
+
+  ; 如果登錄檔找不到，嘗試檢查檔案是否存在 (Fallback mechanism)
+  ${If} $R0 == ""
+    IfFileExists "$INSTDIR\uninst.exe" 0 first_install
+    StrCpy $R0 "$INSTDIR\uninst.exe"
+  ${EndIf}
 
   ; 已安裝，設定為非首次安裝
   StrCpy $IsFirstInstall "0"
