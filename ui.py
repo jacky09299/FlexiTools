@@ -135,12 +135,23 @@ class Module:
     def update_language(self):
         """Override this method to update UI text when language changes."""
         if hasattr(self, 'title_label'):
-            # Try to translate the module title based on its name
-            # E.g. "Clock" -> module_clock_title
-            # If not found, use the original module_name
-            key = f"module_{self.module_name.lower()}_title"
-            translated_title = self.tr(key, self.module_name)
-            self.title_label.config(text=translated_title)
+            # Parse module name to remove instance suffix (e.g., clock#1 -> clock)
+            base_name = self.module_name.split('#')[0]
+            instance_suffix = ""
+            if '#' in self.module_name:
+                instance_suffix = " " + self.module_name.split('#')[1]
+                if instance_suffix.strip() == "1": # Optional: hide #1
+                   instance_suffix = ""
+                else:
+                   instance_suffix = " #" + instance_suffix.strip()
+
+            # Try to translate the module title based on its base name
+            key = f"module_{base_name.lower()}_title"
+            translated_base_title = self.tr(key, base_name)
+
+            # Re-append instance info if needed
+            final_title = f"{translated_base_title}{instance_suffix}"
+            self.title_label.config(text=final_title)
 
     def close_module_action(self):
         if self.gui_manager:
