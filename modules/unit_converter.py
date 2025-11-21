@@ -103,6 +103,10 @@ class UnitConverterModule(Module):
     def update_language(self):
         super().update_language()
 
+        # Guard against uninitialized UI elements
+        if not getattr(self, 'lbl_category', None):
+            return
+
         # Update labels
         self.lbl_category.config(text=self.tr("uc_category"))
         self.lbl_conversion.config(text=self.tr("uc_conversion"))
