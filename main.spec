@@ -31,6 +31,7 @@ a = Analysis(
         ('assets','assets'),
         # 模組資料與 CEF 資料
         ('modules', 'modules'),
+        ('locales', 'locales'),
         ('dependencies/tk/_tk_data', '_tk_data'),
         ('dependencies/cef_dependencies/locales', 'locales'),
         ('dependencies/cef_dependencies/cef.pak', '.'),
