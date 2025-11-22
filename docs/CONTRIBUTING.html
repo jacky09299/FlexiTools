@@ -8,73 +8,114 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- PrismJS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
     <style>
-        .code-block {
-            background: #1e1e1e;
-            border-radius: 8px;
-            padding: 1.5rem;
-            border: 1px solid #333;
-            font-family: 'Consolas', 'Monaco', monospace;
-            color: #dcdcdc;
-            overflow-x: auto;
+        /* Custom tweaks for this page */
+        .code-container {
+            position: relative;
             margin-bottom: 1.5rem;
         }
-        .code-comment { color: #6a9955; }
-        .code-keyword { color: #569cd6; }
-        .code-string { color: #ce9178; }
-        .code-function { color: #dcdcaa; }
-
-        .step-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-            transition: transform 0.3s ease, border-color 0.3s ease;
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            padding: 2px 8px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            opacity: 0;
         }
-        .step-card:hover {
-            transform: translateX(5px);
-            border-color: var(--primary-color);
-            background: rgba(255, 255, 255, 0.05);
+        .code-container:hover .copy-btn {
+            opacity: 1;
         }
-        .step-number {
-            display: inline-block;
-            width: 32px;
-            height: 32px;
+        .copy-btn:hover {
             background: var(--primary-color);
             color: #000;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 32px;
-            font-weight: bold;
-            margin-right: 15px;
         }
+        pre {
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: #1e1e1e !important; /* Override Prism background */
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+            font-size: 0.9rem;
+        }
+
         .toc-sticky {
             position: sticky;
             top: 100px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
         }
         .toc-link {
             color: var(--muted-text-color);
             text-decoration: none;
             display: block;
-            padding: 5px 0;
-            transition: color 0.2s;
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-size: 0.95rem;
         }
         .toc-link:hover, .toc-link.active {
+            background: rgba(0, 191, 255, 0.1);
             color: var(--primary-color);
-            padding-left: 5px;
-            border-left: 2px solid var(--primary-color);
+            padding-left: 16px;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary-color), #0088cc);
+            color: #000;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-right: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+            margin: 60px 0;
+        }
+
+        /* Adjustments for glass card nesting */
+        .glass-card h3 {
+            color: #fff;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+        .badge-custom {
+            background: rgba(0, 191, 255, 0.15);
+            color: var(--primary-color);
+            border: 1px solid rgba(0, 191, 255, 0.3);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
         }
     </style>
 </head>
-<body data-bs-spy="scroll" data-bs-target="#toc" data-bs-offset="100">
+<body data-bs-spy="scroll" data-bs-target="#toc-nav" data-bs-offset="120">
+
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
-        <div class="container-fluid">
+        <div class="container">
             <a class="navbar-brand" href="index.html">
-                <img src="logo.png" alt="FlexiTools Logo" width="36" height="36" class="d-inline-block align-text-top">
+                <img src="logo.png" alt="FlexiTools Logo" width="32" height="32" class="d-inline-block align-text-top me-2">
                 FlexiTools
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
@@ -89,28 +130,32 @@
         </div>
     </nav>
 
-    <header class="hero-section" style="padding: 120px 0 80px 0; min-height: auto;">
+    <!-- Hero Section -->
+    <header class="hero-section">
         <div class="container text-center" data-aos="fade-down">
             <h1 class="page-title mb-3">開發者指南</h1>
-            <p class="lead text-muted mx-auto" style="max-width: 700px;">
-                歡迎加入 FlexiTools 開發行列。<br>這份文件將引導您從環境建置到模組開發的完整流程。
+            <p class="lead mx-auto">
+                歡迎加入 FlexiTools 開發行列。<br>
+                從環境建置、模組開發到 CI/CD 部署的完整技術手冊。
             </p>
         </div>
     </header>
 
     <div class="container pb-5">
         <div class="row">
-            <!-- Sidebar Table of Contents -->
+
+            <!-- Sidebar Navigation -->
             <div class="col-lg-3 d-none d-lg-block">
-                <div class="toc-sticky p-4 glass-card">
-                    <h5 class="text-white mb-3">目錄</h5>
-                    <nav id="toc" class="nav flex-column">
-                        <a class="toc-link" href="#setup">1. 環境建置</a>
-                        <a class="toc-link" href="#structure">2. 專案結構</a>
-                        <a class="toc-link" href="#module-dev">3. 模組開發</a>
-                        <a class="toc-link" href="#localization">4. 多語言支援</a>
-                        <a class="toc-link" href="#build">5. 建置與打包</a>
-                        <a class="toc-link" href="#submission">6. 提交貢獻</a>
+                <div class="toc-sticky glass-card p-3">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3 ms-2">Contents</h6>
+                    <nav id="toc-nav" class="nav flex-column">
+                        <a class="toc-link" href="#setup">1. 環境建置 (Environment)</a>
+                        <a class="toc-link" href="#structure">2. 專案架構 (Structure)</a>
+                        <a class="toc-link" href="#module-dev">3. 模組開發 (Modules)</a>
+                        <a class="toc-link" href="#localization">4. 多語言支援 (L10n)</a>
+                        <a class="toc-link" href="#build">5. 建置與測試 (Build)</a>
+                        <a class="toc-link" href="#cicd">6. CI/CD 與發布</a>
+                        <a class="toc-link" href="#submission">7. 貢獻流程 (Workflow)</a>
                     </nav>
                 </div>
             </div>
@@ -118,189 +163,347 @@
             <!-- Main Content -->
             <div class="col-lg-9">
 
-                <!-- Section 1: Setup -->
+                <!-- 1. Environment Setup -->
                 <section id="setup" class="mb-5" data-aos="fade-up">
-                    <h2 class="mb-4" style="color: var(--primary-color);"><i class="bi bi-tools me-3"></i>1. 環境建置</h2>
-                    <p class="text-muted">FlexiTools 基於 Python 3.9+ 與 Tkinter 構建。我們建議使用 Conda 來管理開發環境。</p>
-
-                    <div class="step-card">
-                        <h5 class="text-white"><span class="step-number">1</span>安裝 Miniconda</h5>
-                        <p class="text-muted">請前往 Miniconda 官網下載並安裝適用於您作業系統的版本。</p>
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="step-number">1</div>
+                        <h2 class="mb-0 text-white">環境建置 (Environment Setup)</h2>
                     </div>
-
-                    <div class="step-card">
-                        <h5 class="text-white"><span class="step-number">2</span>建立環境</h5>
-                        <p class="text-muted">在專案根目錄執行以下指令以建立名為 <code>tools</code> 的虛擬環境：</p>
-                        <div class="code-block">
-                            conda create -n tools python=3.9<br>
-                            conda activate tools
-                        </div>
-                    </div>
-
-                    <div class="step-card">
-                        <h5 class="text-white"><span class="step-number">3</span>安裝依賴</h5>
-                        <p class="text-muted">專案依賴許多第三方套件以支援不同模組的功能：</p>
-                        <div class="code-block">
-                            pip install pandas matplotlib PyPDF2 moviepy opencv-python rembg cefpython3 psutil pygame pyroomacoustics yt-dlp
-                        </div>
-                        <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i> 提示：您可以執行 <code>python check_imports.py</code> 來檢查環境是否缺漏套件。</p>
-                    </div>
-                </section>
-
-                <!-- Section 2: Structure -->
-                <section id="structure" class="mb-5" data-aos="fade-up">
-                    <h2 class="mb-4" style="color: var(--primary-color);"><i class="bi bi-folder2-open me-3"></i>2. 專案結構</h2>
-                    <p class="text-muted">了解專案目錄結構有助於您快速定位檔案。</p>
-
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="glass-card p-3 h-100">
-                                <h5 class="text-white"><i class="bi bi-box me-2 text-primary"></i>modules/</h5>
-                                <p class="text-muted small">所有功能模組存放於此。每個子資料夾代表一個獨立模組（例如 <code>modules/clock/</code>）。</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="glass-card p-3 h-100">
-                                <h5 class="text-white"><i class="bi bi-translate me-2 text-primary"></i>locales/</h5>
-                                <p class="text-muted small">全域語言翻譯檔（<code>en_US.json</code>, <code>zh_TW.json</code> 等）。</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="glass-card p-3 h-100">
-                                <h5 class="text-white"><i class="bi bi-file-earmark-code me-2 text-primary"></i>ui.py</h5>
-                                <p class="text-muted small">主視窗框架與模組載入邏輯的核心程式碼。</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="glass-card p-3 h-100">
-                                <h5 class="text-white"><i class="bi bi-hammer me-2 text-primary"></i>tools/</h5>
-                                <p class="text-muted small">包含建置安裝檔 (<code>generate_nsis.py</code>) 與套件管理腳本。</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Section 3: Module Development -->
-                <section id="module-dev" class="mb-5" data-aos="fade-up">
-                    <h2 class="mb-4" style="color: var(--primary-color);"><i class="bi bi-puzzle me-3"></i>3. 模組開發</h2>
-                    <p class="text-muted">FlexiTools 的核心是模組化。請參考 <code>modules/template_module</code> 作為範本。</p>
-
-                    <div class="step-card">
-                        <h5 class="text-white">Step 1: 建立目錄與 Manifest</h5>
-                        <p class="text-muted">在 <code>modules/</code> 下建立新資料夾（例如 <code>my_tool</code>），並新增 <code>manifest.json</code>：</p>
-                        <div class="code-block">
-{
-  <span class="code-string">"name"</span>: "my_tool",
-  <span class="code-string">"version"</span>: "1.0.0",
-  <span class="code-string">"title"</span>: "My Awesome Tool",
-  <span class="code-string">"description"</span>: "A brief description of what this tool does.",
-  <span class="code-string">"author"</span>: "Your Name"
-}
-                        </div>
-                    </div>
-
-                    <div class="step-card">
-                        <h5 class="text-white">Step 2: 繼承 Module 類別</h5>
-                        <p class="text-muted">建立 <code>__init__.py</code> 並繼承基礎類別。這是模組的入口點。</p>
-                        <div class="code-block">
-<span class="code-keyword">from</span> ui <span class="code-keyword">import</span> Module
-<span class="code-keyword">import</span> tkinter <span class="code-keyword">as</span> tk
-<span class="code-keyword">from</span> tkinter <span class="code-keyword">import</span> ttk
-
-<span class="code-keyword">class</span> <span class="code-function">MyToolModule</span>(Module):
-    <span class="code-keyword">def</span> <span class="code-function">__init__</span>(self, master, shared_state, module_name=<span class="code-string">"MyTool"</span>, gui_manager=<span class="code-keyword">None</span>):
-        <span class="code-function">super</span>().__init__(master, shared_state, module_name, gui_manager)
-        self.create_ui()
-        self.update_language()
-
-    <span class="code-keyword">def</span> <span class="code-function">create_ui</span>(self):
-        <span class="code-comment"># 在 self.frame 中建立 UI</span>
-        self.label = ttk.Label(self.frame, text=<span class="code-string">"Hello World"</span>)
-        self.label.pack(pady=20)
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Section 4: Localization -->
-                <section id="localization" class="mb-5" data-aos="fade-up">
-                    <h2 class="mb-4" style="color: var(--primary-color);"><i class="bi bi-globe me-3"></i>4. 多語言支援</h2>
-                    <p class="text-muted">我們採用 <strong>"Develop First, Localize Later"</strong> 的策略。請勿在程式碼中寫死字串。</p>
 
                     <div class="glass-card p-4 mb-4">
-                        <h5 class="text-white mb-3">實作流程</h5>
-                        <ol class="text-muted ps-3">
-                            <li class="mb-2">在開發初期，直接在程式碼中使用英文。</li>
-                            <li class="mb-2">開發完成後，找出所有顯示給使用者的字串。</li>
-                            <li class="mb-2">在 <code>locales/en_US.json</code> 與 <code>zh_TW.json</code> 中新增對應的 Key。
-                                <br><small class="text-primary">命名建議：module_模組名_元件_描述</small>
-                            </li>
-                            <li class="mb-2">將程式碼中的字串替換為 <code>self.tr("KEY", "Default Text")</code>。</li>
-                            <li class="mb-2">實作 <code>update_language()</code> 方法以支援即時語言切換。</li>
-                        </ol>
-                    </div>
+                        <p class="text-muted">FlexiTools 基於 Python 3.9+ 與 Tkinter 構建。為了確保開發環境的一致性，我們強烈建議使用 Conda。</p>
 
-                    <div class="code-block">
-    <span class="code-keyword">def</span> <span class="code-function">update_language</span>(self):
-        <span class="code-function">super</span>().update_language() <span class="code-comment"># 更新視窗標題</span>
+                        <h5 class="text-white mt-4 mb-3"><i class="bi bi-terminal me-2"></i>快速開始</h5>
 
-        <span class="code-comment"># Guard Clause: 確保 UI 已建立</span>
-        <span class="code-keyword">if not getattr</span>(self, <span class="code-string">'label'</span>, <span class="code-keyword">None</span>):
-            <span class="code-keyword">return</span>
+                        <p class="text-muted small">1. Clone 專案並進入目錄：</p>
+                        <div class="code-container">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre><code class="language-bash">git clone https://github.com/jacky09299/FlexiTools.git
+cd FlexiTools</code></pre>
+                        </div>
 
-        <span class="code-comment"># 更新元件文字</span>
-        self.label.config(text=self.tr(<span class="code-string">"module_mytool_hello"</span>, <span class="code-string">"Hello World"</span>))
+                        <p class="text-muted small">2. 建立並啟用 Conda 環境：</p>
+                        <div class="code-container">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre><code class="language-bash">conda env create -f environment.yml
+conda activate tools</code></pre>
+                        </div>
+
+                        <p class="text-muted small">3. 驗證安裝：</p>
+                        <div class="code-container">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre><code class="language-bash">python check_imports.py</code></pre>
+                        </div>
+                        <div class="alert alert-secondary bg-transparent border-secondary text-muted small">
+                            <i class="bi bi-info-circle me-2 text-info"></i>
+                            若 <code>check_imports.py</code> 顯示 "All modules imported successfully"，即代表環境設定完成。
+                        </div>
                     </div>
                 </section>
 
-                <!-- Section 5: Build -->
+                <div class="section-divider"></div>
+
+                <!-- 2. Project Structure -->
+                <section id="structure" class="mb-5" data-aos="fade-up">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="step-number">2</div>
+                        <h2 class="mb-0 text-white">專案架構 (Project Structure)</h2>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="glass-card p-3 h-100">
+                                <h5 class="text-primary mb-3"><i class="bi bi-folder2-open me-2"></i>核心目錄</h5>
+                                <ul class="list-unstyled text-muted small">
+                                    <li class="mb-2"><code class="text-warning">modules/</code> - 功能模組存放處。每個子資料夾代表一個獨立功能。</li>
+                                    <li class="mb-2"><code class="text-warning">locales/</code> - 全域語言檔 (<code>en_US.json</code>, <code>zh_TW.json</code>)。</li>
+                                    <li class="mb-2"><code class="text-warning">tools/</code> - 建置腳本 (NSIS 生成、插件打包)。</li>
+                                    <li class="mb-2"><code class="text-warning">docs/</code> - 專案文件與網站源碼 (GitHub Pages)。</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="glass-card p-3 h-100">
+                                <h5 class="text-primary mb-3"><i class="bi bi-file-earmark-code me-2"></i>關鍵檔案</h5>
+                                <ul class="list-unstyled text-muted small">
+                                    <li class="mb-2"><code class="text-info">main.py</code> - 程式入口點。</li>
+                                    <li class="mb-2"><code class="text-info">ui.py</code> - <code>ModularGUI</code> 與 <code>Module</code> 基底類別定義。</li>
+                                    <li class="mb-2"><code class="text-info">main.spec</code> - PyInstaller 打包設定檔。</li>
+                                    <li class="mb-2"><code class="text-info">installer.nsi.template</code> - Windows 安裝程式腳本模板。</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="section-divider"></div>
+
+                <!-- 3. Module Development -->
+                <section id="module-dev" class="mb-5" data-aos="fade-up">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="step-number">3</div>
+                        <h2 class="mb-0 text-white">模組開發 (Module Development)</h2>
+                    </div>
+
+                    <p class="text-muted mb-4">
+                        FlexiTools 採用高度模組化設計。開發新功能只需在 <code class="text-warning">modules/</code> 目錄下建立新資料夾即可。
+                        請參考 <code class="text-info">modules/template_module</code>。
+                    </p>
+
+                    <!-- Manifest -->
+                    <div class="glass-card p-4 mb-4">
+                        <h4 class="text-white mb-3">Step 1: 定義 Metadata (manifest.json)</h4>
+                        <p class="text-muted small">
+                            在模組資料夾中建立 <code>manifest.json</code>。這是版本控制與插件系統的依據。
+                        </p>
+                        <div class="code-container">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre><code class="language-json">{
+  "name": "my_new_tool",
+  "version": "1.0.0",
+  "title": "My New Tool",
+  "description": "A short description of the tool.",
+  "author": "Your Name"
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Init Code -->
+                    <div class="glass-card p-4 mb-4">
+                        <h4 class="text-white mb-3">Step 2: 實作邏輯 (__init__.py)</h4>
+                        <p class="text-muted small">
+                            建立 <code>__init__.py</code> 並繼承 <code>Module</code> 類別。這是模組的進入點。
+                        </p>
+                        <div class="code-container">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre><code class="language-python">import tkinter as tk
+from tkinter import ttk, messagebox
+from ui import Module
+
+class MyNewTool(Module):
+    def __init__(self, master, shared_state, module_name="MyTool", gui_manager=None):
+        # 初始化基底類別
+        super().__init__(master, shared_state, module_name, gui_manager)
+
+        # 初始化 UI 元件變數
+        self.label = None
+        self.btn = None
+
+        # 建立介面
+        self.create_ui()
+
+        # 套用語言設定
+        self.update_language()
+
+    def create_ui(self):
+        """建立 UI 元件，初始使用英文"""
+        self.label = ttk.Label(self.frame, text="Hello World")
+        self.label.pack(pady=20)
+
+        self.btn = ttk.Button(self.frame, text="Click Me", command=self.on_click)
+        self.btn.pack()
+
+    def update_language(self):
+        """
+        當語言切換時被呼叫。
+        必須使用 self.tr(key, default) 更新所有顯示文字。
+        """
+        super().update_language() # 更新視窗標題
+
+        # Guard Clause: 確保 UI 已建立
+        if not getattr(self, 'label', None):
+            return
+
+        # 更新元件文字
+        self.label.config(text=self.tr("module_mytool_hello", "Hello World"))
+        self.btn.config(text=self.tr("module_mytool_click", "Click Me"))
+
+    def on_click(self):
+        msg = self.tr("module_mytool_msg", "You clicked the button!")
+        messagebox.showinfo(self.module_name, msg)</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="section-divider"></div>
+
+                <!-- 4. Localization -->
+                <section id="localization" class="mb-5" data-aos="fade-up">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="step-number">4</div>
+                        <h2 class="mb-0 text-white">多語言支援 (Localization)</h2>
+                    </div>
+
+                    <div class="alert alert-info bg-transparent border-info text-muted">
+                        <i class="bi bi-lightbulb me-2 text-warning"></i>
+                        我們採用 <strong>"Develop First, Localize Later"</strong> (先開發，後翻譯) 的工作流。
+                    </div>
+
+                    <div class="glass-card p-4">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <h5 class="text-white mb-3">實作步驟</h5>
+                                <ol class="text-muted ps-3 small">
+                                    <li class="mb-3">
+                                        <strong>開發功能：</strong> 在 <code>create_ui</code> 中直接使用英文字串開發。
+                                    </li>
+                                    <li class="mb-3">
+                                        <strong>提取字串：</strong> 功能完成後，找出所有使用者可見的文字。
+                                    </li>
+                                    <li class="mb-3">
+                                        <strong>新增 Key：</strong> 在 <code>locales/en_US.json</code> 與 <code>zh_TW.json</code> 中加入對應的翻譯。
+                                        <br><span class="badge-custom mt-1">格式：module_模組名_元件_描述</span>
+                                    </li>
+                                    <li class="mb-3">
+                                        <strong>替換程式碼：</strong> 將原字串替換為 <code>self.tr("KEY", "Default")</code>。
+                                    </li>
+                                    <li>
+                                        <strong>實作更新：</strong> 在 <code>update_language()</code> 中重新設定元件文字。
+                                    </li>
+                                </ol>
+                            </div>
+                            <div class="col-lg-6">
+                                <h5 class="text-white mb-3">JSON 範例</h5>
+                                <div class="code-container">
+                                    <pre><code class="language-json">// locales/en_US.json
+{
+  "module_mytool_hello": "Hello World",
+  "module_mytool_click": "Click Me"
+}</code></pre>
+                                </div>
+                                <div class="code-container">
+                                    <pre><code class="language-json">// locales/zh_TW.json
+{
+  "module_mytool_hello": "你好，世界",
+  "module_mytool_click": "點擊我"
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="section-divider"></div>
+
+                <!-- 5. Build & Test -->
                 <section id="build" class="mb-5" data-aos="fade-up">
-                    <h2 class="mb-4" style="color: var(--primary-color);"><i class="bi bi-box-seam me-3"></i>5. 建置與打包</h2>
-                    <p class="text-muted">若需產生 Windows 安裝檔 (.exe)，請遵循以下步驟：</p>
-
-                    <div class="alert alert-secondary bg-transparent border-secondary text-muted">
-                        <i class="bi bi-exclamation-triangle me-2 text-warning"></i>
-                        需要安裝 <strong>NSIS (Nullsoft Scriptable Install System)</strong> 才能進行打包。
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="step-number">5</div>
+                        <h2 class="mb-0 text-white">建置與測試 (Build & Test)</h2>
                     </div>
 
-                    <ul class="list-unstyled text-muted">
-                        <li class="mb-3"><i class="bi bi-chevron-right text-primary me-2"></i><strong>步驟 1：</strong> 使用 PyInstaller 打包主程式。
-                            <div class="code-block mt-2">pyinstaller main.spec</div>
-                        </li>
-                        <li class="mb-3"><i class="bi bi-chevron-right text-primary me-2"></i><strong>步驟 2：</strong> 生成 NSIS 腳本。此腳本會自動掃描 <code>modules/</code> 並加入安裝清單。
-                            <div class="code-block mt-2">python tools/generate_nsis.py</div>
-                        </li>
-                        <li class="mb-3"><i class="bi bi-chevron-right text-primary me-2"></i><strong>步驟 3：</strong> 編譯安裝檔。
-                            <div class="code-block mt-2">makensis installer.nsi</div>
-                        </li>
-                    </ul>
+                    <p class="text-muted">在提交程式碼前，請確保您的模組能通過建置流程。</p>
+
+                    <div class="glass-card p-4 mb-4">
+                        <h5 class="text-white mb-3">本地測試 (Run Source)</h5>
+                        <div class="code-container">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre><code class="language-bash"># 啟動應用程式
+python main.py
+
+# 執行自動化測試
+python verify_tutorials.py</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-4">
+                        <h5 class="text-white mb-3">打包 EXE 與安裝檔 (Build Artifacts)</h5>
+                        <p class="text-muted small">需要安裝 <a href="https://nsis.sourceforge.io/" target="_blank" class="text-primary">NSIS</a>。</p>
+
+                        <div class="code-container">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre><code class="language-bash"># 1. 使用 PyInstaller 打包主程式
+pyinstaller main.spec
+
+# 2. 生成 NSIS 腳本 (自動掃描 modules/)
+python tools/generate_nsis.py
+
+# 3. 編譯安裝檔
+makensis installer.nsi</code></pre>
+                        </div>
+                        <p class="text-muted small mt-2">
+                            編譯完成後，您將在根目錄看到 <code>FlexiToolsInstaller.exe</code>。
+                        </p>
+                    </div>
                 </section>
 
-                <!-- Section 6: Submission -->
+                <div class="section-divider"></div>
+
+                <!-- 6. CI/CD -->
+                <section id="cicd" class="mb-5" data-aos="fade-up">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="step-number">6</div>
+                        <h2 class="mb-0 text-white">CI/CD 與發布</h2>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-lg-6">
+                            <div class="glass-card p-4 h-100">
+                                <h5 class="text-primary mb-3">Github Actions Workflow</h5>
+                                <p class="text-muted small">
+                                    我們使用 <code class="text-white">.github/workflows/build.yml</code> 自動化建置流程：
+                                </p>
+                                <ul class="text-muted small">
+                                    <li><strong>Trigger:</strong> Tag 推送 (<code>v*</code>)。</li>
+                                    <li><strong>Jobs:</strong>
+                                        <ul>
+                                            <li>Setup Conda Environment</li>
+                                            <li>Build EXE (PyInstaller)</li>
+                                            <li>Generate NSIS Script</li>
+                                            <li>Compile Installer (NSIS)</li>
+                                            <li>Upload Release Asset</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="glass-card p-4 h-100">
+                                <h5 class="text-primary mb-3">插件系統 (Plugin System)</h5>
+                                <p class="text-muted small">
+                                    模組也可以獨立更新。更新 <code class="text-white">docs/plugins.json</code> 會觸發 <code class="text-white">tools/package_changed_plugins.py</code>：
+                                </p>
+                                <ol class="text-muted small">
+                                    <li>比對 JSON 版本號。</li>
+                                    <li>將變更的模組打包為 ZIP。</li>
+                                    <li>發布至 <code>gh-pages</code> 分支供使用者下載。</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="section-divider"></div>
+
+                <!-- 7. Contribution Workflow -->
                 <section id="submission" class="mb-5" data-aos="fade-up">
-                    <h2 class="mb-4" style="color: var(--primary-color);"><i class="bi bi-git me-3"></i>6. 提交貢獻</h2>
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="step-number">7</div>
+                        <h2 class="mb-0 text-white">貢獻流程 (Workflow)</h2>
+                    </div>
+
                     <div class="glass-card p-4 text-center">
-                        <p class="lead text-muted mb-4">準備好分享您的成果了嗎？</p>
-                        <div class="row text-start justify-content-center">
-                            <div class="col-md-8">
-                                <div class="d-flex mb-3">
-                                    <span class="step-number">1</span>
+                        <div class="row justify-content-center">
+                            <div class="col-md-8 text-start">
+                                <div class="d-flex mb-4">
+                                    <div class="fs-2 me-3 text-primary"><i class="bi bi-git"></i></div>
                                     <div>
-                                        <h6 class="text-white">Fork & Branch</h6>
-                                        <p class="text-muted small">Fork 專案並建立新的分支：<code>feature/your-module-name</code></p>
+                                        <h5 class="text-white">1. Fork & Branch</h5>
+                                        <p class="text-muted small mb-0">Fork 專案並建立分支：<code>feature/your-module-name</code>。</p>
                                     </div>
                                 </div>
-                                <div class="d-flex mb-3">
-                                    <span class="step-number">2</span>
+                                <div class="d-flex mb-4">
+                                    <div class="fs-2 me-3 text-primary"><i class="bi bi-code-slash"></i></div>
                                     <div>
-                                        <h6 class="text-white">Commit & Push</h6>
-                                        <p class="text-muted small">提交您的變更。請撰寫清晰的 Commit Message。</p>
+                                        <h5 class="text-white">2. Commit</h5>
+                                        <p class="text-muted small mb-0">遵循 Commit Message 規範，保持簡潔。</p>
                                     </div>
                                 </div>
                                 <div class="d-flex">
-                                    <span class="step-number">3</span>
+                                    <div class="fs-2 me-3 text-primary"><i class="bi bi-arrow-left-right"></i></div>
                                     <div>
-                                        <h6 class="text-white">Pull Request</h6>
-                                        <p class="text-muted small">發送 PR 到 <code>develop</code> 分支。我們會儘快進行審查。</p>
+                                        <h5 class="text-white">3. Pull Request</h5>
+                                        <p class="text-muted small mb-0">發送 PR 至 <code>develop</code> 分支。我們將會審查您的程式碼。</p>
                                     </div>
                                 </div>
                             </div>
@@ -312,20 +515,42 @@
         </div>
     </div>
 
+    <!-- Footer -->
     <footer class="mt-5 border-top border-secondary pt-4 pb-4">
         <div class="container text-center">
             <p class="mb-0 small text-muted">&copy; 2025 FlexiTools. Open Source Project.</p>
         </div>
     </footer>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
     <script>
         AOS.init({
             once: true,
             offset: 50,
             duration: 800,
         });
+
+        // Simple copy to clipboard function
+        function copyCode(btn) {
+            const pre = btn.nextElementSibling;
+            const code = pre.querySelector('code').innerText;
+
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied!';
+                btn.classList.add('bg-success', 'border-success');
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove('bg-success', 'border-success');
+                }, 2000);
+            });
+        }
     </script>
 </body>
 </html>
