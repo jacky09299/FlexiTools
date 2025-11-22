@@ -5,7 +5,7 @@ import zipfile
 import threading
 import logging
 
-# Try importing requests, but handle if not available (though it should be for store to work)
+# Try importing requests, but handle if not available
 try:
     import requests
 except ImportError:
@@ -62,22 +62,22 @@ class StoreManager:
                 r = requests.get(url, stream=True)
                 r.raise_for_status()
 
-                zip_path = os.path.join(self.modules_dir, f"{module_name}.zip")
+                # Download to temp zip
+                zip_path = os.path.join(self.modules_dir, f"{module_name}_temp.zip")
                 with open(zip_path, 'wb') as f:
                     for chunk in r.iter_content(chunk_size=8192):
                         f.write(chunk)
 
                 self.shared_state.log(f"Extracting {module_name}...")
 
-                # Validate Zip Structure before extracting?
-                # Assuming zip contains "module_name/..." based on our CI script plan.
-
-                # Safety: remove existing directory if present
+                # Validate and clean old install
                 target_dir = os.path.join(self.modules_dir, module_name)
                 if os.path.exists(target_dir):
                     shutil.rmtree(target_dir)
 
                 with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    # The zip structure is "module_name/..." so extract to modules_dir
+                    # This creates/overwrites modules_dir/module_name
                     zip_ref.extractall(self.modules_dir)
 
                 os.remove(zip_path)
@@ -85,7 +85,6 @@ class StoreManager:
                 if callback: callback(True, f"Installed {module_name}")
             except Exception as e:
                 self.shared_state.log(f"Failed to install {module_name}: {e}", "ERROR")
-                # Clean up zip if failed
                 if os.path.exists(zip_path):
                     try: os.remove(zip_path)
                     except: pass

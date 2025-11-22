@@ -1519,23 +1519,29 @@ class ModularGUI:
 
         scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL)
         # Use a Treeview for columns (Name, Version, Status)
-        cols = ("Name", "Version", "Status")
+        cols = ("Name", "Latest Version", "Status")
         tree = ttk.Treeview(list_frame, columns=cols, show='headings', yscrollcommand=scrollbar.set)
         scrollbar.config(command=tree.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         tree.heading("Name", text="Name")
-        tree.heading("Version", text="Version")
+        tree.heading("Latest Version", text="Latest Version")
         tree.heading("Status", text="Status")
 
         tree.column("Name", width=200)
-        tree.column("Version", width=100)
+        tree.column("Latest Version", width=100)
         tree.column("Status", width=100)
 
         # Details/Actions area
         action_frame = ttk.Frame(store_window)
         action_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        # Version selection
+        ttk.Label(action_frame, text="Version:").pack(side=tk.LEFT, padx=5)
+        version_var = tk.StringVar()
+        cb_version = ttk.Combobox(action_frame, textvariable=version_var, state="readonly", width=10)
+        cb_version.pack(side=tk.LEFT, padx=5)
 
         btn_install = ttk.Button(action_frame, text="Install/Update", state=tk.DISABLED)
         btn_install.pack(side=tk.RIGHT, padx=5)
@@ -1558,7 +1564,10 @@ class ModularGUI:
                 catalog_data = {}
                 if cat and "plugins" in cat:
                     for p in cat["plugins"]:
-                        catalog_data[p["name"]] = p
+                        # Support old schema where p is dict, id might be missing if it's 'name'
+                        pid = p.get("id", p.get("name"))
+                        if pid:
+                            catalog_data[pid] = p
 
                 # Update UI in main thread
                 store_window.after(0, lambda: _populate_tree(cat))
@@ -1575,9 +1584,9 @@ class ModularGUI:
             nonlocal installed_info
             installed_info = store_mgr.get_installed_modules_info() # Refresh installed
 
-            for name, plugin in catalog_data.items():
-                local_ver = installed_info.get(name)
-                remote_ver = plugin.get("version", "0.0.0")
+            for pid, plugin in catalog_data.items():
+                local_ver = installed_info.get(pid)
+                remote_ver = plugin.get("latest_version", plugin.get("version", "0.0.0"))
 
                 status_str = "Not Installed"
                 if local_ver:
@@ -1586,42 +1595,77 @@ class ModularGUI:
                     else:
                         status_str = "Update Available"
 
-                display_title = plugin.get("title", name)
-                tree.insert("", tk.END, values=(display_title, remote_ver, status_str), iid=name)
+                display_title = plugin.get("title", pid)
+                tree.insert("", tk.END, values=(display_title, remote_ver, status_str), iid=pid)
 
         def on_select(event):
             selected = tree.selection()
             if not selected:
                 btn_install.config(state=tk.DISABLED)
                 btn_uninstall.config(state=tk.DISABLED)
+                cb_version.set('')
+                cb_version['values'] = []
                 return
 
             module_name = selected[0]
             plugin = catalog_data.get(module_name)
             local_ver = installed_info.get(module_name)
 
+            # Populate versions
+            versions_list = plugin.get("versions", [])
+            # If versions list is empty or old schema, fabricate one from latest
+            if not versions_list and "url" in plugin:
+                versions_list = [{"version": plugin.get("version", "0.0.0"), "url": plugin.get("url")}]
+
+            # Extract version strings for combobox
+            v_strs = [v["version"] for v in versions_list]
+            cb_version['values'] = v_strs
+            if v_strs:
+                cb_version.current(0) # Select first (assuming latest is first or we want latest)
+
             btn_install.config(state=tk.NORMAL)
             if local_ver:
                 btn_uninstall.config(state=tk.NORMAL)
-                if local_ver == plugin.get("version"):
-                    btn_install.config(text="Reinstall")
-                else:
-                    btn_install.config(text="Update")
+                # Update button text based on selection vs installed
+                check_btn_text(local_ver, cb_version.get())
             else:
                 btn_uninstall.config(state=tk.DISABLED)
                 btn_install.config(text="Install")
 
+        def check_btn_text(local_ver, selected_ver):
+            if not local_ver:
+                btn_install.config(text="Install")
+            elif local_ver == selected_ver:
+                btn_install.config(text="Reinstall")
+            else:
+                btn_install.config(text="Update/Switch")
+
         tree.bind("<<TreeviewSelect>>", on_select)
+        cb_version.bind("<<ComboboxSelected>>", lambda e: check_btn_text(installed_info.get(tree.selection()[0]) if tree.selection() else None, cb_version.get()))
 
         def do_install():
             selected = tree.selection()
             if not selected: return
             module_name = selected[0]
             plugin = catalog_data.get(module_name)
-            url = plugin.get("url")
+
+            selected_ver = cb_version.get()
+            if not selected_ver: return
+
+            # Find URL for selected version
+            url = None
+            versions_list = plugin.get("versions", [])
+            # Fallback for old schema
+            if not versions_list and "url" in plugin and plugin.get("version") == selected_ver:
+                 url = plugin.get("url")
+            else:
+                for v in versions_list:
+                    if v["version"] == selected_ver:
+                        url = v["url"]
+                        break
 
             if not url:
-                messagebox.showerror("Error", "No download URL for this plugin.", parent=store_window)
+                messagebox.showerror("Error", "No download URL for this version.", parent=store_window)
                 return
 
             btn_install.config(state=tk.DISABLED)

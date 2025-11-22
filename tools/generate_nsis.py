@@ -40,15 +40,29 @@ def generate_nsis(template_path, output_path, modules_dir):
 Section "{module_name}" {section_id}
   ; Set output path to AppData
   SetOutPath "$APPDATA\\FlexiTools\\modules\\{module_name}"
+
+  ; Do not overwrite if file exists (Update software, do not update plugin)
+  SetOverwrite off
+
   ; Copy directory contents recursively
   File /r "dist\\FlexiTools\\_internal\\modules\\{module_name}\\*.*"
+
+  ; Restore overwrite mode for other sections
+  SetOverwrite on
 SectionEnd
 """
         else:
              section = f"""
 Section "{module_name}" {section_id}
   SetOutPath "$APPDATA\\FlexiTools\\modules"
+
+  ; Do not overwrite if file exists
+  SetOverwrite off
+
   File "dist\\FlexiTools\\_internal\\modules\\{module_item}"
+
+  ; Restore overwrite mode
+  SetOverwrite on
 SectionEnd
 """
 
