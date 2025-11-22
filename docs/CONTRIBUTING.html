@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexiTools - 如何貢獻</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">
+                <img src="logo.png" alt="FlexiTools Logo" width="36" height="36" class="d-inline-block align-text-top">
+                FlexiTools
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="index.html">首頁</a></li>
+                    <li class="nav-item"><a class="nav-link" href="tutorials.html">教學</a></li>
+                    <li class="nav-item"><a class="nav-link" href="download.html">下載</a></li>
+                    <li class="nav-item"><a class="nav-link" href="support.html">支援</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">關於我們</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="CONTRIBUTING.html">貢獻</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5 py-5">
+        <div class="content-section">
+            <h1 class="page-title">如何貢獻</h1>
+            <p class="lead text-center">感謝您有興趣為 FlexiTools 做出貢獻！我們歡迎所有形式的貢獻，從錯誤回報到新功能模組的開發。</p>
+
+            <hr class="my-5">
+
+            <h2><i class="bi bi-code-slash"></i> 開發入門</h2>
+            <p>開始之前，請確保您的開發環境已準備就緒。FlexiTools 主要使用 Python 和 Tkinter GUI 工具包構建。</p>
+            
+            <h4>主要依賴套件</h4>
+            <p>請確保您已安裝以下核心套件。某些模組可能需要額外的特定套件。</p>
+            <ul>
+                <li><code>pandas</code> - 用於數據處理，例如在 <code>plot_gui</code> 和 <code>report</code> 模組中。</li>
+                <li><code>matplotlib</code> - 用於數據可視化，是 <code>plot_gui</code> 的核心。</li>
+                <li><code>PyPDF2</code> - 用於 PDF 操作，例如在 <code>pdf_processor</code> 模組中。</li>
+                <li><code>moviepy</code> & <code>opencv-python</code> - 用於影片處理。</li>
+                <li><code>rembg</code> - 用於圖片去背。</li>
+                <li><code>cefpython3</code> - <code>browser</code> 模組的網頁渲染核心。</li>
+                <li><code>psutil</code> - 用於 <code>system_info</code> 模組獲取系統資訊。</li>
+                <li><code>pygame</code> - 用於音訊播放。</li>
+                <li><code>pyroomacoustics</code> - 用於音訊效果模擬。</li>
+                <li><code>yt-dlp</code> - 用於 YouTube 下載功能。</li>
+            </ul>
+            <p>您可以使用 <code>pip</code> 來安裝這些套件：</p>
+            <pre><code>pip install pandas matplotlib PyPDF2 moviepy opencv-python rembg cefpython3 psutil pygame pyroomacoustics yt-dlp</code></pre>
+
+            <div class="alert mt-3" role="alert">
+                <h4 class="alert-heading">提示</h4>
+                <p>專案中的 <code>check_imports.py</code> 腳本提供了一個方便的方式來檢查和模擬缺失的依賴，有助於在不完全安裝所有套件的情況下運行主應用程式。</p>
+            </div>
+
+            <h2 class="mt-5"><i class="bi bi-puzzle"></i> 創建一個新模組</h2>
+            <p>FlexiTools 的核心是其模組化架構。創建一個新模組非常簡單。所有模組都應放在 <code>modules/</code> 資料夾中。</p>
+
+            <h4>1. 繼承基礎 `Module` 類別</h4>
+            <p>您的新模組類別必須繼承自 <code>ui.py</code> 中定義的 <code>Module</code> 類別。</p>
+            <pre><code>from ui import Module
+
+class YourNewModule(Module):
+    def __init__(self, master, shared_state, module_name="YourModule", gui_manager=None):
+        super().__init__(master, shared_state, module_name, gui_manager)
+        # 在這裡初始化您的變數
+        self.create_ui()
+        self.update_language() # 確保在UI建立後呼叫
+</code></pre>
+
+            <h4>2. 實現 `create_ui` 方法</h4>
+            <p>這是在模組框架內建立所有 UI 元素（按鈕、輸入框等）的地方。所有 UI 元件都應該被放置在 <code>self.frame</code> 內。</p>
+            <pre><code>def create_ui(self):
+    # self.frame 是您的模組的主容器
+    main_content_frame = ttk.Frame(self.frame, padding="10")
+    main_content_frame.pack(expand=True, fill=tk.BOTH)
+
+    self.my_label = ttk.Label(main_content_frame, text="Hello, Module!")
+    self.my_label.pack()
+
+    self.my_button = ttk.Button(main_content_frame, text="Click Me", command=self.my_action)
+    self.my_button.pack()
+</code></pre>
+
+            <h4>3. 支援多語言</h4>
+            <p>為了支援多語言，請實現 <code>update_language</code> 方法。使用 <code>self.tr("key", "default_text")</code> 來獲取翻譯後的文字。</p>
+            <pre><code>def update_language(self):
+    super().update_language() # 更新模組標題
+    if not getattr(self, 'my_label', None): return
+
+    self.my_label.config(text=self.tr("module_yourmodule_greeting", "Hello, Module!"))
+    self.my_button.config(text=self.tr("module_yourmodule_button", "Click Me"))
+</code></pre>
+            <p>接著，您需要在 <code>locales/</code> 資料夾下的對應 JSON 檔案中添加您的翻譯鍵值對。</p>
+
+            <h2 class="mt-5"><i class="bi bi-rulers"></i> 程式碼風格</h2>
+            <p>我們力求保持程式碼庫的乾淨和一致。請在提交程式碼前：</p>
+            <ul>
+                <li>遵循 <strong>PEP 8</strong> 程式碼風格指南。</li>
+                <li>模仿現有模組的程式碼結構和命名約定。</li>
+                <li>為複雜的邏輯添加簡潔的註釋，解釋 *為什麼* 這樣做，而不是 *做什麼*。</li>
+                <li>確保您的程式碼在所有主要平台上都能良好運行。</li>
+            </ul>
+
+            <h2 class="mt-5"><i class="bi bi-git"></i> 提交您的貢獻</h2>
+            <p>我們使用 GitHub Flow。請遵循以下步驟來提交您的變更：</p>
+            <ol>
+                <li><strong>Fork</strong> 我們的儲存庫。</li>
+                <li>為您的變更創建一個新的 <strong>分支</strong> (<code>git checkout -b feature/your-new-feature</code>)。</li>
+                <li>進行您的變更並 <strong>Commit</strong>。請撰寫清晰的提交訊息。</li>
+                <li>將您的分支推送到您的 Fork (<code>git push origin feature/your-new-feature</code>)。</li>
+                <li>開啟一個 <strong>Pull Request</strong> 到我們的主分支。</li>
+            </ol>
+            <p>您的貢獻將被審查，我們可能會要求一些修改。一旦審查通過，您的變更將被合併。非常感謝您的努力！</p>
+
+        </div>
+    </div>
+
+    <footer class="py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">Copyright &copy; 2025 FlexiTools</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

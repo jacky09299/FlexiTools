@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexiTools - UML 架構圖</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --line-color: #666;
+            --box-bg: #2d2d2d; /* Fallback */
+            --box-border: #444;
+            --method-text: #dcdcdc;
+            --attribute-text: #b0b0b0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden; /* Prevent body scroll */
+        }
+
+        /* Adjust navbar for flex layout if needed, but fixed-top takes it out of flow.
+           We need to ensure the main content starts below the navbar.
+           Body padding-top in style.css is 56px, which handles this.
+        */
+
+        #main-content {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            overflow: hidden;
+            background-color: var(--background-color);
+        }
+
+        #sidebar {
+            width: 300px;
+            background-color: var(--surface-color);
+            border-right: 1px solid var(--box-border);
+            display: flex;
+            flex-direction: column;
+            z-index: 60; /* Above canvas */
+            transition: transform 0.3s ease;
+        }
+
+        #sidebar.collapsed {
+            transform: translateX(-300px);
+            margin-right: -300px;
+        }
+
+        #sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--box-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #sidebar-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .module-group {
+            margin-bottom: 15px;
+        }
+
+        .module-header {
+            padding: 5px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .module-header:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .module-classes {
+            margin-left: 25px;
+            display: block;
+        }
+
+        .module-classes.hidden-list {
+            display: none;
+        }
+
+        .class-item {
+            display: flex;
+            align-items: center;
+            padding: 3px 0;
+            font-size: 0.9em;
+            color: var(--muted-text-color);
+        }
+
+        .class-item:hover {
+            color: var(--text-color);
+        }
+
+        .form-check-input {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        #sidebar-toggle {
+            position: absolute;
+            top: 15px;
+            left: 315px;
+            z-index: 70;
+            transition: left 0.3s ease;
+        }
+
+        #sidebar.collapsed + #canvas-wrapper #sidebar-toggle {
+            left: 15px;
+        }
+
+        #canvas-wrapper {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow: hidden; /* JS handles panning */
+            cursor: grab;
+        }
+
+        #canvas-container.grabbing {
+            cursor: grabbing;
+        }
+
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: visible;
+        }
+
+        .uml-class {
+            position: absolute;
+            background-color: var(--surface-color);
+            border: 1px solid var(--box-border);
+            border-radius: 4px;
+            min-width: 200px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 1;
+            transition: box-shadow 0.2s, opacity 0.3s;
+            user-select: none;
+            color: var(--text-color);
+        }
+
+        .uml-class.hidden {
+            display: none;
+        }
+
+        .uml-class:hover {
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+            z-index: 10;
+            border-color: var(--primary-color);
+        }
+
+        .class-header {
+            background-color: rgba(0, 191, 255, 0.15); /* var(--primary-color) low opacity */
+            color: var(--primary-color);
+            padding: 8px;
+            font-weight: bold;
+            text-align: center;
+            border-top-left-radius: 3px;
+            border-top-right-radius: 3px;
+            border-bottom: 1px solid var(--box-border);
+            position: relative;
+        }
+
+        .toggle-node-btn {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            cursor: pointer;
+            font-size: 0.8em;
+            opacity: 0.6;
+            color: var(--text-color);
+        }
+
+        .toggle-node-btn:hover {
+            opacity: 1;
+            color: #ff6b6b;
+        }
+
+        .class-type {
+            font-size: 0.8em;
+            font-style: italic;
+            opacity: 0.8;
+            display: block;
+            font-weight: normal;
+            color: var(--muted-text-color);
+        }
+
+        .class-body {
+            padding: 8px;
+            font-size: 0.9em;
+        }
+
+        .section-title {
+            font-size: 0.75em;
+            color: var(--muted-text-color);
+            margin-top: 6px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #444;
+        }
+
+        .attribute {
+            color: var(--attribute-text);
+            font-family: 'Consolas', monospace;
+            margin-bottom: 2px;
+        }
+
+        .method {
+            color: var(--method-text);
+            font-family: 'Consolas', monospace;
+            margin-bottom: 2px;
+        }
+
+        /* SVG Connectors */
+        path {
+            fill: none;
+            stroke: var(--line-color);
+            stroke-width: 2;
+        }
+
+        .arrow-head {
+            fill: var(--line-color);
+        }
+
+        /* Controls */
+        #controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(5px);
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 100;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        #loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(18, 18, 18, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        footer {
+            margin-top: 0 !important;
+            z-index: 50; /* Above canvas if necessary */
+            background-color: var(--surface-color);
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">
+                <img src="logo.png" alt="FlexiTools Logo" width="36" height="36" class="d-inline-block align-text-top">
+                FlexiTools
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="index.html">首頁</a></li>
+                    <li class="nav-item"><a class="nav-link" href="tutorials.html">教學</a></li>
+                    <li class="nav-item"><a class="nav-link" href="download.html">下載</a></li>
+                    <li class="nav-item"><a class="nav-link" href="support.html">支援</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">關於我們</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div id="main-content">
+        <div id="sidebar">
+            <div id="sidebar-header">
+                <h5 class="m-0 text-light"><i class="bi bi-filter-square"></i> 類別篩選</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleSidebar()"><i class="bi bi-chevron-left"></i></button>
+            </div>
+            <div id="sidebar-content">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <div id="canvas-wrapper">
+            <button id="sidebar-toggle" class="btn btn-sm btn-outline-secondary" onclick="toggleSidebar()" style="display:none; position:absolute; top:15px; left:15px; z-index:101;"><i class="bi bi-list"></i></button>
+
+            <div id="loading-overlay">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h4 class="text-light">正在讀取架構圖資料...</h4>
+                <p class="text-muted mt-2">如果卡住，請確認您是透過伺服器開啟此網頁。</p>
+            </div>
+
+            <div id="controls">
+                <h5 class="mb-3 text-light"><i class="bi bi-diagram-3"></i> UML 控制面板</h5>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-sm btn-outline-light" onclick="resetView()"><i class="bi bi-arrows-fullscreen"></i> 重置視角</button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="layoutEngine.run()"><i class="bi bi-magic"></i> 重新排版</button>
+                </div>
+                <hr class="border-secondary my-3">
+                <div style="font-size: 0.85em; color: #aaa;">
+                    <div class="d-flex align-items-center mb-1">
+                        <span style="display:inline-block; width:20px; height:2px; background:#666; margin-right:5px;"></span>
+                        <span style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 10px solid #666; margin-bottom: -5px;"></span>
+                        <span class="ms-2">繼承 (Inheritance)</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-1">
+                        <span style="display:inline-block; width:20px; height:0; border-top:2px dashed #666; margin-right:5px;"></span>
+                        <span style="display:inline-block; width: 0; height: 0; border-top: 3px solid transparent; border-bottom: 3px solid transparent; border-left: 6px solid #666;"></span>
+                        <span class="ms-2">依賴 (Dependency)</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-1">
+                        <span style="display:inline-block; width:20px; height:2px; background:#666; margin-right:5px;"></span>
+                        <span style="display:inline-block; width:8px; height:8px; background:#2d2d2d; border:1px solid #666; transform:rotate(45deg); margin-right:5px;"></span>
+                        <span class="ms-2">聚合 (Aggregation)</span>
+                    </div>
+                     <div class="d-flex align-items-center">
+                        <span style="display:inline-block; width:20px; height:2px; background:#666; margin-right:5px;"></span>
+                        <span style="display:inline-block; width:8px; height:8px; background:#666; border:1px solid #666; transform:rotate(45deg); margin-right:5px;"></span>
+                        <span class="ms-2">組合 (Composition)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="canvas-container">
+                <svg id="connections"></svg>
+                <div id="nodes-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-3">
+        <div class="container text-center">
+            <p class="mb-0 small">Copyright &copy; 2025 FlexiTools</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- Configuration ---
+        const DATA_URL = 'uml_data.json';
+        const NODE_SPACING_X = 600; // Increased initial spacing
+        const NODE_SPACING_Y = 500;
+
+        // --- Helper Geometry ---
+        const Geometry = {
+            // Check if two line segments (p1-p2) and (p3-p4) intersect
+            lineIntersectsLine: function(p1, p2, p3, p4) {
+                const det = (p2.x - p1.x) * (p4.y - p3.y) - (p4.x - p3.x) * (p2.y - p1.y);
+                if (det === 0) return false; // Parallel
+                const lambda = ((p4.y - p3.y) * (p4.x - p1.x) + (p3.x - p4.x) * (p4.y - p1.y)) / det;
+                const gamma = ((p1.y - p2.y) * (p4.x - p1.x) + (p2.x - p1.x) * (p4.y - p1.y)) / det;
+                return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+            },
+
+            // Check if a line segment (p1-p2) intersects a rectangle (rect)
+            lineIntersectsRect: function(p1, p2, rect) {
+                // Check if either point is INSIDE the rect
+                if (p1.x > rect.x && p1.x < rect.x + rect.w && p1.y > rect.y && p1.y < rect.y + rect.h) return true;
+                if (p2.x > rect.x && p2.x < rect.x + rect.w && p2.y > rect.y && p2.y < rect.y + rect.h) return true;
+
+                // Check intersection with 4 edges
+                const tl = {x: rect.x, y: rect.y};
+                const tr = {x: rect.x + rect.w, y: rect.y};
+                const bl = {x: rect.x, y: rect.y + rect.h};
+                const br = {x: rect.x + rect.w, y: rect.y + rect.h};
+
+                return Geometry.lineIntersectsLine(p1, p2, tl, tr) ||
+                       Geometry.lineIntersectsLine(p1, p2, tr, br) ||
+                       Geometry.lineIntersectsLine(p1, p2, br, bl) ||
+                       Geometry.lineIntersectsLine(p1, p2, bl, tl);
+            },
+
+            // Check if two rectangles overlap
+            rectIntersectsRect: function(r1, r2) {
+                return !(r2.x >= r1.x + r1.w ||
+                         r2.x + r2.w <= r1.x ||
+                         r2.y >= r1.y + r1.h ||
+                         r2.y + r2.h <= r1.y);
+            },
+
+            // Find intersection point of a line from center of rect to 'targetPoint' with the rect's border
+            getBorderIntersection: function(center, rect, targetPoint) {
+                const dx = targetPoint.x - center.x;
+                const dy = targetPoint.y - center.y;
+
+                if (dx === 0 && dy === 0) return center;
+
+                // Try all 4 intersection times (positive only)
+                const times = [];
+
+                if (dx !== 0) {
+                   times.push((rect.x - center.x) / dx); // Left
+                   times.push((rect.x + rect.w - center.x) / dx); // Right
+                }
+                if (dy !== 0) {
+                   times.push((rect.y - center.y) / dy); // Top
+                   times.push((rect.y + rect.h - center.y) / dy); // Bottom
+                }
+
+                // We want the smallest positive t
+                const validT = times.filter(t => t > 0).sort((a,b) => a-b)[0] || 0;
+
+                return {
+                    x: center.x + validT * dx,
+                    y: center.y + validT * dy
+                };
+            }
+        };
+
+        // --- State ---
+        let state = {
+            classes: [],
+            relationships: [],
+            nodes: {}, // id -> data, x, y, w, h, visible
+            zoom: 1,
+            pan: { x: 0, y: 0 }
+        };
+
+        // --- Sidebar Logic ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('sidebar-toggle');
+            sidebar.classList.toggle('collapsed');
+            if (sidebar.classList.contains('collapsed')) {
+                toggleBtn.style.display = 'block';
+                // Wait for transition then show button properly
+                setTimeout(() => toggleBtn.style.left = '15px', 50);
+            } else {
+                toggleBtn.style.display = 'none';
+                toggleBtn.style.left = '315px';
+            }
+        }
+
+        function renderSidebar(classes) {
+            const container = document.getElementById('sidebar-content');
+            container.innerHTML = '';
+
+            // Group by file
+            const groups = {};
+            classes.forEach(cls => {
+                const file = cls.file || 'Unknown';
+                if (!groups[file]) groups[file] = [];
+                groups[file].push(cls);
+            });
+
+            // --- Global Filters ---
+            const filtersDiv = document.createElement('div');
+            filtersDiv.className = 'mb-3 pb-2 border-bottom border-secondary';
+
+            // Toggle Modules Folder
+            const btnToggleModules = document.createElement('button');
+            btnToggleModules.className = 'btn btn-sm btn-outline-info w-100 mb-1';
+            btnToggleModules.innerHTML = '<i class="bi bi-folder-x"></i> 隱藏/顯示 modules 資料夾';
+            btnToggleModules.onclick = () => {
+                const isAnyVisible = Object.keys(groups)
+                    .filter(f => f.startsWith('modules/'))
+                    .some(f => groups[f].some(c => state.nodes[c.id].visible));
+
+                const newState = !isAnyVisible;
+
+                Object.keys(groups).forEach(file => {
+                    if (file.startsWith('modules/')) {
+                        // Toggle Group Checkbox
+                        const groupCheck = document.getElementById(`group-check-${file}`); // Need to add ID to group check
+                        if (groupCheck) groupCheck.checked = newState;
+
+                        groups[file].forEach(cls => toggleNode(cls.id, newState));
+                    }
+                });
+            };
+            filtersDiv.appendChild(btnToggleModules);
+            container.appendChild(filtersDiv);
+
+            // Sort files
+            const sortedFiles = Object.keys(groups).sort();
+
+            sortedFiles.forEach(file => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'module-group';
+
+                // Header
+                const header = document.createElement('div');
+                header.className = 'module-header';
+                header.onclick = (e) => {
+                    // Don't toggle list if clicking checkbox
+                    if(e.target.type !== 'checkbox') {
+                         const list = groupDiv.querySelector('.module-classes');
+                         list.classList.toggle('hidden-list');
+                         const icon = header.querySelector('.toggle-icon');
+                         icon.className = list.classList.contains('hidden-list') ? 'bi bi-chevron-right toggle-icon' : 'bi bi-chevron-down toggle-icon';
+                    }
+                };
+
+                // Group Checkbox
+                const check = document.createElement('input');
+                check.type = 'checkbox';
+                check.className = 'form-check-input';
+                check.checked = true;
+                check.id = `group-check-${file}`;
+                check.onclick = (e) => {
+                    const isChecked = e.target.checked;
+                    groups[file].forEach(cls => toggleNode(cls.id, isChecked));
+                };
+
+                // Label
+                const label = document.createElement('span');
+                label.className = 'ms-2 text-light small text-truncate';
+                label.innerText = file;
+                label.title = file;
+                label.style.flexGrow = 1;
+
+                // Icon
+                const icon = document.createElement('i');
+                icon.className = 'bi bi-chevron-down toggle-icon ms-2 text-secondary';
+                icon.style.fontSize = '0.8em';
+
+                header.appendChild(check);
+                header.appendChild(label);
+                header.appendChild(icon);
+                groupDiv.appendChild(header);
+
+                // List
+                const list = document.createElement('div');
+                list.className = 'module-classes';
+
+                groups[file].forEach(cls => {
+                    const item = document.createElement('div');
+                    item.className = 'class-item';
+
+                    const itemCheck = document.createElement('input');
+                    itemCheck.type = 'checkbox';
+                    itemCheck.className = 'form-check-input';
+                    itemCheck.checked = true;
+                    itemCheck.id = `check-${cls.id}`;
+                    itemCheck.onclick = (e) => toggleNode(cls.id, e.target.checked);
+
+                    const itemLabel = document.createElement('label');
+                    itemLabel.className = 'text-truncate cursor-pointer';
+                    itemLabel.htmlFor = `check-${cls.id}`;
+                    itemLabel.innerText = cls.name;
+                    itemLabel.title = cls.name;
+                    itemLabel.style.cursor = 'pointer';
+
+                    item.appendChild(itemCheck);
+                    item.appendChild(itemLabel);
+                    list.appendChild(item);
+                });
+
+                groupDiv.appendChild(list);
+                container.appendChild(groupDiv);
+            });
+        }
+
+        function toggleNode(nodeId, isVisible) {
+            if (!state.nodes[nodeId]) return;
+            state.nodes[nodeId].visible = isVisible;
+
+            // Update Sidebar Checkbox
+            const check = document.getElementById(`check-${nodeId}`);
+            if (check) check.checked = isVisible;
+
+            // Update DOM
+            const el = document.getElementById(`node-${nodeId}`);
+            if (el) {
+                if (isVisible) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            }
+
+            // Update Connections Visibility (by re-drawing or just hiding)
+            // Re-drawing is safer to ensure paths are removed
+            layoutEngine.drawConnections(state.nodes);
+        }
+
+        // --- Layout Engine ---
+        const layoutEngine = {
+            run: async function() {
+                // Filter visible nodes only for layout
+                const visibleNodes = Object.values(state.nodes).filter(n => n.visible);
+
+                // We need to treat "classes" as the list of visible classes for initial layout
+                // But initialLayout resets everything.
+                // If we want to keep positions of visible nodes and just re-optimize...
+                // The user said: "Re-layout will use displayed ones".
+
+                // Let's extract the visible subset
+                const visibleClasses = visibleNodes.map(n => n.data);
+                const visibleIds = new Set(visibleClasses.map(c => c.id));
+
+                // Filter relationships where both ends are visible
+                const visibleRels = state.relationships.filter(r => visibleIds.has(r.source) && visibleIds.has(r.target));
+
+                // 1. Initial Layered Layout (Start Point for visible nodes)
+                // Note: This resets positions. If we want to keep existing positions as starting point,
+                // we should skip this or make it optional. But "Re-layout" usually implies full reset.
+                this.initialLayeredLayout(visibleClasses, visibleRels);
+
+                // 2. Get Dimensions (only for visible)
+                this.updateNodeDimensions();
+
+                // 3. Optimize Layout
+                await this.optimizeLayout(1500, visibleNodes, visibleRels);
+
+                // 4. Render
+                this.applyPositions(state.nodes); // Apply to all (hidden ones won't change much or matter)
+                this.drawConnections(state.nodes);
+            },
+
+            initialLayeredLayout: function(classes, relationships) {
+                // Only affect passed (visible) classes
+                // We need to update state.nodes[id].x/y/rank
+
+                // Reset ranks for these nodes
+                const nodesMap = {};
+                classes.forEach(cls => {
+                    if(state.nodes[cls.id]) {
+                        state.nodes[cls.id].rank = -1;
+                        nodesMap[cls.id] = state.nodes[cls.id];
+                    }
+                });
+
+                // Assign Ranks based on inheritance
+                const visited = new Set();
+                function assignRank(nodeId, currentRank) {
+                    if (visited.has(nodeId + "_" + currentRank)) return;
+                    visited.add(nodeId + "_" + currentRank);
+                    const node = nodesMap[nodeId];
+                    if (!node) return;
+                    if (currentRank > node.rank) node.rank = currentRank;
+
+                    relationships.forEach(rel => {
+                        if (rel.target === nodeId && rel.type === 'inheritance') {
+                            assignRank(rel.source, currentRank + 1);
+                        }
+                    });
+                }
+
+                // Find roots
+                const potentialRoots = new Set();
+                classes.forEach(cls => {
+                    let isSubclass = false;
+                    relationships.forEach(rel => {
+                        if(rel.source === cls.id && rel.type === 'inheritance') isSubclass = true;
+                    });
+                    if (!isSubclass) potentialRoots.add(cls.id);
+                });
+                potentialRoots.forEach(id => assignRank(id, 0));
+                Object.values(nodesMap).forEach(n => { if(n.rank === -1) n.rank = 1; });
+
+                // Initial grid position
+                const ranks = {};
+                let maxRank = 0;
+                Object.values(nodesMap).forEach(n => {
+                    if(!ranks[n.rank]) ranks[n.rank] = [];
+                    ranks[n.rank].push(n);
+                    maxRank = Math.max(maxRank, n.rank);
+                });
+
+                for(let r=0; r<=maxRank; r++) {
+                    if(!ranks[r]) continue;
+                    const row = ranks[r];
+                    const width = row.length * NODE_SPACING_X;
+                    const startX = -width/2;
+                    row.forEach((n, i) => {
+                        n.x = startX + i * NODE_SPACING_X;
+                        n.y = 50 + r * NODE_SPACING_Y;
+                    });
+                }
+            },
+
+            updateNodeDimensions: function() {
+                Object.values(state.nodes).forEach(node => {
+                    const el = document.getElementById(`node-${node.id}`);
+                    if (el) {
+                        node.w = el.offsetWidth;
+                        node.h = el.offsetHeight;
+                    }
+                });
+            },
+
+            // Simulated Annealing Optimization
+            optimizeLayout: async function(iterations, nodes, rels) {
+                // nodes and rels are the visible subset
+                let temp = 1000.0; // Higher initial temperature
+                const coolingRate = 0.99; // Slower cooling
+
+                if (nodes.length === 0) return;
+
+                for (let i = 0; i < iterations; i++) {
+                    // Pick a random node
+                    const node = nodes[Math.floor(Math.random() * nodes.length)];
+
+                    // Save current pos
+                    const oldX = node.x;
+                    const oldY = node.y;
+                    const oldCost = this.calculateCost(nodes, rels);
+
+                    // Propose move
+                    const angle = Math.random() * Math.PI * 2;
+                    // Move distance scales with temp
+                    const dist = Math.random() * temp;
+
+                    node.x += Math.cos(angle) * dist;
+                    node.y += Math.sin(angle) * dist;
+
+                    const newCost = this.calculateCost(nodes, rels);
+
+                    // Metropolis Acceptance Criterion
+                    if (newCost < oldCost) {
+                        // Accept improvement
+                    } else {
+                        // Accept degradation with probability e^(-delta / temp)
+                        const delta = newCost - oldCost;
+                        const prob = Math.exp(-delta / temp);
+                        if (Math.random() < prob) {
+                            // Accept worse state to escape local minima
+                        } else {
+                            // Revert
+                            node.x = oldX;
+                            node.y = oldY;
+                        }
+                    }
+
+                    temp *= coolingRate;
+                    // if (temp < 1) temp = 500; // Optional Re-heating if we were doing multiple passes
+                }
+            },
+
+            calculateCost: function(nodes, rels) {
+                let cost = 0;
+                const BOX_PADDING = 50; // Increased padding
+
+                // 1. Node Overlaps (Super Expensive)
+                for (let i = 0; i < nodes.length; i++) {
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const n1 = nodes[i];
+                        const n2 = nodes[j];
+                        // AABB Check
+                        // n.x/y are top-left? No, in applyPositions: style.left = node.x
+                        // But in initialLayout calculation: x is center-ish?
+                        // Wait, initialLayout: n.x = startX + i * SPACING.
+                        // applyPositions: left = n.x.
+                        // So n.x is LEFT coordinate.
+                        // Center logic in lines code: x + w/2.
+                        // Overlap check:
+                        // Rect1: [x, x+w], [y, y+h]
+
+                        const overlapX = (n1.x < n2.x + n2.w + BOX_PADDING) && (n1.x + n1.w + BOX_PADDING > n2.x);
+                        const overlapY = (n1.y < n2.y + n2.h + BOX_PADDING) && (n1.y + n1.h + BOX_PADDING > n2.y);
+
+                        if (overlapX && overlapY) {
+                            // Cost proportional to overlap depth to provide gradient
+                            cost += 1000000;
+                        }
+                    }
+                }
+
+                // Calculate Virtual Lines for all relationships
+                const lines = rels.map(rel => {
+                    const s = state.nodes[rel.source];
+                    const t = state.nodes[rel.target];
+                    if (!s || !t) return null;
+
+                    // Centers
+                    const c1 = { x: s.x + s.w/2, y: s.y + s.h/2 };
+                    const c2 = { x: t.x + t.w/2, y: t.y + t.h/2 };
+
+                    // Virtual Line Endpoints (on borders)
+                    // Simplified Rect for geometry: {x, y, w, h}
+                    // Note: node.x/y are Top-Left coordinates in DOM logic?
+                    // Wait, in initialLayout: n.x = startX.
+                    // In applyPositions: left = node.x.
+                    // So node.x is Left, node.y is Top.
+
+                    const r1 = {x: s.x, y: s.y, w: s.w, h: s.h};
+                    const r2 = {x: t.x, y: t.y, w: t.w, h: t.h};
+
+                    const pStart = Geometry.getBorderIntersection(c1, r1, c2);
+                    const pEnd = Geometry.getBorderIntersection(c2, r2, c1);
+
+                    return { p1: pStart, p2: pEnd, source: s.id, target: t.id };
+                }).filter(l => l !== null);
+
+                // 2. Virtual Line Intersects Node (Expensive)
+                lines.forEach(line => {
+                    nodes.forEach(node => {
+                        if (node.id === line.source || node.id === line.target) return; // Ignore self
+
+                        const rect = {x: node.x - 10, y: node.y - 10, w: node.w + 20, h: node.h + 20}; // Padding
+                        if (Geometry.lineIntersectsRect(line.p1, line.p2, rect)) {
+                            cost += 10000;
+                        }
+                    });
+                });
+
+                // 3. Virtual Line Intersects Virtual Line (Medium-Expensive)
+                for (let i = 0; i < lines.length; i++) {
+                    for (let j = i + 1; j < lines.length; j++) {
+                        const l1 = lines[i];
+                        const l2 = lines[j];
+                        // Check if they share a node (connected lines naturally touch at the node)
+                        if (l1.source === l2.source || l1.source === l2.target ||
+                            l1.target === l2.source || l1.target === l2.target) continue;
+
+                        if (Geometry.lineIntersectsLine(l1.p1, l1.p2, l2.p1, l2.p2)) {
+                            cost += 20000; // Increased penalty
+                        }
+                    }
+                }
+
+                // 4. Hierarchy Violation (Soft constraint)
+                rels.forEach(rel => {
+                    if (rel.type === 'inheritance') {
+                        const child = state.nodes[rel.source];
+                        const parent = state.nodes[rel.target];
+                        if (child && parent) {
+                            if (child.y < parent.y + 50) {
+                                cost += 2000; // Increased penalty
+                            }
+                        }
+                    }
+                });
+
+                // 5. Edge Length (Keep it compact, but less important than overlap)
+                lines.forEach(line => {
+                    const dx = line.p1.x - line.p2.x;
+                    const dy = line.p1.y - line.p2.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    cost += dist * 0.1; // Reduced weight to allow spreading
+                });
+
+                // 6. Center Gravity (Keep nodes near center to prevent explosion)
+                nodes.forEach(n => {
+                    const dist = Math.sqrt(n.x*n.x + n.y*n.y);
+                    cost += dist * 0.05;
+                });
+
+                return cost;
+            },
+
+            applyPositions: function(nodes) {
+                Object.values(nodes).forEach(node => {
+                    const el = document.getElementById(`node-${node.id}`);
+                    if (el) {
+                        el.style.left = node.x + 'px';
+                        el.style.top = node.y + 'px';
+                    }
+                });
+            },
+
+            drawConnections: function(nodes) {
+                const svg = document.getElementById('connections');
+                svg.innerHTML = ''; // Clear
+
+                // Re-define markers (since we cleared innerHTML)
+                const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+
+                const createMarker = (id, d, fill="#666", stroke="#666", refX=10) => {
+                    const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+                    marker.setAttribute("id", id);
+                    marker.setAttribute("markerWidth", "14");
+                    marker.setAttribute("markerHeight", "14");
+                    marker.setAttribute("refX", refX);
+                    marker.setAttribute("refY", "7");
+                    marker.setAttribute("orient", "auto");
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("d", d);
+                    path.setAttribute("fill", fill);
+                    path.setAttribute("stroke", stroke);
+                    marker.appendChild(path);
+                    defs.appendChild(marker);
+                };
+
+                // 1. Inheritance (Empty Triangle) - Target
+                createMarker("triangle", "M0,1 L12,7 L0,13 Z", "#2d2d2d", "#666", 12);
+
+                // 2. Association / Dependency (Open Arrow) - Target
+                createMarker("arrow-open", "M0,1 L12,7 L0,13", "none", "#666", 12);
+
+                // 3. Composition (Filled Diamond) - Source
+                // Note: For marker-start, the orientation is reversed relative to the line?
+                // "orient=auto" rotates it.
+                // We need the diamond centered.
+                createMarker("diamond-filled", "M0,7 L7,0 L14,7 L7,14 Z", "#666", "#666", 0);
+
+                // 4. Aggregation (Empty Diamond) - Source
+                createMarker("diamond-empty", "M0,7 L7,0 L14,7 L7,14 Z", "#2d2d2d", "#666", 0);
+
+                svg.appendChild(defs);
+
+                state.relationships.forEach(rel => {
+                    const src = nodes[rel.source];
+                    const tgt = nodes[rel.target];
+                    if (!src || !tgt) return;
+
+                    // Visibility Check
+                    if (!src.visible || !tgt.visible) return;
+
+                    const srcEl = document.getElementById(`node-${rel.source}`);
+                    const tgtEl = document.getElementById(`node-${rel.target}`);
+
+                    // Centers for connection logic
+                    const c1 = { x: src.x + src.w/2, y: src.y + src.h/2 };
+                    const c2 = { x: tgt.x + tgt.w/2, y: tgt.y + tgt.h/2 };
+
+                    // Calculate border intersection points for visual drawing
+                    const pStart = Geometry.getBorderIntersection(c1, {x:src.x, y:src.y, w:src.w, h:src.h}, c2);
+                    const pEnd = Geometry.getBorderIntersection(c2, {x:tgt.x, y:tgt.y, w:tgt.w, h:tgt.h}, c1);
+
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+                    // Draw Curve
+                    // If straight line is clear (which optimization tries to enforce),
+                    // we can just draw a slight curve or even a straight line.
+                    // But the user likes curved arrows.
+                    // Let's make the curve control points perpendicular to the virtual line
+                    // to give it a nice arc, but check if that arc intersects anything?
+                    // User said: "Arrow is original drawing method".
+                    // Original method was based on Side-to-Side or Top-to-Bottom.
+                    // Let's adapt original method to use the dynamic positions.
+
+                    let d = "";
+                    // Calculate control points
+                    const dx = pEnd.x - pStart.x;
+                    const dy = pEnd.y - pStart.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+
+                    // Simple quadratic bezier or cubic
+                    // A simple curve: Offset the midpoint
+                    // const midX = (pStart.x + pEnd.x) / 2;
+                    // const midY = (pStart.y + pEnd.y) / 2;
+                    // Perpendicular vector (-dy, dx)
+
+                    // Let's stick to a standard cubic bezier that flows naturally
+                    // If mainly vertical (Inheritance)
+                    if (rel.type === 'inheritance') {
+                        // Curve out from top/bottom?
+                        // Actually pStart/pEnd are on the border closest to the other node.
+                        // So if they are vertical, pStart is likely Bottom/Top.
+                        // Control points: extend vertically from start/end
+                        d = `M ${pStart.x} ${pStart.y} C ${pStart.x} ${pStart.y - 50}, ${pEnd.x} ${pEnd.y + 50}, ${pEnd.x} ${pEnd.y}`;
+                        // This logic assumes pStart is TOP and pEnd is BOTTOM of their respective nodes?
+                        // No, pStart is just "on the border".
+                        // If pStart is below pEnd, this C curve might loop weirdly.
+                        // Better approach: C P1 P2
+                        // P1 = pStart + (direction away from center) * scale
+                        // P2 = pEnd + (direction away from center) * scale
+
+                        // To keep it simple and robust:
+                        // Just use the virtual line approach but with a slight curve?
+                        // Or restore the logic: Source Center -> Target Center
+                        // But use the calculated border points.
+
+                        // Let's try to match the original aesthetic:
+                        // Original: M start C start_control end_control end
+                        // Let's just use a generic curved path between the two border points.
+                         d = `M ${pStart.x} ${pStart.y} Q ${(pStart.x+pEnd.x)/2} ${(pStart.y+pEnd.y)/2}, ${pEnd.x} ${pEnd.y}`;
+                         // Wait, Q with midpoint is a straight line.
+                         // Let's offset the control point.
+                         const offset = 20;
+                         d = `M ${pStart.x} ${pStart.y} Q ${(pStart.x+pEnd.x)/2 + offset} ${(pStart.y+pEnd.y)/2}, ${pEnd.x} ${pEnd.y}`;
+                    } else {
+                        // Association
+                         const offset = 30;
+                         d = `M ${pStart.x} ${pStart.y} Q ${(pStart.x+pEnd.x)/2} ${(pStart.y+pEnd.y)/2 - offset}, ${pEnd.x} ${pEnd.y}`;
+                    }
+
+                    // Reverting to user request: "Arrow remains original drawing method"
+                    // Original method used fixed logic:
+                    // Inheritance: Top of Child -> Bottom of Parent
+                    // Association: Right of Source -> Left of Target
+                    // BUT, since nodes move freely now, "Top of Child" might not be facing "Bottom of Parent".
+                    // So "Original Drawing Method" implies "Curved lines", not necessarily "Fixed attachment points".
+                    // The "Virtual Line" logic determines *positions*.
+                    // I will implement a robust curve between the dynamic border points.
+
+                    // Let's make a nice S-curve or Arc.
+                    const cx1 = pStart.x + (pEnd.x - pStart.x) * 0.25; // 25% along x
+                    const cy1 = pStart.y; // Horizontal out?
+                    const cx2 = pEnd.x - (pEnd.x - pStart.x) * 0.25;
+                    const cy2 = pEnd.y;
+
+                    // If we want to emulate the previous logic which had specific exit sides:
+                    // We can determine which side of the rect the intersection point is on.
+                    // (Top, Bottom, Left, Right)
+                    // And extend the control point out from that normal.
+
+                    const getNormal = (pt, rect) => {
+                        const buffer = 2;
+                        if (Math.abs(pt.y - rect.y) < buffer) return {x:0, y:-1}; // Top
+                        if (Math.abs(pt.y - (rect.y+rect.h)) < buffer) return {x:0, y:1}; // Bottom
+                        if (Math.abs(pt.x - rect.x) < buffer) return {x:-1, y:0}; // Left
+                        if (Math.abs(pt.x - (rect.x+rect.w)) < buffer) return {x:1, y:0}; // Right
+                        return {x:0, y:0};
+                    };
+
+                    const n1 = getNormal(pStart, {x:src.x, y:src.y, w:src.w, h:src.h});
+                    const n2 = getNormal(pEnd, {x:tgt.x, y:tgt.y, w:tgt.w, h:tgt.h});
+
+                    const cpDist = 60;
+                    const cp1 = { x: pStart.x + n1.x * cpDist, y: pStart.y + n1.y * cpDist };
+                    const cp2 = { x: pEnd.x + n2.x * cpDist, y: pEnd.y + n2.y * cpDist };
+
+                    d = `M ${pStart.x} ${pStart.y} C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${pEnd.x} ${pEnd.y}`;
+
+                    path.setAttribute("d", d);
+
+                    if (rel.type === 'inheritance') {
+                        path.setAttribute("marker-end", "url(#triangle)");
+                    } else if (rel.type === 'composition') {
+                        path.setAttribute("marker-start", "url(#diamond-filled)");
+                        // Start point should be adjusted so marker doesn't overlap node?
+                        // SVG markers usually handle this if refX is correct.
+                        // We set refX=0 for start marker, so it attaches at the very beginning of the line.
+                    } else if (rel.type === 'aggregation') {
+                        path.setAttribute("marker-start", "url(#diamond-empty)");
+                    } else if (rel.type === 'dependency') {
+                        path.setAttribute("marker-end", "url(#arrow-open)");
+                        path.setAttribute("stroke-dasharray", "5,5");
+                    } else {
+                        // Association or others
+                        path.setAttribute("marker-end", "url(#arrow-open)");
+                    }
+
+                    svg.appendChild(path);
+                });
+            }
+        };
+
+        // --- View Logic (Pan/Zoom with Transform) ---
+        const container = document.getElementById('canvas-container');
+        const nodesContainer = document.getElementById('nodes-container');
+        const svg = document.getElementById('connections');
+
+        // Create a wrapper for content to transform
+        const contentWrapper = document.createElement('div');
+        contentWrapper.id = 'content-wrapper';
+        contentWrapper.style.transformOrigin = '0 0';
+        contentWrapper.style.position = 'absolute';
+        contentWrapper.style.top = '0';
+        contentWrapper.style.left = '0';
+        contentWrapper.style.width = '100%'; // Will expand
+        contentWrapper.style.height = '100%';
+
+        // Move nodes and svg into wrapper
+        container.appendChild(contentWrapper);
+        contentWrapper.appendChild(svg);
+        contentWrapper.appendChild(nodesContainer);
+
+        let isDragging = false;
+        let lastMouse = { x: 0, y: 0 };
+        let transform = { x: 0, y: 0, k: 1 };
+
+        function updateTransform() {
+            contentWrapper.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`;
+        }
+
+        container.addEventListener('mousedown', e => {
+            if(e.target === container || e.target === contentWrapper || e.target.tagName === 'svg') {
+                isDragging = true;
+                lastMouse = { x: e.clientX, y: e.clientY };
+                container.classList.add('grabbing');
+            }
+        });
+
+        window.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const dx = e.clientX - lastMouse.x;
+            const dy = e.clientY - lastMouse.y;
+            lastMouse = { x: e.clientX, y: e.clientY };
+
+            transform.x += dx;
+            transform.y += dy;
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            container.classList.remove('grabbing');
+        });
+
+        container.addEventListener('wheel', e => {
+            e.preventDefault();
+            const zoomSensitivity = 0.001;
+            const newK = transform.k - (e.deltaY * zoomSensitivity);
+
+            // Limit zoom
+            if (newK < 0.1 || newK > 5) return;
+
+            // Zoom towards mouse pointer
+            // 1. Get mouse pos relative to container
+            const rect = container.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // 2. Calculate world coordinates of mouse
+            const worldX = (mouseX - transform.x) / transform.k;
+            const worldY = (mouseY - transform.y) / transform.k;
+
+            // 3. Update Scale
+            transform.k = newK;
+
+            // 4. Update Translate to keep worldX, worldY under mouse
+            transform.x = mouseX - worldX * transform.k;
+            transform.y = mouseY - worldY * transform.k;
+
+            updateTransform();
+        }, { passive: false });
+
+        function resetView() {
+            transform = { x: container.clientWidth / 2, y: 50, k: 1 };
+            updateTransform();
+        }
+
+        // --- Render HTML Nodes ---
+        function renderNodes(classes) {
+            const container = document.getElementById('nodes-container');
+            container.innerHTML = '';
+
+            classes.forEach(cls => {
+                const el = document.createElement('div');
+                el.className = 'uml-class';
+                el.id = `node-${cls.id}`;
+
+                let html = `
+                    <div class="class-header">
+                        <span class="class-name">${cls.name}</span>
+                        <span class="class-type">&laquo;${cls.type}&raquo;</span>
+                        <i class="bi bi-eye-slash toggle-node-btn" title="Hide this class" onclick="toggleNode('${cls.id}', false); event.stopPropagation();"></i>
+                    </div>
+                    <div class="class-body">
+                `;
+
+                if (cls.attributes && cls.attributes.length > 0) {
+                    html += `<div class="section-title">Attributes</div>`;
+                    cls.attributes.forEach(attr => {
+                        html += `<div class="attribute">- ${attr}</div>`;
+                    });
+                    html += `<hr style="border:0; border-top:1px solid #444; margin: 4px 0;">`;
+                }
+
+                if (cls.methods && cls.methods.length > 0) {
+                    html += `<div class="section-title">Methods</div>`;
+                    cls.methods.forEach(method => {
+                        html += `<div class="method">+ ${method}()</div>`;
+                    });
+                }
+
+                html += `</div>`;
+                el.innerHTML = html;
+
+                // Draggable Logic for individual nodes
+                makeNodeDraggable(el);
+
+                container.appendChild(el);
+            });
+        }
+
+        function makeNodeDraggable(el) {
+            let startX, startY;
+            const header = el.querySelector('.class-header');
+
+            header.addEventListener('mousedown', e => {
+                e.stopPropagation();
+                startX = e.clientX;
+                startY = e.clientY;
+
+                const nodeId = el.id.replace('node-', '');
+                const node = state.nodes[nodeId];
+                const startNodeX = node.x;
+                const startNodeY = node.y;
+
+                function onMove(e) {
+                    // Calculate delta in world coordinates (divide by zoom)
+                    const dx = (e.clientX - startX) / transform.k;
+                    const dy = (e.clientY - startY) / transform.k;
+
+                    node.x = startNodeX + dx;
+                    node.y = startNodeY + dy;
+
+                    layoutEngine.applyPositions(state.nodes); // Update DOM
+                    layoutEngine.drawConnections(state.nodes); // Redraw lines
+                }
+
+                function onUp() {
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('mouseup', onUp);
+                }
+
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('mouseup', onUp);
+            });
+        }
+
+        // --- Initialization ---
+        async function init() {
+            try {
+                const response = await fetch(DATA_URL);
+                if (!response.ok) throw new Error("HTTP Error " + response.status);
+                const data = await response.json();
+
+                state.classes = data.classes;
+                state.relationships = data.relationships;
+
+                // Initialize Nodes State
+                state.nodes = {};
+                state.classes.forEach(cls => {
+                    state.nodes[cls.id] = {
+                        id: cls.id,
+                        data: cls,
+                        x: 0, y: 0, w: 220, h: 100,
+                        visible: true,
+                        rank: -1
+                    };
+                });
+
+                document.getElementById('loading-overlay').style.display = 'none';
+
+                renderNodes(state.classes);
+                renderSidebar(state.classes);
+
+                // Wait for DOM render to get sizes
+                setTimeout(() => {
+                    layoutEngine.run();
+                    resetView();
+                }, 100);
+
+            } catch (e) {
+                console.error(e);
+                const overlay = document.getElementById('loading-overlay');
+                overlay.innerHTML = `<h3 class="text-danger">讀取失敗</h3><p class="text-light">${e.message}</p>`;
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

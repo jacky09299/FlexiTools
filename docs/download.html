@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexiTools - 下載</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">
+                <img src="logo.png" alt="FlexiTools Logo" width="36" height="36" class="d-inline-block align-text-top">
+                FlexiTools
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="index.html">首頁</a></li>
+                    <li class="nav-item"><a class="nav-link" href="tutorials.html">教學</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="download.html">下載</a></li>
+                    <li class="nav-item"><a class="nav-link" href="support.html">支援</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">關於我們</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5 py-5">
+        <div class="text-center mb-5" data-aos="fade-down">
+            <h1 class="page-title">下載 FlexiTools</h1>
+            <p class="text-muted col-lg-8 mx-auto">選擇您需要的版本進行下載。建議始終使用最新版本以獲得最佳體驗和最新的功能。</p>
+        </div>
+
+        <div class="row justify-content-center">
+            <!-- System Requirements Side Panel -->
+            <div class="col-lg-4 mb-4" data-aos="fade-right">
+                <div class="card glass-card h-100">
+                    <div class="card-body">
+                        <h4 class="card-title mb-4 text-white"><i class="bi bi-pc-display-horizontal me-2"></i>系統需求</h4>
+                        <ul class="list-unstyled text-muted">
+                            <li class="mb-3">
+                                <strong class="text-light d-block">作業系統</strong>
+                                Windows 10 (64-bit) 或更新版本
+                            </li>
+                            <li class="mb-3">
+                                <strong class="text-light d-block">處理器</strong>
+                                Intel Core i3 或同級 AMD 處理器
+                            </li>
+                            <li class="mb-3">
+                                <strong class="text-light d-block">記憶體</strong>
+                                建議 4GB RAM 或以上
+                            </li>
+                            <li class="mb-3">
+                                <strong class="text-light d-block">硬碟空間</strong>
+                                至少 500MB 可用空間
+                            </li>
+                        </ul>
+                        <div class="alert alert-info mt-4" role="alert">
+                            <i class="bi bi-info-circle me-2"></i> Linux 與 macOS 版本目前正在開發中。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Version List -->
+            <div class="col-lg-8">
+                <div class="list-group" id="version-list">
+                    <!-- JS will inject version items here -->
+                    <div class="text-center py-5 text-muted">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">正在載入版本資訊...</p>
+                    </div>
+                </div>
+                <div class="text-center mt-4" data-aos="fade-up">
+                    <a href="https://github.com/jacky09299/FlexiTools/releases" class="btn btn-outline-primary" target="_blank">
+                        <i class="bi bi-github me-1"></i> 查看所有歷史版本
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">Copyright &copy; 2025 FlexiTools</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            once: true,
+            offset: 50,
+            duration: 600,
+        });
+
+        fetch('versions.json')
+        .then(res => res.json())
+        .then(versions => {
+            const list = document.getElementById('version-list');
+            list.innerHTML = ''; // Clear loading spinner
+
+            versions.forEach((v, idx) => {
+                const isLatest = idx === 0;
+                const hasChangelog = v.changelog && v.changelog.length > 0;
+                const collapseId = `collapse-${idx}`;
+                const li = document.createElement('div'); // Changed to div for animation wrapper
+
+                // AOS animation delay staggering
+                li.setAttribute('data-aos', 'fade-left');
+                li.setAttribute('data-aos-delay', idx * 100);
+
+                li.className = 'list-group-item mb-3 rounded' + (isLatest ? ' list-group-item-success' : '');
+                if (!isLatest) li.style.borderLeft = '5px solid #444'; // Visual distinction for older versions
+
+                let changelogHtml = '';
+                let toggleButton = '';
+
+                if (hasChangelog) {
+                    const listItems = v.changelog.map(item => `<li>${item}</li>`).join('');
+                    changelogHtml = `
+                        <div class="collapse mt-3" id="${collapseId}">
+                            <div class="card card-body bg-transparent border-secondary p-3">
+                                <h6 class="text-muted mb-2">更新內容：</h6>
+                                <ul class="mb-0 ps-3 text-light">
+                                    ${listItems}
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                    toggleButton = `
+                        <button class="btn btn-link btn-sm text-decoration-none ms-2 collapse-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}" style="color: var(--primary-color);">
+                            <i class="bi bi-chevron-down"></i> 顯示詳情
+                        </button>
+                    `;
+                }
+
+                li.innerHTML = `
+                    <div class="d-flex w-100 justify-content-between align-items-center flex-wrap gap-3">
+                        <div>
+                            <div class="d-flex align-items-center flex-wrap">
+                                <h4 class="mb-1 me-2 text-white">${v.version}</h4>
+                                ${isLatest ? '<span class="badge bg-primary ms-2">Latest</span>' : '<span class="badge bg-secondary ms-2">Old</span>'}
+                                ${toggleButton}
+                            </div>
+                            <p class="mb-0 text-muted small"><i class="bi bi-clock me-1"></i>發佈於 ${v.date}</p>
+                        </div>
+                        <div class="text-end">
+                            <a href="https://github.com/jacky09299/FlexiTools/releases/download/${v.version}/FlexiToolsInstaller.exe" class="btn btn-success shadow-sm">
+                                <i class="bi bi-download me-1"></i> 下載安裝檔
+                            </a>
+                        </div>
+                    </div>
+                    ${changelogHtml}
+                `;
+                list.appendChild(li);
+            });
+        })
+        .catch(err => {
+             const list = document.getElementById('version-list');
+             list.innerHTML = `<div class="alert alert-danger">無法載入版本資訊: ${err.message}</div>`;
+        });
+    </script>
+</body>
+</html>
