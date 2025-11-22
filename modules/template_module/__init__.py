@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from main import Module
 
+__version__ = "1.2.0"
+
 class TemplateModule(Module):
     def __init__(self, master, shared_state, module_name="Template", gui_manager=None):
         super().__init__(master, shared_state, module_name, gui_manager)
@@ -28,6 +30,9 @@ class TemplateModule(Module):
 
         self.action_button = ttk.Button(main_frame, text="", command=self.show_message)
         self.action_button.pack(pady=10)
+
+        # Version label
+        ttk.Label(main_frame, text=f"v{__version__}").pack(side=tk.BOTTOM, anchor=tk.SE)
 
     def update_language(self):
         """
