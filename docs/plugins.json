@@ -1,0 +1,204 @@
+{
+  "plugins": [
+    {
+      "name": "py_gui_runner",
+      "version": "1.0.0",
+      "title": "Py Gui Runner",
+      "description": "The py_gui_runner module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/py_gui_runner.zip"
+    },
+    {
+      "name": "draw",
+      "version": "1.0.0",
+      "title": "Draw",
+      "description": "The draw module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/draw.zip"
+    },
+    {
+      "name": "clock",
+      "version": "1.0.0",
+      "title": "Clock",
+      "description": "The clock module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/clock.zip"
+    },
+    {
+      "name": "mp4_processor",
+      "version": "1.0.0",
+      "title": "Mp4 Processor",
+      "description": "The mp4_processor module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/mp4_processor.zip"
+    },
+    {
+      "name": "gui_cmd",
+      "version": "1.0.0",
+      "title": "Gui Cmd",
+      "description": "The gui_cmd module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/gui_cmd.zip"
+    },
+    {
+      "name": "recipe_wheel",
+      "version": "1.0.0",
+      "title": "Recipe Wheel",
+      "description": "The recipe_wheel module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/recipe_wheel.zip"
+    },
+    {
+      "name": "pdf_viewer",
+      "version": "1.0.0",
+      "title": "Pdf Viewer",
+      "description": "The pdf_viewer module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/pdf_viewer.zip"
+    },
+    {
+      "name": "split_para",
+      "version": "1.0.0",
+      "title": "Split Para",
+      "description": "The split_para module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/split_para.zip"
+    },
+    {
+      "name": "sudoku_studio",
+      "version": "1.0.0",
+      "title": "Sudoku Studio",
+      "description": "The sudoku_studio module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/sudoku_studio.zip"
+    },
+    {
+      "name": "video",
+      "version": "1.0.0",
+      "title": "Video",
+      "description": "The video module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/video.zip"
+    },
+    {
+      "name": "system_info",
+      "version": "1.0.0",
+      "title": "System Info",
+      "description": "The system_info module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/system_info.zip"
+    },
+    {
+      "name": "exe_embedder",
+      "version": "1.0.0",
+      "title": "Exe Embedder",
+      "description": "The exe_embedder module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/exe_embedder.zip"
+    },
+    {
+      "name": "pdf_processor",
+      "version": "1.0.0",
+      "title": "Pdf Processor",
+      "description": "The pdf_processor module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/pdf_processor.zip"
+    },
+    {
+      "name": "template_module",
+      "version": "1.0.0",
+      "title": "Template Module",
+      "description": "The template_module module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/template_module.zip"
+    },
+    {
+      "name": "unit_converter",
+      "version": "1.0.0",
+      "title": "Unit Converter",
+      "description": "The unit_converter module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/unit_converter.zip"
+    },
+    {
+      "name": "youtube_downloader",
+      "version": "1.0.0",
+      "title": "Youtube Downloader",
+      "description": "The youtube_downloader module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/youtube_downloader.zip"
+    },
+    {
+      "name": "notepad",
+      "version": "1.0.0",
+      "title": "Notepad",
+      "description": "The notepad module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/notepad.zip"
+    },
+    {
+      "name": "todo_list",
+      "version": "1.0.0",
+      "title": "Todo List",
+      "description": "The todo_list module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/todo_list.zip"
+    },
+    {
+      "name": "plot_gui",
+      "version": "1.0.0",
+      "title": "Plot Gui",
+      "description": "The plot_gui module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/plot_gui.zip"
+    },
+    {
+      "name": "color_palette",
+      "version": "1.0.0",
+      "title": "Color Palette",
+      "description": "The color_palette module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/color_palette.zip"
+    },
+    {
+      "name": "translator",
+      "version": "1.0.0",
+      "title": "Translator",
+      "description": "The translator module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/translator.zip"
+    },
+    {
+      "name": "report",
+      "version": "1.0.0",
+      "title": "Report",
+      "description": "The report module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/report.zip"
+    },
+    {
+      "name": "Fitter",
+      "version": "1.0.0",
+      "title": "Fitter",
+      "description": "The Fitter module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/Fitter.zip"
+    },
+    {
+      "name": "browser",
+      "version": "1.0.0",
+      "title": "Browser",
+      "description": "The browser module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/browser.zip"
+    },
+    {
+      "name": "image_editor",
+      "version": "1.0.0",
+      "title": "Image Editor",
+      "description": "The image_editor module.",
+      "author": "李紘宇",
+      "url": "https://jacky09299.github.io/FlexiTools/plugins/image_editor.zip"
+    }
+  ]
+}
