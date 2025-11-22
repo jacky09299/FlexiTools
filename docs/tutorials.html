@@ -8,6 +8,58 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        .tutorial-step-list {
+            counter-reset: tutorial-counter;
+            list-style: none;
+            padding: 0;
+        }
+        .tutorial-step-list li {
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 12px;
+            color: #d1d1d1;
+        }
+        .tutorial-step-list li::before {
+            counter-increment: tutorial-counter;
+            content: counter(tutorial-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 28px;
+            height: 28px;
+            background-color: rgba(0, 191, 255, 0.15);
+            color: var(--primary-color);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .feature-card-small {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            height: 100%;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        .feature-card-small:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .feature-card-small i {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            display: block;
+        }
+        .modal-content {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
@@ -31,41 +83,96 @@
         </div>
     </nav>
 
-    <header class="hero-section" style="padding: 80px 0 60px 0; min-height: auto;">
+    <header class="hero-section" style="padding: 100px 0 60px 0; min-height: auto;">
         <div class="container text-center" data-aos="fade-down">
             <h1 class="page-title mb-3">軟體教學</h1>
             <p class="lead text-muted mx-auto" style="max-width: 700px;">
-                探索 FlexiTools 的強大功能。點擊下方的模組卡片以查看詳細使用說明。
+                完整掌握 FlexiTools 的所有功能。<br>從基礎操作到進階工具，助您事半功倍。
             </p>
         </div>
     </header>
 
     <div class="container pb-5">
-        <!-- Search Bar -->
-        <div class="row justify-content-center mb-5" data-aos="fade-up">
-            <div class="col-md-6">
-                <div class="input-group">
-                    <span class="input-group-text bg-dark border-secondary text-light"><i class="bi bi-search"></i></span>
-                    <input type="text" id="moduleSearch" class="form-control bg-dark text-light border-secondary" placeholder="搜尋模組名稱...">
-                </div>
-            </div>
-        </div>
-
+        <!-- General Usage Section -->
         <section id="general-usage" class="mb-5" data-aos="fade-up">
-            <div class="card glass-card p-4 border-0">
-                <div class="card-body text-center">
-                    <h2 class="mb-3" style="color: var(--primary-color);"><i class="bi bi-joystick me-2"></i>基本操作</h2>
-                    <p class="text-muted">FlexiTools 的設計旨在直觀易用。主介面包含一個工具列表，您可以點擊任何工具來啟動它。每個工具都在其自己的視窗中運行，讓您可以同時使用多個工具。您可以通過拖放來重新排列工具佈局，並將您喜歡的佈局保存為配置文件。</p>
+            <div class="d-flex align-items-center mb-4">
+                <h2 class="mb-0" style="color: var(--primary-color);"><i class="bi bi-controller me-3"></i>基本操作指南</h2>
+                <div class="flex-grow-1 ms-3 border-bottom border-secondary opacity-25"></div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card-small">
+                        <i class="bi bi-window-desktop"></i>
+                        <h5>介面概覽</h5>
+                        <p class="text-muted small mb-0">FlexiTools 採用直觀的模組化設計。啟動後的每一個工具都在獨立的視窗中運行，您可以自由拖曳、重疊或調整大小，打造最適合您的工作空間。</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card-small">
+                        <i class="bi bi-toggles"></i>
+                        <h5>模組管理</h5>
+                        <p class="text-muted small mb-0">覺得選單太雜亂？點擊上方選單列的 <strong>Help &gt; Manage Modules</strong>，您可以勾選常用的工具，隱藏不需要的模組，保持介面清爽。</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card-small">
+                        <i class="bi bi-translate"></i>
+                        <h5>語言設定</h5>
+                        <p class="text-muted small mb-0">軟體內建多國語言支援。點擊選單列的 <strong>Language</strong> 即可即時切換繁體中文、English、日本語等多種語言，無需重新啟動。</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card-small">
+                        <i class="bi bi-arrows-fullscreen"></i>
+                        <h5>視窗控制</h5>
+                        <p class="text-muted small mb-0">每個模組視窗右上角皆有控制按鈕。點擊 <strong>⬜</strong> 可最大化該模組填滿主視窗，再次點擊則還原。拖曳視窗邊緣即可調整大小。</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card-small">
+                        <i class="bi bi-hdd"></i>
+                        <h5>資料儲存</h5>
+                        <p class="text-muted small mb-0">您的所有設定檔、筆記內容與播放清單皆安全地儲存在使用者的 <code>AppData</code> 資料夾中 (或可攜模式下的目錄)，確保更新軟體時資料不遺失。</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card-small">
+                        <i class="bi bi-cloud-arrow-down"></i>
+                        <h5>自動更新</h5>
+                        <p class="text-muted small mb-0">FlexiTools 會自動檢查新版本。當有新功能發布時，您會收到通知並可選擇一鍵自動下載與安裝更新。</p>
+                    </div>
                 </div>
             </div>
         </section>
 
+        <!-- Search Bar -->
+        <div class="row justify-content-center mb-5 mt-5" data-aos="fade-up">
+            <div class="col-md-8 col-lg-6">
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-dark border-secondary text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="moduleSearch" class="form-control bg-dark text-light border-secondary" placeholder="搜尋模組名稱 (例如: PDF, Video)...">
+                </div>
+            </div>
+        </div>
+
+        <!-- Module Tutorials Grid -->
         <section id="module-tutorials">
+            <div class="d-flex align-items-center mb-4" data-aos="fade-right">
+                <h2 class="mb-0" style="color: var(--primary-color);"><i class="bi bi-grid-fill me-3"></i>模組詳細教學</h2>
+                <div class="flex-grow-1 ms-3 border-bottom border-secondary opacity-25"></div>
+            </div>
+
             <div class="row g-4" id="modulesGrid">
                 <!-- Module Cards will be injected here -->
             </div>
+
             <div id="noResults" class="text-center mt-5 d-none">
-                <h4 class="text-muted">沒有找到符合的模組</h4>
+                <div class="py-5">
+                    <i class="bi bi-emoji-frown display-1 text-muted mb-3 d-block"></i>
+                    <h4 class="text-muted">沒有找到符合的模組</h4>
+                    <p class="text-muted">試試看其他的關鍵字？</p>
+                </div>
             </div>
         </section>
     </div>
@@ -78,23 +185,31 @@
 
     <!-- Modal for displaying tutorial details -->
     <div class="modal fade" id="tutorialModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content glass-card" style="background: #1e1e1e; border: 1px solid #444;">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content glass-card">
                 <div class="modal-header border-secondary">
-                    <h5 class="modal-title text-light" id="modalTitle">Module Name</h5>
+                    <div class="d-flex align-items-center">
+                        <i id="modalIconTitle" class="bi me-3 fs-4 text-primary"></i>
+                        <h5 class="modal-title text-light fw-bold" id="modalTitle">Module Name</h5>
+                    </div>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body text-light">
-                    <div class="mb-4 text-center">
-                         <i id="modalIcon" class="bi" style="font-size: 4rem; color: var(--primary-color);"></i>
+                <div class="modal-body text-light p-4">
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <h6 class="text-primary text-uppercase small fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>功能描述</h6>
+                            <p id="modalDescription" class="fs-5 lh-base text-light" style="opacity: 0.9;">Description goes here.</p>
+                        </div>
+                        <div class="col-12">
+                            <h6 class="text-primary text-uppercase small fw-bold mb-3"><i class="bi bi-list-ol me-2"></i>使用步驟</h6>
+                            <div id="modalTutorial" class="p-3 rounded" style="background: rgba(0,0,0,0.2);">
+                                <!-- Tutorial steps injected here -->
+                            </div>
+                        </div>
                     </div>
-                    <h6 class="text-muted text-uppercase small fw-bold">功能描述</h6>
-                    <p id="modalDescription" class="fs-5 mb-4">Description goes here.</p>
-                    <h6 class="text-muted text-uppercase small fw-bold">使用教學</h6>
-                    <div id="modalTutorial" class="p-3 rounded" style="background: rgba(255,255,255,0.05);">Tutorial steps...</div>
                 </div>
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">關閉</button>
                 </div>
             </div>
         </div>
@@ -110,50 +225,128 @@
         });
 
         const modulesData = {
-            "Browser": { "desc": "內嵌式網頁瀏覽器，支援多分頁、書籤和歷史紀錄。", "tut": "在上方網址列輸入網址後按 Enter 即可瀏覽網頁。點擊 “+” 新增分頁，“☆” 可將目前網頁加入書籤。右方的選單按鈕提供更多功能，如查看歷史紀錄與開發者工具。" },
-            "CADFileConverter": { "desc": "在 GDS, DXF, DWG 等 CAD 檔案格式之間進行轉換。", "tut": "1. 點擊 “選檔” 或 “選資料夾” 選擇來源檔案或批次轉換的資料夾。<br>2. 選擇輸出的資料夾與格式。<br>3. 若轉換為 DXF，可選擇 DXF 版本。<br>4. 點擊 “執行轉換”。單檔模式下可點擊 “預覽” 查看檔案基本資訊。" },
-            "Clock": { "desc": "顯示目前系統時間。", "tut": "此模組會自動更新並顯示現在的時間 (HH:MM:SS)。" },
-            "Color Palette": { "desc": "產生並管理調色盤。", "tut": "點擊 “Regenerate All Palettes” 可隨機產生一組顏色。點擊任一色塊，下方會顯示其 HEX 和 RGB 值，並可透過滑桿調整顏色。點擊 “Copy” 可複製 HEX 色碼。" },
-            "Draw": { "desc": "簡單的繪圖板。", "tut": "在白色畫布上按住滑鼠左鍵即可開始繪圖。點擊 “Pen Color” 選擇畫筆顏色，拖動 “Pen Width” 滑桿調整畫筆粗細。“Clear Canvas” 可清空畫布。" },
-            "Fitter": { "desc": "分析諧振器數據，提供數據擬合與可視化功能。", "tut": "1. 點擊 “瀏覽...” 選擇 CSV 數據檔案。<br>2. 可選填左右頻率邊界 (GHz) 進行局部擬合，或留空自動尋峰。<br>3. 點擊 “執行分析”。<br>4. 在不同分頁中查看全頻譜、振幅擬合與相位擬合的圖表及詳細報告。" },
-            "GUI CMD": { "desc": "圖形化介面的命令提示字元模擬器，特別支援 Conda 環境。", "tut": "在下方輸入框中輸入標準 CMD 指令後按 Enter 執行。可使用按鈕快速切換 Conda 環境、變更目錄或執行 Python 腳本。" },
-            "Image Editor": { "desc": "基礎的圖片編輯工具，支援開啟、旋轉、裁剪與繪圖。", "tut": "1. 點擊 “開啟圖片” 載入圖片。<br>2. 使用 “旋轉”、“裁剪” 按鈕進行操作。<br>3. 點擊 “編輯模式” 進入繪圖模式。<br>4. 完成後點擊 “儲存”。" },
-            "MP4 Processor": { "desc": "處理 MP4 影片檔案，提供轉為圖片序列、音訊提取、影片去背、影片分割等功能。", "tut": "1. 選擇輸入的影片檔案或資料夾。<br>2. 選擇輸出資料夾。<br>3. 在 “Mode” 下拉選單中選擇要執行的功能。<br>4. 設定選項並點擊 “Start Processing”。" },
-            "Notepad": { "desc": "簡單的純文字編輯器。", "tut": "可直接在文字區域輸入內容。使用 “Open”, “Save”, “Save As...” 按鈕進行檔案的開啟與儲存。" },
-            "PDF Processor": { "desc": "提供多種 PDF 處理功能，如分割、合併、壓縮、加水印與文字提取。", "tut": "在上方選擇功能分頁。根據提示選擇輸入檔案、設定選項，然後點擊執行按鈕。" },
-            "Plot GUI": { "desc": "從 Excel 檔案讀取數據並繪製二維圖表。", "tut": "1. 點擊 “Load Excel” 載入檔案。<br>2. 在右側列表中選擇要繪製的曲線。<br>3. 設定 X/Y 軸的標籤與單位。<br>4. 點擊 “Plot (Scatter)” 產生圖表。" },
-            "Recipe Wheel": { "desc": "隨機選擇一道食譜，並顯示其所需食材與製作步驟。", "tut": "點擊 “Spin the Wheel!” 按鈕，上方的食譜輪盤會開始轉動。停止後，下方會顯示被選中的食譜名稱、食材與做法。" },
-            "Report": { "desc": "載入並顯示 Excel (.xlsx, .xls) 檔案的內容。", "tut": "點擊 “Load Excel File” 選擇檔案。如果檔案包含多個工作表 (Sheet)，可從下拉選單中選擇要檢視的工作表。" },
-            "Split Para": { "desc": "根據指定的參數欄位，將一個 CSV 檔案分割成多個獨立的 CSV 檔案。", "tut": "1. 選擇輸入的 CSV 檔案與輸出目錄。<br>2. 設定檔名規則與分割參數。<br>3. 點擊 “Process Data”。" },
-            "Sudoku Studio": { "desc": "數獨遊戲。", "tut": "點擊 “New Game” 開始新的一局。在空格中填入數字，完成後點擊 “Check Solution” 檢查答案。" },
-            "System Info": { "desc": "顯示目前的 CPU 與記憶體使用率。", "tut": "此模組會自動更新並顯示系統的即時資源使用狀況。" },
-            "Todo List": { "desc": "待辦事項清單。", "tut": "在輸入框中輸入任務後按 Enter 或點擊 “Add Task” 新增任務。" },
-            "Unit Converter": { "desc": "在不同物理量單位之間進行換算。", "tut": "1. 選擇物理量類型 (Category)。<br>2. 選擇轉換單位 (Conversion)。<br>3. 輸入數值，結果即時顯示。" },
-            "Video Player": { "desc": "播放本地影片檔案，支援多種格式。", "tut": "點擊 “選擇檔案” 載入影片。使用控制按鈕播放、暫停或調整音量。" },
-            "Youtube Downloader": { "desc": "從 YouTube 下載影片或音訊。", "tut": "1. 選擇儲存資料夾。<br>2. 輸入 YouTube 影片 URL。<br>3. 選擇格式與畫質。<br>4. 點擊 “Download All” 開始下載。" }
+            "Browser": {
+                "desc": "內嵌式網頁瀏覽器，支援多分頁瀏覽、書籤管理和瀏覽歷史紀錄，讓您無需離開軟體即可查閱資料。",
+                "tut": "<ol class='tutorial-step-list'><li>在上方網址列輸入網址，按 <b>Enter</b> 鍵即可前往。</li><li>點擊分頁列右側的 <b>+</b> 按鈕可新增分頁。</li><li>點擊網址列旁的 <b>☆</b> 按鈕可將目前網頁加入書籤。</li><li>點擊右側選單按鈕 (三條線)，可存取歷史紀錄、書籤管理與開發者工具。</li></ol>"
+            },
+            "Clock": {
+                "desc": "簡約的系統時鐘，顯示目前日期與時間，方便您隨時確認。",
+                "tut": "<ol class='tutorial-step-list'><li>開啟模組後，視窗將自動顯示目前的系統時間 (HH:MM:SS) 與日期。</li><li>視窗大小可自由調整，字體會隨視窗大小自動縮放。</li></ol>"
+            },
+            "Color Palette": {
+                "desc": "設計師必備的調色盤工具，可隨機產生配色方案並獲取顏色代碼。",
+                "tut": "<ol class='tutorial-step-list'><li>點擊 <b>Regenerate All Palettes</b> 按鈕，系統會隨機生成一組協調的顏色。</li><li>點擊任一色塊，下方會顯示其 HEX 和 RGB 數值。</li><li>拖動色塊下方的滑桿可微調該顏色的色相與飽和度。</li><li>點擊 <b>Copy</b> 按鈕即可將 HEX 色碼複製到剪貼簿。</li></ol>"
+            },
+            "Draw": {
+                "desc": "輕量級繪圖板，適合快速記事、塗鴉或繪製簡單示意圖。",
+                "tut": "<ol class='tutorial-step-list'><li>在白色畫布上按住滑鼠左鍵並拖曳即可開始繪圖。</li><li>點擊 <b>Pen Color</b> 選擇畫筆顏色。</li><li>拖動 <b>Pen Width</b> 滑桿可調整線條粗細。</li><li>若需重新開始，點擊 <b>Clear Canvas</b> 可清空所有內容。</li></ol>"
+            },
+            "Exe Embedder": {
+                "desc": "將外部 .exe 應用程式嵌入到 FlexiTools 的視窗中運行，並支援建立常用程式捷徑庫，打造您的專屬工具箱。",
+                "tut": "<ol class='tutorial-step-list'><li>點擊 <b>Select External .exe</b> 選擇您想要嵌入的外部程式。</li><li>點擊 <b>Run</b>，該程式將會啟動並嘗試嵌入到目前的視窗中。</li><li>若這是常用的工具，可點擊 <b>Add to Pool</b> 將其加入快速清單。</li><li>日後使用時，直接從上方下拉選單選擇程式即可快速啟動。</li></ol>"
+            },
+            "Fitter": {
+                "desc": "專業的諧振器數據分析工具，提供數據擬合 (Fitting) 與視覺化圖表功能。",
+                "tut": "<ol class='tutorial-step-list'><li>點擊 <b>瀏覽...</b> 選擇含有量測數據的 CSV 檔案。</li><li>(選填) 輸入左右頻率邊界 (GHz) 以鎖定分析範圍，若留空則自動尋峰。</li><li>點擊 <b>執行分析</b> 開始運算。</li><li>切換上方分頁可查看不同圖表：<b>全頻譜</b>、<b>振幅擬合</b>、<b>相位擬合</b> 以及 <b>詳細報告</b>。</li></ol>"
+            },
+            "GUI CMD": {
+                "desc": "圖形化介面的命令提示字元模擬器，特別優化對 Conda 環境的支援。",
+                "tut": "<ol class='tutorial-step-list'><li>在下方輸入框輸入 CMD 指令 (如 <code>dir</code>, <code>python --version</code>)，按 <b>Enter</b> 執行。</li><li>使用快捷按鈕可快速切換 Conda 環境或變更工作目錄。</li><li>支援拖曳 Python 腳本到視窗中快速執行。</li></ol>"
+            },
+            "Image Editor": {
+                "desc": "基礎圖片編輯器，提供旋轉、裁剪、繪圖標註與濾鏡功能。",
+                "tut": "<ol class='tutorial-step-list'><li>點擊 <b>開啟圖片</b> 載入您要編輯的檔案。</li><li>使用工具列按鈕進行 <b>旋轉</b> 或 <b>裁剪</b>。</li><li>點擊 <b>編輯模式</b> 可在圖片上進行繪圖標註。</li><li>編輯完成後，點擊 <b>儲存</b> 將成果匯出。</li></ol>"
+            },
+            "MP4 Processor": {
+                "desc": "多功能影片處理工具，包含轉圖檔序列、音訊提取、去背與分割等功能。",
+                "tut": "<ol class='tutorial-step-list'><li>點擊 <b>Select File</b> 選擇影片，或選擇資料夾進行批次處理。</li><li>選擇 <b>Output Folder</b> 設定儲存位置。</li><li>在 <b>Mode</b> 下拉選單中選擇功能 (如 <i>MP4 to PNG</i>, <i>Remove Background</i>)。</li><li>依據需求調整參數，最後點擊 <b>Start Processing</b>。</li></ol>"
+            },
+            "Notepad": {
+                "desc": "簡單純粹的純文字編輯器，支援開啟與儲存各種文字檔案。",
+                "tut": "<ol class='tutorial-step-list'><li>直接在編輯區域輸入文字。</li><li>點擊 <b>Open</b> 載入現有的 .txt 或 .log 檔案。</li><li>點擊 <b>Save</b> 或 <b>Save As...</b> 將內容儲存至電腦。</li></ol>"
+            },
+            "PDF Processor": {
+                "desc": "全方位的 PDF 工具箱，提供分割、合併、壓縮、浮水印與文字提取功能。",
+                "tut": "<ol class='tutorial-step-list'><li>在上方分頁選擇您需要的功能 (如 <i>Split</i>, <i>Merge</i>)。</li><li>依據畫面提示選擇來源 PDF 檔案。</li><li>設定相關選項 (如分割頁數、浮水印文字)。</li><li>點擊執行按鈕 (如 <b>Split PDF</b>) 完成處理。</li></ol>"
+            },
+            "PDF Viewer": {
+                "desc": "高效的 PDF 閱讀器，支援頁面縮放、局部放大與歷史導航功能。",
+                "tut": "<ol class='tutorial-step-list'><li>點擊 <b>Open PDF</b> 選擇檔案開啟。</li><li>使用上方按鈕翻頁，或使用滑鼠滾輪瀏覽。</li><li><b>局部放大功能：</b>在頁面上按住滑鼠左鍵框選感興趣的區域，放開後會自動放大該區域填滿視窗。</li><li>點擊 <b>Back</b> 系列按鈕可返回上一步或更早的檢視狀態。</li></ol>"
+            },
+            "Plot GUI": {
+                "desc": "Excel 數據繪圖工具，能快速將表格數據轉換為視覺化折線圖或散佈圖。",
+                "tut": "<ol class='tutorial-step-list'><li>點擊 <b>Load Excel</b> 載入 .xlsx 檔案。</li><li>在右側列表中勾選您想要繪製的欄位 (Y軸數據)。</li><li>設定 X 軸與 Y 軸的標籤名稱與單位。</li><li>點擊 <b>Plot (Scatter)</b> 生成圖表，圖表視窗支援互動縮放與存檔。</li></ol>"
+            },
+            "PyGUI Runner": {
+                "desc": "Python 腳本執行器，能自動分析腳本中的 `input()` 需求並生成圖形化輸入介面。",
+                "tut": "<ol class='tutorial-step-list'><li>點擊 <b>Select External .py</b> 選擇腳本。</li><li>系統會自動偵測腳本需要的輸入參數，並產生對應的輸入框或檔案選擇按鈕。</li><li>填寫完參數後，點擊 <b>Run</b>。</li><li>執行結果與輸出訊息將會顯示在下方的文字框中。</li></ol>"
+            },
+            "Recipe Wheel": {
+                "desc": "晚餐吃什麼？讓命運輪盤來幫您決定！",
+                "tut": "<ol class='tutorial-step-list'><li>點擊 <b>Spin the Wheel!</b> 按鈕，輪盤開始轉動。</li><li>停止後，系統會顯示選中的菜色。</li><li>下方會列出該料理所需的 <b>Ingredients</b> (食材) 與 <b>Instructions</b> (烹飪步驟)。</li></ol>"
+            },
+            "Report": {
+                "desc": "輕量的 Excel 表格檢視器，方便快速查看數據。",
+                "tut": "<ol class='tutorial-step-list'><li>點擊 <b>Load Excel File</b> 選擇檔案。</li><li>若檔案包含多個工作表 (Sheet)，可從上方下拉選單切換。</li><li>表格內容將以唯讀模式顯示於視窗中。</li></ol>"
+            },
+            "Split Para": {
+                "desc": "CSV 檔案分割工具，可根據特定欄位的數值變化將大檔案拆分為多個小檔案。",
+                "tut": "<ol class='tutorial-step-list'><li>選擇輸入的 CSV 檔案與輸出資料夾。</li><li>設定 <b>Filename Format</b> (檔名規則) 與 <b>Parameter Name</b> (依據哪個欄位分割)。</li><li>點擊 <b>Process Data</b>，系統會依據參數值的變化自動拆分檔案。</li></ol>"
+            },
+            "Sudoku Studio": {
+                "desc": "經典數獨遊戲，訓練邏輯思維。",
+                "tut": "<ol class='tutorial-step-list'><li>點擊 <b>New Game</b> 開始新局。</li><li>點擊空格並輸入 1-9 的數字。</li><li>若不確定，可使用鉛筆模式標記。</li><li>完成後點擊 <b>Check Solution</b> 驗證答案。</li></ol>"
+            },
+            "System Info": {
+                "desc": "即時監控系統資源使用率。",
+                "tut": "<ol class='tutorial-step-list'><li>開啟模組後，圖表將自動開始滾動。</li><li>藍色線條代表 <b>CPU 使用率</b>，綠色線條代表 <b>記憶體使用率</b>。</li><li>將滑鼠游標停留在圖表上可查看具體數值。</li></ol>"
+            },
+            "Todo List": {
+                "desc": "簡約的待辦事項清單，助您管理日常任務。",
+                "tut": "<ol class='tutorial-step-list'><li>在輸入框輸入任務內容，按 <b>Enter</b> 或點擊 <b>Add Task</b> 新增。</li><li>點擊任務左側的方塊可將其標記為完成。</li><li>點擊右側的垃圾桶圖示可刪除任務。</li></ol>"
+            },
+            "Translator": {
+                "desc": "強大的多語言翻譯助手，支援浮動視窗與剪貼簿監聽功能。",
+                "tut": "<ol class='tutorial-step-list'><li>選擇 <b>Target Language</b> (目標語言)。</li><li>點擊 <b>Enable Translate</b> 啟動監聽模式。</li><li><b>使用方式：</b>在任何視窗中反白選取文字並複製 (Ctrl+C)，翻譯結果將自動彈出。</li><li>切換 <b>Display Mode</b> 為 <i>Float</i>，翻譯結果將以浮動小視窗顯示在游標旁，閱讀不中斷。</li></ol>"
+            },
+            "Unit Converter": {
+                "desc": "通用的物理單位換算工具，涵蓋長度、重量、溫度等多種類型。",
+                "tut": "<ol class='tutorial-step-list'><li>在左側選擇物理量類型 (如 Length, Weight)。</li><li>設定來源單位 (From) 與目標單位 (To)。</li><li>輸入數值，換算結果將即時顯示。</li></ol>"
+            },
+            "Video Player": {
+                "desc": "進階影片播放器，內建強大的音訊處理引擎，支援環境模擬與人聲降噪。",
+                "tut": "<ol class='tutorial-step-list'><li>點擊 <b>Select File</b> 或 <b>Select Folder</b> 載入影片。</li><li><b>音效設定：</b>點擊 <b>Audio Effects...</b> 開啟設定面板。您可以：<ul><li>模擬播放環境 (如：浴室、音樂廳)。</li><li>設定聲音方位 (如：後方、360度環繞)。</li><li>啟用 <b>Denoise</b> 消除背景雜音。</li></ul></li><li>支援依照建立時間或 JSON 設定檔排序播放清單。</li></ol>"
+            },
+            "Youtube Downloader": {
+                "desc": "YouTube 影片與音訊下載工具。",
+                "tut": "<ol class='tutorial-step-list'><li>點擊 <b>Browse</b> 選擇下載存檔位置。</li><li>將 YouTube 影片網址貼入 URL 欄位。</li><li>選擇下載格式 (MP4 影片或 MP3 音訊) 與畫質。</li><li>點擊 <b>Download All</b> 開始下載任務。</li></ol>"
+            }
         };
 
         const moduleIcons = {
             "Browser": "bi-browser-chrome",
-            "CADFileConverter": "bi-file-earmark-ruled",
-            "Clock": "bi-clock-history",
+            "Clock": "bi-clock",
             "Color Palette": "bi-palette",
             "Draw": "bi-brush",
+            "Exe Embedder": "bi-window-stack",
             "Fitter": "bi-graph-up-arrow",
-            "GUI CMD": "bi-terminal-fill",
-            "Image Editor": "bi-image-alt",
+            "GUI CMD": "bi-terminal",
+            "Image Editor": "bi-image",
             "MP4 Processor": "bi-film",
             "Notepad": "bi-journal-text",
-            "PDF Processor": "bi-file-pdf-fill",
-            "Plot GUI": "bi-bar-chart-line-fill",
+            "PDF Processor": "bi-file-earmark-pdf",
+            "PDF Viewer": "bi-file-pdf",
+            "Plot GUI": "bi-bar-chart-line",
+            "PyGUI Runner": "bi-play-btn",
             "Recipe Wheel": "bi-disc",
             "Report": "bi-table",
             "Split Para": "bi-scissors",
-            "Sudoku Studio": "bi-grid-3x3-gap-fill",
-            "System Info": "bi-cpu-fill",
+            "Sudoku Studio": "bi-grid-3x3-gap",
+            "System Info": "bi-cpu",
             "Todo List": "bi-check2-square",
+            "Translator": "bi-translate",
             "Unit Converter": "bi-arrow-left-right",
-            "Video Player": "bi-play-circle-fill",
+            "Video Player": "bi-camera-reels",
             "Youtube Downloader": "bi-youtube"
         };
 
@@ -168,37 +361,41 @@
             let count = 0;
 
             Object.keys(modulesData).forEach((name, index) => {
-                // Format name
+                // Use the key directly as display name (Human Readable Keys)
                 let displayName = name;
-                if (displayName !== "GUI CMD") {
-                    displayName = displayName.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim();
-                    displayName = displayName.replace(/\b\w/g, c => c.toUpperCase());
-                }
 
                 // Search Filter
-                if (filter && !displayName.toLowerCase().includes(filter.toLowerCase()) && !modulesData[name].desc.toLowerCase().includes(filter.toLowerCase())) {
+                const searchContent = (displayName + modulesData[name].desc).toLowerCase();
+                if (filter && !searchContent.includes(filter.toLowerCase())) {
                     return;
                 }
 
                 count++;
                 const iconClass = moduleIcons[name] || "bi-box-seam";
-                const delay = (index % 3) * 100; // Stagger animations
+                const delay = (index % 4) * 50; // Faster stagger
 
                 const col = document.createElement('div');
-                col.className = "col-md-6 col-lg-4";
+                col.className = "col-md-6 col-lg-4 col-xl-3"; // More columns on large screens
                 col.setAttribute('data-aos', 'fade-up');
                 col.setAttribute('data-aos-delay', delay);
 
                 col.innerHTML = `
-                    <div class="card module-card h-100 cursor-pointer" onclick="showTutorial('${name}')" style="cursor: pointer;">
+                    <div class="card module-card h-100 cursor-pointer border-0 shadow-sm" onclick="showTutorial('${name}')" style="cursor: pointer;">
                         <div class="card-body p-4 d-flex flex-column">
-                            <div class="module-icon-wrapper">
-                                <i class="bi ${iconClass}"></i>
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="module-icon-wrapper mb-0" style="height: auto;">
+                                    <i class="bi ${iconClass}" style="font-size: 2rem;"></i>
+                                </div>
+                                <i class="bi bi-arrow-right-circle text-secondary opacity-50"></i>
                             </div>
-                            <h4 class="card-title mb-3 text-white">${displayName}</h4>
-                            <p class="card-text text-muted flex-grow-1">${modulesData[name].desc}</p>
-                            <div class="mt-3 pt-3 border-top border-secondary text-end">
-                                <span class="text-primary fw-bold small">查看教學 <i class="bi bi-arrow-right ms-1"></i></span>
+
+                            <h5 class="card-title text-white fw-bold mb-2">${displayName}</h5>
+                            <p class="card-text text-muted small flex-grow-1" style="line-height: 1.6; opacity: 0.8;">${modulesData[name].desc.substring(0, 60)}...</p>
+
+                            <div class="mt-3 pt-3 border-top border-secondary border-opacity-25">
+                                <span class="text-primary fw-bold small" style="font-size: 0.85rem;">
+                                    查看完整教學
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -216,16 +413,13 @@
         // Show Modal
         window.showTutorial = function(key) {
             const data = modulesData[key];
-            let displayName = key;
-            if (displayName !== "GUI CMD") {
-                displayName = displayName.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim();
-                displayName = displayName.replace(/\b\w/g, c => c.toUpperCase());
-            }
             
-            document.getElementById('modalTitle').innerText = displayName;
+            document.getElementById('modalTitle').innerText = key;
             document.getElementById('modalDescription').innerText = data.desc;
             document.getElementById('modalTutorial').innerHTML = data.tut;
-            document.getElementById('modalIcon').className = `bi ${moduleIcons[key] || "bi-box-seam"}`;
+
+            const iconClass = moduleIcons[key] || "bi-box-seam";
+            document.getElementById('modalIconTitle').className = `bi ${iconClass} me-3 fs-4 text-primary`;
 
             tutorialModal.show();
         }
