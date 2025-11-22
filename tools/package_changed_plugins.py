@@ -34,8 +34,8 @@ def package_plugin(name, version, modules_dir, output_dir):
         print(f"Warning: Module directory not found: {source_dir}")
         return False
 
-    # Ensure output directory exists: output_dir/docs/plugins/
-    plugin_out_dir = os.path.join(output_dir, "docs", "plugins")
+    # Ensure output directory exists: output_dir/docs/plugins/<name>/
+    plugin_out_dir = os.path.join(output_dir, "docs", "plugins", name)
     os.makedirs(plugin_out_dir, exist_ok=True)
 
     zip_filename = f"{name}_{version}.zip"
