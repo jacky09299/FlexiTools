@@ -3,12 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlexiTools - 如何貢獻</title>
+    <title>FlexiTools - 開發者指南</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        .code-block {
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid #333;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #dcdcdc;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+        }
+        .code-comment { color: #6a9955; }
+        .code-keyword { color: #569cd6; }
+        .code-string { color: #ce9178; }
+        .code-function { color: #dcdcaa; }
+
+        .step-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        .step-card:hover {
+            transform: translateX(5px);
+            border-color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .step-number {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background: var(--primary-color);
+            color: #000;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 32px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        .toc-sticky {
+            position: sticky;
+            top: 100px;
+        }
+        .toc-link {
+            color: var(--muted-text-color);
+            text-decoration: none;
+            display: block;
+            padding: 5px 0;
+            transition: color 0.2s;
+        }
+        .toc-link:hover, .toc-link.active {
+            color: var(--primary-color);
+            padding-left: 5px;
+            border-left: 2px solid var(--primary-color);
+        }
+    </style>
 </head>
-<body>
+<body data-bs-spy="scroll" data-bs-target="#toc" data-bs-offset="100">
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="index.html">
@@ -24,114 +83,249 @@
                     <li class="nav-item"><a class="nav-link" href="tutorials.html">教學</a></li>
                     <li class="nav-item"><a class="nav-link" href="download.html">下載</a></li>
                     <li class="nav-item"><a class="nav-link" href="support.html">支援</a></li>
-                    <li class="nav-item"><a class="nav-link" href="about.html">關於我們</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="CONTRIBUTING.html">貢獻</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="CONTRIBUTING.html">開發者指南</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-5 py-5">
-        <div class="content-section">
-            <h1 class="page-title">如何貢獻</h1>
-            <p class="lead text-center">感謝您有興趣為 FlexiTools 做出貢獻！我們歡迎所有形式的貢獻，從錯誤回報到新功能模組的開發。</p>
+    <header class="hero-section" style="padding: 120px 0 80px 0; min-height: auto;">
+        <div class="container text-center" data-aos="fade-down">
+            <h1 class="page-title mb-3">開發者指南</h1>
+            <p class="lead text-muted mx-auto" style="max-width: 700px;">
+                歡迎加入 FlexiTools 開發行列。<br>這份文件將引導您從環境建置到模組開發的完整流程。
+            </p>
+        </div>
+    </header>
 
-            <hr class="my-5">
-
-            <h2><i class="bi bi-code-slash"></i> 開發入門</h2>
-            <p>開始之前，請確保您的開發環境已準備就緒。FlexiTools 主要使用 Python 和 Tkinter GUI 工具包構建。</p>
-            
-            <h4>主要依賴套件</h4>
-            <p>請確保您已安裝以下核心套件。某些模組可能需要額外的特定套件。</p>
-            <ul>
-                <li><code>pandas</code> - 用於數據處理，例如在 <code>plot_gui</code> 和 <code>report</code> 模組中。</li>
-                <li><code>matplotlib</code> - 用於數據可視化，是 <code>plot_gui</code> 的核心。</li>
-                <li><code>PyPDF2</code> - 用於 PDF 操作，例如在 <code>pdf_processor</code> 模組中。</li>
-                <li><code>moviepy</code> & <code>opencv-python</code> - 用於影片處理。</li>
-                <li><code>rembg</code> - 用於圖片去背。</li>
-                <li><code>cefpython3</code> - <code>browser</code> 模組的網頁渲染核心。</li>
-                <li><code>psutil</code> - 用於 <code>system_info</code> 模組獲取系統資訊。</li>
-                <li><code>pygame</code> - 用於音訊播放。</li>
-                <li><code>pyroomacoustics</code> - 用於音訊效果模擬。</li>
-                <li><code>yt-dlp</code> - 用於 YouTube 下載功能。</li>
-            </ul>
-            <p>您可以使用 <code>pip</code> 來安裝這些套件：</p>
-            <pre><code>pip install pandas matplotlib PyPDF2 moviepy opencv-python rembg cefpython3 psutil pygame pyroomacoustics yt-dlp</code></pre>
-
-            <div class="alert mt-3" role="alert">
-                <h4 class="alert-heading">提示</h4>
-                <p>專案中的 <code>check_imports.py</code> 腳本提供了一個方便的方式來檢查和模擬缺失的依賴，有助於在不完全安裝所有套件的情況下運行主應用程式。</p>
+    <div class="container pb-5">
+        <div class="row">
+            <!-- Sidebar Table of Contents -->
+            <div class="col-lg-3 d-none d-lg-block">
+                <div class="toc-sticky p-4 glass-card">
+                    <h5 class="text-white mb-3">目錄</h5>
+                    <nav id="toc" class="nav flex-column">
+                        <a class="toc-link" href="#setup">1. 環境建置</a>
+                        <a class="toc-link" href="#structure">2. 專案結構</a>
+                        <a class="toc-link" href="#module-dev">3. 模組開發</a>
+                        <a class="toc-link" href="#localization">4. 多語言支援</a>
+                        <a class="toc-link" href="#build">5. 建置與打包</a>
+                        <a class="toc-link" href="#submission">6. 提交貢獻</a>
+                    </nav>
+                </div>
             </div>
 
-            <h2 class="mt-5"><i class="bi bi-puzzle"></i> 創建一個新模組</h2>
-            <p>FlexiTools 的核心是其模組化架構。創建一個新模組非常簡單。所有模組都應放在 <code>modules/</code> 資料夾中。</p>
+            <!-- Main Content -->
+            <div class="col-lg-9">
 
-            <h4>1. 繼承基礎 `Module` 類別</h4>
-            <p>您的新模組類別必須繼承自 <code>ui.py</code> 中定義的 <code>Module</code> 類別。</p>
-            <pre><code>from ui import Module
+                <!-- Section 1: Setup -->
+                <section id="setup" class="mb-5" data-aos="fade-up">
+                    <h2 class="mb-4" style="color: var(--primary-color);"><i class="bi bi-tools me-3"></i>1. 環境建置</h2>
+                    <p class="text-muted">FlexiTools 基於 Python 3.9+ 與 Tkinter 構建。我們建議使用 Conda 來管理開發環境。</p>
 
-class YourNewModule(Module):
-    def __init__(self, master, shared_state, module_name="YourModule", gui_manager=None):
-        super().__init__(master, shared_state, module_name, gui_manager)
-        # 在這裡初始化您的變數
+                    <div class="step-card">
+                        <h5 class="text-white"><span class="step-number">1</span>安裝 Miniconda</h5>
+                        <p class="text-muted">請前往 Miniconda 官網下載並安裝適用於您作業系統的版本。</p>
+                    </div>
+
+                    <div class="step-card">
+                        <h5 class="text-white"><span class="step-number">2</span>建立環境</h5>
+                        <p class="text-muted">在專案根目錄執行以下指令以建立名為 <code>tools</code> 的虛擬環境：</p>
+                        <div class="code-block">
+                            conda create -n tools python=3.9<br>
+                            conda activate tools
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <h5 class="text-white"><span class="step-number">3</span>安裝依賴</h5>
+                        <p class="text-muted">專案依賴許多第三方套件以支援不同模組的功能：</p>
+                        <div class="code-block">
+                            pip install pandas matplotlib PyPDF2 moviepy opencv-python rembg cefpython3 psutil pygame pyroomacoustics yt-dlp
+                        </div>
+                        <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i> 提示：您可以執行 <code>python check_imports.py</code> 來檢查環境是否缺漏套件。</p>
+                    </div>
+                </section>
+
+                <!-- Section 2: Structure -->
+                <section id="structure" class="mb-5" data-aos="fade-up">
+                    <h2 class="mb-4" style="color: var(--primary-color);"><i class="bi bi-folder2-open me-3"></i>2. 專案結構</h2>
+                    <p class="text-muted">了解專案目錄結構有助於您快速定位檔案。</p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="glass-card p-3 h-100">
+                                <h5 class="text-white"><i class="bi bi-box me-2 text-primary"></i>modules/</h5>
+                                <p class="text-muted small">所有功能模組存放於此。每個子資料夾代表一個獨立模組（例如 <code>modules/clock/</code>）。</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="glass-card p-3 h-100">
+                                <h5 class="text-white"><i class="bi bi-translate me-2 text-primary"></i>locales/</h5>
+                                <p class="text-muted small">全域語言翻譯檔（<code>en_US.json</code>, <code>zh_TW.json</code> 等）。</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="glass-card p-3 h-100">
+                                <h5 class="text-white"><i class="bi bi-file-earmark-code me-2 text-primary"></i>ui.py</h5>
+                                <p class="text-muted small">主視窗框架與模組載入邏輯的核心程式碼。</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="glass-card p-3 h-100">
+                                <h5 class="text-white"><i class="bi bi-hammer me-2 text-primary"></i>tools/</h5>
+                                <p class="text-muted small">包含建置安裝檔 (<code>generate_nsis.py</code>) 與套件管理腳本。</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 3: Module Development -->
+                <section id="module-dev" class="mb-5" data-aos="fade-up">
+                    <h2 class="mb-4" style="color: var(--primary-color);"><i class="bi bi-puzzle me-3"></i>3. 模組開發</h2>
+                    <p class="text-muted">FlexiTools 的核心是模組化。請參考 <code>modules/template_module</code> 作為範本。</p>
+
+                    <div class="step-card">
+                        <h5 class="text-white">Step 1: 建立目錄與 Manifest</h5>
+                        <p class="text-muted">在 <code>modules/</code> 下建立新資料夾（例如 <code>my_tool</code>），並新增 <code>manifest.json</code>：</p>
+                        <div class="code-block">
+{
+  <span class="code-string">"name"</span>: "my_tool",
+  <span class="code-string">"version"</span>: "1.0.0",
+  <span class="code-string">"title"</span>: "My Awesome Tool",
+  <span class="code-string">"description"</span>: "A brief description of what this tool does.",
+  <span class="code-string">"author"</span>: "Your Name"
+}
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <h5 class="text-white">Step 2: 繼承 Module 類別</h5>
+                        <p class="text-muted">建立 <code>__init__.py</code> 並繼承基礎類別。這是模組的入口點。</p>
+                        <div class="code-block">
+<span class="code-keyword">from</span> ui <span class="code-keyword">import</span> Module
+<span class="code-keyword">import</span> tkinter <span class="code-keyword">as</span> tk
+<span class="code-keyword">from</span> tkinter <span class="code-keyword">import</span> ttk
+
+<span class="code-keyword">class</span> <span class="code-function">MyToolModule</span>(Module):
+    <span class="code-keyword">def</span> <span class="code-function">__init__</span>(self, master, shared_state, module_name=<span class="code-string">"MyTool"</span>, gui_manager=<span class="code-keyword">None</span>):
+        <span class="code-function">super</span>().__init__(master, shared_state, module_name, gui_manager)
         self.create_ui()
-        self.update_language() # 確保在UI建立後呼叫
-</code></pre>
+        self.update_language()
 
-            <h4>2. 實現 `create_ui` 方法</h4>
-            <p>這是在模組框架內建立所有 UI 元素（按鈕、輸入框等）的地方。所有 UI 元件都應該被放置在 <code>self.frame</code> 內。</p>
-            <pre><code>def create_ui(self):
-    # self.frame 是您的模組的主容器
-    main_content_frame = ttk.Frame(self.frame, padding="10")
-    main_content_frame.pack(expand=True, fill=tk.BOTH)
+    <span class="code-keyword">def</span> <span class="code-function">create_ui</span>(self):
+        <span class="code-comment"># 在 self.frame 中建立 UI</span>
+        self.label = ttk.Label(self.frame, text=<span class="code-string">"Hello World"</span>)
+        self.label.pack(pady=20)
+                        </div>
+                    </div>
+                </section>
 
-    self.my_label = ttk.Label(main_content_frame, text="Hello, Module!")
-    self.my_label.pack()
+                <!-- Section 4: Localization -->
+                <section id="localization" class="mb-5" data-aos="fade-up">
+                    <h2 class="mb-4" style="color: var(--primary-color);"><i class="bi bi-globe me-3"></i>4. 多語言支援</h2>
+                    <p class="text-muted">我們採用 <strong>"Develop First, Localize Later"</strong> 的策略。請勿在程式碼中寫死字串。</p>
 
-    self.my_button = ttk.Button(main_content_frame, text="Click Me", command=self.my_action)
-    self.my_button.pack()
-</code></pre>
+                    <div class="glass-card p-4 mb-4">
+                        <h5 class="text-white mb-3">實作流程</h5>
+                        <ol class="text-muted ps-3">
+                            <li class="mb-2">在開發初期，直接在程式碼中使用英文。</li>
+                            <li class="mb-2">開發完成後，找出所有顯示給使用者的字串。</li>
+                            <li class="mb-2">在 <code>locales/en_US.json</code> 與 <code>zh_TW.json</code> 中新增對應的 Key。
+                                <br><small class="text-primary">命名建議：module_模組名_元件_描述</small>
+                            </li>
+                            <li class="mb-2">將程式碼中的字串替換為 <code>self.tr("KEY", "Default Text")</code>。</li>
+                            <li class="mb-2">實作 <code>update_language()</code> 方法以支援即時語言切換。</li>
+                        </ol>
+                    </div>
 
-            <h4>3. 支援多語言</h4>
-            <p>為了支援多語言，請實現 <code>update_language</code> 方法。使用 <code>self.tr("key", "default_text")</code> 來獲取翻譯後的文字。</p>
-            <pre><code>def update_language(self):
-    super().update_language() # 更新模組標題
-    if not getattr(self, 'my_label', None): return
+                    <div class="code-block">
+    <span class="code-keyword">def</span> <span class="code-function">update_language</span>(self):
+        <span class="code-function">super</span>().update_language() <span class="code-comment"># 更新視窗標題</span>
 
-    self.my_label.config(text=self.tr("module_yourmodule_greeting", "Hello, Module!"))
-    self.my_button.config(text=self.tr("module_yourmodule_button", "Click Me"))
-</code></pre>
-            <p>接著，您需要在 <code>locales/</code> 資料夾下的對應 JSON 檔案中添加您的翻譯鍵值對。</p>
+        <span class="code-comment"># Guard Clause: 確保 UI 已建立</span>
+        <span class="code-keyword">if not getattr</span>(self, <span class="code-string">'label'</span>, <span class="code-keyword">None</span>):
+            <span class="code-keyword">return</span>
 
-            <h2 class="mt-5"><i class="bi bi-rulers"></i> 程式碼風格</h2>
-            <p>我們力求保持程式碼庫的乾淨和一致。請在提交程式碼前：</p>
-            <ul>
-                <li>遵循 <strong>PEP 8</strong> 程式碼風格指南。</li>
-                <li>模仿現有模組的程式碼結構和命名約定。</li>
-                <li>為複雜的邏輯添加簡潔的註釋，解釋 *為什麼* 這樣做，而不是 *做什麼*。</li>
-                <li>確保您的程式碼在所有主要平台上都能良好運行。</li>
-            </ul>
+        <span class="code-comment"># 更新元件文字</span>
+        self.label.config(text=self.tr(<span class="code-string">"module_mytool_hello"</span>, <span class="code-string">"Hello World"</span>))
+                    </div>
+                </section>
 
-            <h2 class="mt-5"><i class="bi bi-git"></i> 提交您的貢獻</h2>
-            <p>我們使用 GitHub Flow。請遵循以下步驟來提交您的變更：</p>
-            <ol>
-                <li><strong>Fork</strong> 我們的儲存庫。</li>
-                <li>為您的變更創建一個新的 <strong>分支</strong> (<code>git checkout -b feature/your-new-feature</code>)。</li>
-                <li>進行您的變更並 <strong>Commit</strong>。請撰寫清晰的提交訊息。</li>
-                <li>將您的分支推送到您的 Fork (<code>git push origin feature/your-new-feature</code>)。</li>
-                <li>開啟一個 <strong>Pull Request</strong> 到我們的主分支。</li>
-            </ol>
-            <p>您的貢獻將被審查，我們可能會要求一些修改。一旦審查通過，您的變更將被合併。非常感謝您的努力！</p>
+                <!-- Section 5: Build -->
+                <section id="build" class="mb-5" data-aos="fade-up">
+                    <h2 class="mb-4" style="color: var(--primary-color);"><i class="bi bi-box-seam me-3"></i>5. 建置與打包</h2>
+                    <p class="text-muted">若需產生 Windows 安裝檔 (.exe)，請遵循以下步驟：</p>
 
+                    <div class="alert alert-secondary bg-transparent border-secondary text-muted">
+                        <i class="bi bi-exclamation-triangle me-2 text-warning"></i>
+                        需要安裝 <strong>NSIS (Nullsoft Scriptable Install System)</strong> 才能進行打包。
+                    </div>
+
+                    <ul class="list-unstyled text-muted">
+                        <li class="mb-3"><i class="bi bi-chevron-right text-primary me-2"></i><strong>步驟 1：</strong> 使用 PyInstaller 打包主程式。
+                            <div class="code-block mt-2">pyinstaller main.spec</div>
+                        </li>
+                        <li class="mb-3"><i class="bi bi-chevron-right text-primary me-2"></i><strong>步驟 2：</strong> 生成 NSIS 腳本。此腳本會自動掃描 <code>modules/</code> 並加入安裝清單。
+                            <div class="code-block mt-2">python tools/generate_nsis.py</div>
+                        </li>
+                        <li class="mb-3"><i class="bi bi-chevron-right text-primary me-2"></i><strong>步驟 3：</strong> 編譯安裝檔。
+                            <div class="code-block mt-2">makensis installer.nsi</div>
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- Section 6: Submission -->
+                <section id="submission" class="mb-5" data-aos="fade-up">
+                    <h2 class="mb-4" style="color: var(--primary-color);"><i class="bi bi-git me-3"></i>6. 提交貢獻</h2>
+                    <div class="glass-card p-4 text-center">
+                        <p class="lead text-muted mb-4">準備好分享您的成果了嗎？</p>
+                        <div class="row text-start justify-content-center">
+                            <div class="col-md-8">
+                                <div class="d-flex mb-3">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <h6 class="text-white">Fork & Branch</h6>
+                                        <p class="text-muted small">Fork 專案並建立新的分支：<code>feature/your-module-name</code></p>
+                                    </div>
+                                </div>
+                                <div class="d-flex mb-3">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <h6 class="text-white">Commit & Push</h6>
+                                        <p class="text-muted small">提交您的變更。請撰寫清晰的 Commit Message。</p>
+                                    </div>
+                                </div>
+                                <div class="d-flex">
+                                    <span class="step-number">3</span>
+                                    <div>
+                                        <h6 class="text-white">Pull Request</h6>
+                                        <p class="text-muted small">發送 PR 到 <code>develop</code> 分支。我們會儘快進行審查。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
         </div>
     </div>
 
-    <footer class="py-4 mt-5">
+    <footer class="mt-5 border-top border-secondary pt-4 pb-4">
         <div class="container text-center">
-            <p class="mb-0">Copyright &copy; 2025 FlexiTools</p>
+            <p class="mb-0 small text-muted">&copy; 2025 FlexiTools. Open Source Project.</p>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            once: true,
+            offset: 50,
+            duration: 800,
+        });
+    </script>
 </body>
 </html>
