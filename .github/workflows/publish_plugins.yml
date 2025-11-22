@@ -1,0 +1,66 @@
+name: Publish Changed Plugins
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'docs/plugins.json'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-plugins:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Get previous plugins.json
+        run: |
+          git show HEAD^:docs/plugins.json > old_plugins.json || echo "{}" > old_plugins.json
+          echo "Old plugins.json content:"
+          head -n 20 old_plugins.json
+
+      - name: Package changed plugins
+        run: |
+          python tools/package_changed_plugins.py --old old_plugins.json --new docs/plugins.json --output dist
+
+      - name: Copy updated plugins.json to dist
+        run: |
+          mkdir -p dist/docs
+          cp docs/plugins.json dist/docs/plugins.json
+
+      - name: Deploy to gh-pages
+        run: |
+          # Configure git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Clone gh-pages to a temporary directory
+          git clone --branch gh-pages --single-branch https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} gh-pages-dir
+
+          # Copy new files over (using rsync or cp)
+          # We use cp -r to merge folders.
+          cp -r dist/* gh-pages-dir/
+
+          cd gh-pages-dir
+
+          # Check if there are changes
+          if [[ -n $(git status -s) ]]; then
+            git add .
+            git commit -m "Update plugins from develop commit ${{ github.sha }}"
+            git push origin gh-pages
+            echo "Successfully deployed to gh-pages."
+          else
+            echo "No changes to deploy."
+          fi
