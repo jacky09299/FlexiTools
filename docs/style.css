@@ -73,15 +73,47 @@ body {
     pointer-events: none;
 }
 
+/* Restored Hero Layout & Hover Effects */
+.hero-logo-title {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.hero-logo,
+.hero-title {
+    transition: transform 0.2s cubic-bezier(.4,2,.6,1), box-shadow 0.2s, color 0.2s;
+    cursor: pointer;
+}
+
+.hero-subtitle {
+    transition: transform 0.2s cubic-bezier(.4,2,.6,1), box-shadow 0.2s, color 0.2s;
+    cursor: pointer;
+}
+
+.hero-logo:hover,
+.hero-title:hover {
+    transform: scale(1.08) rotate(-2deg);
+    /* Adjusted shadow color for dark theme visibility */
+    filter: drop-shadow(0 0 15px rgba(0, 191, 255, 0.5));
+    color: var(--primary-color);
+}
+
+.hero-subtitle:hover {
+    transform: scale(1.03) rotate(-0.5deg);
+    color: var(--primary-color);
+    text-shadow: 0 0 10px rgba(0, 191, 255, 0.4);
+}
+
 .hero-section h1 {
-    font-size: 5rem;
-    font-weight: 800;
-    letter-spacing: -1px;
-    background: linear-gradient(to right, #fff, #00bfff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-size: 4.5rem; /* Restored larger size */
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+    text-shadow: 0 0 15px rgba(0, 191, 255, 0.5);
     margin-bottom: 1rem;
-    filter: drop-shadow(0 0 20px rgba(0, 191, 255, 0.3));
 }
 
 .hero-section .lead {
