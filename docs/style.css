@@ -44,33 +44,14 @@ body {
     text-shadow: 0 0 8px rgba(0, 191, 255, 0.4);
 }
 
-/* Hero Section Animation */
-@keyframes gradient-bg {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
 .hero-section {
     padding: 140px 0; /* Increased padding */
     text-align: center;
     position: relative;
     overflow: hidden;
-    /* Animated gradient background */
-    background: linear-gradient(-45deg, #0f0f0f, #1b2735, #0e2a3b, #050505);
-    background-size: 400% 400%;
-    animation: gradient-bg 15s ease infinite;
+    /* Original static dark background for better contrast */
+    background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
     border-bottom: 1px solid var(--border-color);
-}
-
-.hero-section::before {
-    /* Subtle overlay pattern */
-    content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 30px 30px;
-    pointer-events: none;
 }
 
 /* Restored Hero Layout & Hover Effects */
