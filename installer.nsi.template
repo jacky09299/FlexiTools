@@ -201,6 +201,13 @@ Section Uninstall
   
   ; 刪除 _internal 目錄
   RMDir /r "$INSTDIR\_internal"
+
+  ; 刪除 AppData modules (Optional? User might want to keep them?
+  ; Usually full uninstall removes everything, but user data (saves) is kept.
+  ; Modules are plugins, so maybe remove them.
+  ; Let's remove modules in AppData/FlexiTools/modules but keep saves if they are elsewhere)
+  RMDir /r "$APPDATA\FlexiTools\modules"
+  RMDir "$APPDATA\FlexiTools"
   
   ; 刪除開始功能表項目
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\卸載 ${PRODUCT_NAME}.lnk"

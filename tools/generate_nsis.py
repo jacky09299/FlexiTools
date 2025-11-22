@@ -7,9 +7,13 @@ def generate_nsis(template_path, output_path, modules_dir):
 
     modules = []
     if os.path.exists(modules_dir):
-        for filename in os.listdir(modules_dir):
-            if filename.endswith(".py") and not filename.startswith("__"):
-                modules.append(filename)
+        for item in os.listdir(modules_dir):
+            # Check for directories that have __init__.py
+            if os.path.isdir(os.path.join(modules_dir, item)) and os.path.exists(os.path.join(modules_dir, item, "__init__.py")):
+                modules.append(item)
+            # Fallback for legacy single file modules (if any)
+            elif item.endswith(".py") and not item.startswith("__"):
+                modules.append(item) # Keep extension for file
 
     modules.sort()
 
@@ -22,17 +26,32 @@ def generate_nsis(template_path, output_path, modules_dir):
     hide_modules_lines = []
     init_modules_lines = []
 
-    for i, module_file in enumerate(modules):
-        module_name = os.path.splitext(module_file)[0]
+    for i, module_item in enumerate(modules):
+        is_dir = not module_item.endswith(".py")
+        module_name = module_item if is_dir else os.path.splitext(module_item)[0]
         section_id = f"SEC_MOD_{i}"
 
-        # Section definition
-        section = f"""
+        # Determine source and destination
+        # Source: dist/FlexiTools/_internal/modules/module_name
+        # Destination: $APPDATA\FlexiTools\modules\module_name
+
+        if is_dir:
+            section = f"""
 Section "{module_name}" {section_id}
-  SetOutPath "$INSTDIR\\_internal\\modules"
-  File "dist\\FlexiTools\\_internal\\modules\\{module_file}"
+  ; Set output path to AppData
+  SetOutPath "$APPDATA\\FlexiTools\\modules\\{module_name}"
+  ; Copy directory contents recursively
+  File /r "dist\\FlexiTools\\_internal\\modules\\{module_name}\\*.*"
 SectionEnd
 """
+        else:
+             section = f"""
+Section "{module_name}" {section_id}
+  SetOutPath "$APPDATA\\FlexiTools\\modules"
+  File "dist\\FlexiTools\\_internal\\modules\\{module_item}"
+SectionEnd
+"""
+
         sections_code.append(section)
 
         # Description
@@ -41,22 +60,18 @@ SectionEnd
 
         # Logic for Show/Hide functions
         show_modules_lines.append(f"  SectionSetText ${{{section_id}}} \"{module_name}\"") # Show by setting text
-        # To hide a section in NSIS, you set its text to ""
         hide_modules_lines.append(f"  SectionSetText ${{{section_id}}} \"\"")
 
         # Logic for InitModuleSelection (Update Mode)
-        # If module file exists, select it (check it). If not, uncheck it.
-        # But SectionSetFlags requires calculation of flags.
-        # Simplest is to use macros from Sections.nsh but we are generating raw logic here.
-        # Or use SectionSetFlags with ${SF_SELECTED} (1) or not.
-        # ${SF_SELECTED} is usually 1. Unselected is 0.
-
-        # We need to verify if the file exists on the target system (during install)
-        # $INSTDIR points to target.
+        # Check existence in AppData
+        if is_dir:
+             check_path = f"$APPDATA\\FlexiTools\\modules\\{module_name}\\__init__.py" # Check for init py to confirm module presence
+        else:
+             check_path = f"$APPDATA\\FlexiTools\\modules\\{module_item}"
 
         init_lines = f"""
   ; Check {module_name}
-  IfFileExists "$INSTDIR\\_internal\\modules\\{module_file}" 0 +3
+  IfFileExists "{check_path}" 0 +3
     SectionSetFlags ${{{section_id}}} 1
     Goto +2
     SectionSetFlags ${{{section_id}}} 0
@@ -76,7 +91,6 @@ FunctionEnd
 
 Function InitModuleSelection
   ; Initialize module selection based on existing files in update mode
-  ; First unselect all to be safe? The loop handles both 0 and 1 cases.
 {chr(10).join(init_modules_lines)}
 FunctionEnd
 """

@@ -47,6 +47,12 @@ except ImportError:
         return fallback_dir
 
 
+try:
+    from store_manager import StoreManager
+except ImportError:
+    print("ERROR: store_manager.py not found.")
+    StoreManager = None
+
 from localization import LocalizationManager
 from shared_state import SharedState
 from style_manager import (
@@ -475,10 +481,25 @@ class ModularGUI:
         self.saves_dir = get_saves_dir()
         self.shared_state.log(f"Application saves directory set to: {self.saves_dir}", "INFO")
 
-        self.modules_dir = "modules"
-        if not os.path.exists(self.modules_dir):
-            os.makedirs(self.modules_dir)
-            self.shared_state.log(f"Created modules directory: {self.modules_dir}")
+        # Determine modules directory (Dev Mode vs User Mode)
+        local_modules_dir = os.path.join(os.getcwd(), "modules")
+        if os.path.exists(local_modules_dir):
+            self.modules_dir = local_modules_dir
+            self.shared_state.log(f"Dev Mode: Using local modules directory: {self.modules_dir}")
+        else:
+            appdata = os.getenv('APPDATA')
+            if appdata:
+                self.modules_dir = os.path.join(appdata, "FlexiTools", "modules")
+            else:
+                # Fallback for non-Windows
+                self.modules_dir = os.path.join(os.path.expanduser("~"), ".flexitools", "modules")
+
+            if not os.path.exists(self.modules_dir):
+                try:
+                    os.makedirs(self.modules_dir)
+                    self.shared_state.log(f"Created User Mode modules directory: {self.modules_dir}")
+                except OSError as e:
+                    self.shared_state.log(f"Error creating modules directory {self.modules_dir}: {e}", "ERROR")
 
         # Initialize Localization Manager with modules_dir
         self.loc_manager = LocalizationManager(self.shared_state, modules_dir=self.modules_dir)
@@ -598,6 +619,7 @@ class ModularGUI:
         self.help_menubutton.pack(side="left")
         self.help_menubutton.bind("<Button-1>", lambda e: self.help_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
         self.help_menu.add_command(label=self.loc_manager.get("menu_manage_modules"), command=self.manage_modules_dialog)
+        self.help_menu.add_command(label="Module Store", command=self.open_module_store)
         self.help_menu.add_command(label=self.loc_manager.get("menu_check_updates"), command=self.ui_check_for_updates_manual)
 
         # Language Menu
@@ -888,7 +910,9 @@ class ModularGUI:
 
         # Help Menu
         self.help_menu.entryconfigure(0, label=self.loc_manager.get("menu_manage_modules"))
-        self.help_menu.entryconfigure(1, label=self.loc_manager.get("menu_check_updates"))
+        # Index 1 is Module Store, hardcoded or needs translation
+        self.help_menu.entryconfigure(1, label=self.loc_manager.get("menu_module_store", "Module Store"))
+        self.help_menu.entryconfigure(2, label=self.loc_manager.get("menu_check_updates"))
 
         # Language Menu (Labels are fixed native names, no update needed)
 
@@ -1087,20 +1111,36 @@ class ModularGUI:
     def discover_modules(self):
         self.shared_state.log("Discovering available modules...")
         self.available_module_classes.clear()
+
+        # Ensure sys.path includes the parent of modules_dir so 'modules' package is resolvable if needed
+        parent_dir = os.path.dirname(self.modules_dir)
+        if parent_dir and parent_dir not in sys.path:
+            sys.path.append(parent_dir)
+
         if not os.path.exists(self.modules_dir):
             self.shared_state.log(f"Modules directory '{self.modules_dir}' not found.", level=logging.WARNING)
             return
+
         for item in os.listdir(self.modules_dir):
             item_path = os.path.join(self.modules_dir, item)
             module_name = None
             module_spec = None
+
+            # Try to read manifest.json for logging or future use
+            manifest_path = os.path.join(item_path, "manifest.json")
+            if os.path.exists(manifest_path):
+                try:
+                    with open(manifest_path, "r", encoding="utf-8") as f:
+                        _ = json.load(f) # Just verifying it's readable for now
+                except Exception as e:
+                    self.shared_state.log(f"Failed to read manifest for {item}: {e}", level=logging.WARNING)
 
             # Case 1: Directory (package)
             if os.path.isdir(item_path) and os.path.exists(os.path.join(item_path, "__init__.py")):
                 module_name = item
                 module_spec = importlib.util.spec_from_file_location(module_name, os.path.join(item_path, "__init__.py"))
 
-            # Case 2: File (standalone module) - kept for backward compatibility or unmigrated files
+            # Case 2: File (standalone module) - kept for backward compatibility
             elif os.path.isfile(item_path) and item.endswith(".py") and not item.startswith("_"):
                 module_name = item[:-3]
                 module_spec = importlib.util.spec_from_file_location(module_name, item_path)
@@ -1452,6 +1492,178 @@ class ModularGUI:
 
         ttk.Button(btn_frame, text="Save", command=on_save).pack(side="right", padx=5)
         ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side="right", padx=5)
+
+    def open_module_store(self):
+        if not StoreManager:
+            messagebox.showerror("Error", "StoreManager unavailable.", parent=self.root)
+            return
+
+        store_window = tk.Toplevel(self.root)
+        store_window.title(self.loc_manager.get("window_module_store", "Module Store"))
+        store_window.geometry("600x400")
+        store_window.transient(self.root)
+        store_window.grab_set()
+
+        store_mgr = StoreManager(self.modules_dir, self.shared_state)
+
+        # Top frame for status/refresh
+        top_frame = ttk.Frame(store_window)
+        top_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        status_var = tk.StringVar(value="Loading...")
+        ttk.Label(top_frame, textvariable=status_var).pack(side=tk.LEFT)
+
+        # Listbox area
+        list_frame = ttk.Frame(store_window)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL)
+        # Use a Treeview for columns (Name, Version, Status)
+        cols = ("Name", "Version", "Status")
+        tree = ttk.Treeview(list_frame, columns=cols, show='headings', yscrollcommand=scrollbar.set)
+        scrollbar.config(command=tree.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        tree.heading("Name", text="Name")
+        tree.heading("Version", text="Version")
+        tree.heading("Status", text="Status")
+
+        tree.column("Name", width=200)
+        tree.column("Version", width=100)
+        tree.column("Status", width=100)
+
+        # Details/Actions area
+        action_frame = ttk.Frame(store_window)
+        action_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        btn_install = ttk.Button(action_frame, text="Install/Update", state=tk.DISABLED)
+        btn_install.pack(side=tk.RIGHT, padx=5)
+
+        btn_uninstall = ttk.Button(action_frame, text="Uninstall", state=tk.DISABLED)
+        btn_uninstall.pack(side=tk.RIGHT, padx=5)
+
+        # Data placeholders
+        catalog_data = {} # {module_name: plugin_info}
+        installed_info = store_mgr.get_installed_modules_info() # {module_name: version}
+
+        def refresh_list():
+            status_var.set("Fetching catalog...")
+            store_window.update_idletasks()
+
+            # Threaded fetch
+            def _fetch():
+                cat = store_mgr.fetch_catalog()
+                nonlocal catalog_data
+                catalog_data = {}
+                if cat and "plugins" in cat:
+                    for p in cat["plugins"]:
+                        catalog_data[p["name"]] = p
+
+                # Update UI in main thread
+                store_window.after(0, lambda: _populate_tree(cat))
+
+            threading.Thread(target=_fetch, daemon=True).start()
+
+        def _populate_tree(cat):
+            tree.delete(*tree.get_children())
+            if not cat:
+                status_var.set("Failed to fetch catalog.")
+                return
+
+            status_var.set("Catalog loaded.")
+            nonlocal installed_info
+            installed_info = store_mgr.get_installed_modules_info() # Refresh installed
+
+            for name, plugin in catalog_data.items():
+                local_ver = installed_info.get(name)
+                remote_ver = plugin.get("version", "0.0.0")
+
+                status_str = "Not Installed"
+                if local_ver:
+                    if local_ver == remote_ver:
+                        status_str = "Installed"
+                    else:
+                        status_str = "Update Available"
+
+                display_title = plugin.get("title", name)
+                tree.insert("", tk.END, values=(display_title, remote_ver, status_str), iid=name)
+
+        def on_select(event):
+            selected = tree.selection()
+            if not selected:
+                btn_install.config(state=tk.DISABLED)
+                btn_uninstall.config(state=tk.DISABLED)
+                return
+
+            module_name = selected[0]
+            plugin = catalog_data.get(module_name)
+            local_ver = installed_info.get(module_name)
+
+            btn_install.config(state=tk.NORMAL)
+            if local_ver:
+                btn_uninstall.config(state=tk.NORMAL)
+                if local_ver == plugin.get("version"):
+                    btn_install.config(text="Reinstall")
+                else:
+                    btn_install.config(text="Update")
+            else:
+                btn_uninstall.config(state=tk.DISABLED)
+                btn_install.config(text="Install")
+
+        tree.bind("<<TreeviewSelect>>", on_select)
+
+        def do_install():
+            selected = tree.selection()
+            if not selected: return
+            module_name = selected[0]
+            plugin = catalog_data.get(module_name)
+            url = plugin.get("url")
+
+            if not url:
+                messagebox.showerror("Error", "No download URL for this plugin.", parent=store_window)
+                return
+
+            btn_install.config(state=tk.DISABLED)
+            status_var.set(f"Installing {module_name}...")
+
+            def cb(success, msg):
+                store_window.after(0, lambda: _post_install(success, msg, module_name))
+
+            store_mgr.install_plugin(module_name, url, cb)
+
+        def _post_install(success, msg, module_name):
+            btn_install.config(state=tk.NORMAL)
+            if success:
+                status_var.set(f"Installed {module_name}.")
+                refresh_list()
+                # Refresh main app module list
+                self.discover_modules()
+                self.refresh_modules_menu()
+                messagebox.showinfo("Success", f"Installed {module_name} successfully.", parent=store_window)
+            else:
+                status_var.set(f"Install failed: {msg}")
+                messagebox.showerror("Error", f"Installation failed: {msg}", parent=store_window)
+
+        def do_uninstall():
+            selected = tree.selection()
+            if not selected: return
+            module_name = selected[0]
+
+            if messagebox.askyesno("Confirm", f"Uninstall {module_name}?", parent=store_window):
+                success, msg = store_mgr.uninstall_plugin(module_name)
+                if success:
+                    refresh_list()
+                    self.discover_modules()
+                    self.refresh_modules_menu()
+                    messagebox.showinfo("Success", "Uninstalled successfully.", parent=store_window)
+                else:
+                    messagebox.showerror("Error", msg, parent=store_window)
+
+        btn_install.config(command=do_install)
+        btn_uninstall.config(command=do_uninstall)
+
+        refresh_list()
 
     def _get_current_layout_config(self):
         if not self.loaded_modules: return {"modules": [], "maximized_module_name": self.maximized_module_name, "module_order": []}
