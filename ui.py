@@ -481,19 +481,56 @@ class ModularGUI:
         self.saves_dir = get_saves_dir()
         self.shared_state.log(f"Application saves directory set to: {self.saves_dir}", "INFO")
 
-        # Determine modules directory (Dev Mode vs User Mode)
-        local_modules_dir = os.path.join(os.getcwd(), "modules")
-        if os.path.exists(local_modules_dir):
-            self.modules_dir = local_modules_dir
-            self.shared_state.log(f"Dev Mode: Using local modules directory: {self.modules_dir}")
-        else:
-            appdata = os.getenv('APPDATA')
-            if appdata:
-                self.modules_dir = os.path.join(appdata, "FlexiTools", "modules")
-            else:
-                # Fallback for non-Windows
-                self.modules_dir = os.path.join(os.path.expanduser("~"), ".flexitools", "modules")
+        # Determine modules directory
+        # Logic:
+        # 1. If 'portable.txt' exists in app root, use local 'modules' folder.
+        # 2. If frozen (installed), use LOCALAPPDATA.
+        # 3. Otherwise (dev mode), try local 'modules' folder first.
 
+        app_root = os.getcwd()
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+             # In frozen mode, CWD might be set to MEIPASS by main.py, but we want the executable's dir for portable check
+             app_root = os.path.dirname(sys.executable)
+
+        portable_marker = os.path.join(app_root, "portable.txt")
+        local_modules_dir = os.path.join(app_root, "modules")
+
+        is_portable = os.path.exists(portable_marker)
+        is_frozen = getattr(sys, 'frozen', False)
+
+        self.modules_dir = None
+
+        if is_portable:
+             self.modules_dir = local_modules_dir
+             self.shared_state.log(f"Portable Mode: Using local modules directory: {self.modules_dir}")
+        elif is_frozen:
+             # Installed mode: Force usage of LOCALAPPDATA to avoid confusing _internal/modules
+             appdata = os.getenv('LOCALAPPDATA') # Use LOCALAPPDATA instead of APPDATA (Roaming)
+             if not appdata: # Fallback if LOCALAPPDATA is missing on Windows or if non-Windows
+                 appdata = os.getenv('APPDATA')
+
+             if appdata:
+                 self.modules_dir = os.path.join(appdata, "FlexiTools", "modules")
+                 self.shared_state.log(f"Installed Mode: Using User AppData modules directory: {self.modules_dir}")
+             else:
+                 # Fallback for non-Windows or weird environment
+                 self.modules_dir = os.path.join(os.path.expanduser("~"), ".flexitools", "modules")
+                 self.shared_state.log(f"Installed Mode (Fallback): Using home modules directory: {self.modules_dir}")
+        else:
+             # Dev Mode
+             if os.path.exists(os.path.join(os.getcwd(), "modules")):
+                 self.modules_dir = os.path.join(os.getcwd(), "modules")
+                 self.shared_state.log(f"Dev Mode: Using local modules directory: {self.modules_dir}")
+             else:
+                 # Fallback dev mode
+                 appdata = os.getenv('LOCALAPPDATA') or os.getenv('APPDATA')
+                 if appdata:
+                     self.modules_dir = os.path.join(appdata, "FlexiTools", "modules")
+                 else:
+                     self.modules_dir = os.path.join(os.path.expanduser("~"), ".flexitools", "modules")
+                 self.shared_state.log(f"Dev Mode (Fallback): Using User AppData modules directory: {self.modules_dir}")
+
+        if self.modules_dir:
             if not os.path.exists(self.modules_dir):
                 try:
                     os.makedirs(self.modules_dir)

@@ -33,13 +33,13 @@ def generate_nsis(template_path, output_path, modules_dir):
 
         # Determine source and destination
         # Source: dist/FlexiTools/_internal/modules/module_name
-        # Destination: $APPDATA\FlexiTools\modules\module_name
+        # Destination: $LOCALAPPDATA\FlexiTools\modules\module_name
 
         if is_dir:
             section = f"""
 Section "{module_name}" {section_id}
-  ; Set output path to AppData
-  SetOutPath "$APPDATA\\FlexiTools\\modules\\{module_name}"
+  ; Set output path to Local AppData
+  SetOutPath "$LOCALAPPDATA\\FlexiTools\\modules\\{module_name}"
 
   ; Do not overwrite if file exists (Update software, do not update plugin)
   SetOverwrite off
@@ -54,7 +54,7 @@ SectionEnd
         else:
              section = f"""
 Section "{module_name}" {section_id}
-  SetOutPath "$APPDATA\\FlexiTools\\modules"
+  SetOutPath "$LOCALAPPDATA\\FlexiTools\\modules"
 
   ; Do not overwrite if file exists
   SetOverwrite off
@@ -77,11 +77,11 @@ SectionEnd
         hide_modules_lines.append(f"  SectionSetText ${{{section_id}}} \"\"")
 
         # Logic for InitModuleSelection (Update Mode)
-        # Check existence in AppData
+        # Check existence in Local AppData
         if is_dir:
-             check_path = f"$APPDATA\\FlexiTools\\modules\\{module_name}\\__init__.py" # Check for init py to confirm module presence
+             check_path = f"$LOCALAPPDATA\\FlexiTools\\modules\\{module_name}\\__init__.py" # Check for init py to confirm module presence
         else:
-             check_path = f"$APPDATA\\FlexiTools\\modules\\{module_item}"
+             check_path = f"$LOCALAPPDATA\\FlexiTools\\modules\\{module_item}"
 
         init_lines = f"""
   ; Check {module_name}

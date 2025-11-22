@@ -109,13 +109,6 @@ Section "Main Program" SEC01
   SetOutPath "$INSTDIR\_internal"
   File /r /x "modules" "dist\FlexiTools\_internal\*.*"
 
-  ; Create modules directory structure but don't copy all py files yet
-  CreateDirectory "$INSTDIR\_internal\modules"
-  SetOutPath "$INSTDIR\_internal\modules"
-
-  ; Copy non-python files in modules just in case (e.g. assets inside modules folder?)
-  File /r /x "*.py" "dist\FlexiTools\_internal\modules\*.*"
-
   ; 複製語言檔案 (locales)
   SetOutPath "$INSTDIR\locales"
   File /r "locales\*.*"
@@ -205,9 +198,9 @@ Section Uninstall
   ; 刪除 AppData modules (Optional? User might want to keep them?
   ; Usually full uninstall removes everything, but user data (saves) is kept.
   ; Modules are plugins, so maybe remove them.
-  ; Let's remove modules in AppData/FlexiTools/modules but keep saves if they are elsewhere)
-  RMDir /r "$APPDATA\FlexiTools\modules"
-  RMDir "$APPDATA\FlexiTools"
+  ; Let's remove modules in Local AppData/FlexiTools/modules but keep saves if they are elsewhere)
+  RMDir /r "$LOCALAPPDATA\FlexiTools\modules"
+  RMDir "$LOCALAPPDATA\FlexiTools"
   
   ; 刪除開始功能表項目
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\卸載 ${PRODUCT_NAME}.lnk"
