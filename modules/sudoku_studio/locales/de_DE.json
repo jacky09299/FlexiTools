@@ -1,0 +1,10 @@
+{
+    "module_sudoku_studio_title": "Sudoku Studio",
+    "module_sudoku_btn_new": "Neues Spiel",
+    "module_sudoku_btn_check": "Lösung prüfen",
+    "module_sudoku_btn_reset": "Puzzle zurücksetzen",
+    "module_sudoku_msg_no_sol": "Keine Lösung geladen.",
+    "module_sudoku_msg_progress": "So weit so gut! Weiter so.",
+    "module_sudoku_msg_incorrect": "Einige Zahlen sind falsch. Überprüfen Sie die markierten Zellen.",
+    "module_sudoku_msg_congrats": "Sie haben das Sudoku-Puzzle richtig gelöst!"
+}

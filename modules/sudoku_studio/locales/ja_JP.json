@@ -1,0 +1,10 @@
+{
+    "module_sudoku_studio_title": "数独スタジオ",
+    "module_sudoku_btn_new": "新しいゲーム",
+    "module_sudoku_btn_check": "解答を確認",
+    "module_sudoku_btn_reset": "パズルをリセット",
+    "module_sudoku_msg_no_sol": "パズルの解答が読み込まれていません。",
+    "module_sudoku_msg_progress": "順調です！続けましょう。",
+    "module_sudoku_msg_incorrect": "間違っている数字があります。ハイライトされたセルを確認してください。",
+    "module_sudoku_msg_congrats": "数独パズルを正しく解きました！"
+}

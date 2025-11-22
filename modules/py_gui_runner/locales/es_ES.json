@@ -1,0 +1,23 @@
+{
+    "module_py_gui_runner_title": "Ejecutor de GUI Py",
+    "module_pyguirunner_btn_add": "Añadir al grupo",
+    "module_pyguirunner_btn_delete": "Eliminar selección",
+    "module_pyguirunner_btn_select": "Seleccionar .py externo",
+    "module_pyguirunner_lbl_no_file": "Ningún archivo seleccionado",
+    "module_pyguirunner_grp_inputs": "Parámetros entrada",
+    "module_pyguirunner_grp_output": "Salida",
+    "module_pyguirunner_btn_run": "Ejecutar",
+    "module_pyguirunner_msg_no_script": "Por favor seleccione primero un archivo de script externo.",
+    "module_pyguirunner_msg_file_exists": "El archivo '{0}' ya existe en el grupo. ¿Sobrescribir?",
+    "module_pyguirunner_msg_added": "Script '{0}' añadido exitosamente.",
+    "module_pyguirunner_msg_copy_fail": "Error al copiar el archivo al grupo:\n{0}",
+    "module_pyguirunner_lbl_no_scripts": "No hay scripts en el grupo",
+    "module_pyguirunner_msg_select_first": "Por favor seleccione un script primero.",
+    "module_pyguirunner_msg_confirm_delete": "¿Eliminar script '{0}'? No se puede deshacer.",
+    "module_pyguirunner_msg_deleted": "Script '{0}' eliminado.",
+    "module_pyguirunner_msg_delete_fail": "No se pudo eliminar el archivo:\n{0}",
+    "module_pyguirunner_msg_read_error": "No se pudo leer o analizar el archivo:\n{0}",
+    "module_pyguirunner_msg_no_file": "Por favor seleccione un archivo .py primero.",
+    "module_pyguirunner_btn_select_folder": "Seleccionar carpeta",
+    "module_pyguirunner_btn_select_file": "Seleccionar archivo"
+}

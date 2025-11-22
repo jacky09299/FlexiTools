@@ -1,0 +1,12 @@
+{
+    "module_pdfviewer_btn_open": "Ouvrir PDF",
+    "module_pdfviewer_btn_prev": "Page préc.",
+    "module_pdfviewer_btn_next": "Page suiv.",
+    "module_pdfviewer_btn_back1": "Retour 1",
+    "module_pdfviewer_btn_back2": "Retour 2",
+    "module_pdfviewer_btn_back3": "Retour 3",
+    "module_pdfviewer_btn_back4": "Retour 4",
+    "module_pdfviewer_btn_reset": "Réinitialiser la vue",
+    "module_pdfviewer_status_select_pdf": "Veuillez sélectionner un fichier PDF",
+    "module_pdfviewer_dialog_select": "Sélectionner un fichier PDF"
+}

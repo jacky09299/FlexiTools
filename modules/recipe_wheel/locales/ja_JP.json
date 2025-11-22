@@ -1,0 +1,9 @@
+{
+    "module_recipe_wheel_title": "レシピルーレット",
+    "module_recipewheel_lbl_wheel": "レシピルーレット！",
+    "module_recipewheel_btn_spin": "回す！",
+    "module_recipewheel_lbl_recipe": "レシピ: ",
+    "module_recipewheel_lbl_ingredients": "材料:",
+    "module_recipewheel_lbl_steps": "手順:",
+    "module_recipewheel_lbl_no_recipes": "レシピがありません！"
+}

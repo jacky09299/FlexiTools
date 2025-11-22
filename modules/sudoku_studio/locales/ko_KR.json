@@ -1,0 +1,10 @@
+{
+    "module_sudoku_studio_title": "스도쿠 스튜디오",
+    "module_sudoku_btn_new": "새 게임",
+    "module_sudoku_btn_check": "해답 확인",
+    "module_sudoku_btn_reset": "퍼즐 재설정",
+    "module_sudoku_msg_no_sol": "퍼즐 해답이 로드되지 않았습니다.",
+    "module_sudoku_msg_progress": "지금까지 좋습니다! 계속하세요.",
+    "module_sudoku_msg_incorrect": "일부 숫자가 올바르지 않습니다. 강조된 셀을 확인하세요.",
+    "module_sudoku_msg_congrats": "스도쿠 퍼즐을 올바르게 풀었습니다!"
+}

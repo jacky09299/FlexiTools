@@ -1,0 +1,8 @@
+{
+    "module_notepad_title": "Bloc-notes",
+    "module_notepad_btn_open": "Ouvrir",
+    "module_notepad_btn_save": "Enregistrer",
+    "module_notepad_btn_save_as": "Enregistrer sous...",
+    "module_notepad_msg_error_open": "Erreur lors de l'ouverture du fichier",
+    "module_notepad_msg_error_save": "Erreur lors de l'enregistrement du fichier"
+}

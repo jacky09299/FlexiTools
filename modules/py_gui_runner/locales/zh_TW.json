@@ -1,0 +1,23 @@
+{
+    "module_py_gui_runner_title": "Python GUI 執行器",
+    "module_pyguirunner_btn_add": "加入程式組",
+    "module_pyguirunner_btn_delete": "刪除選定",
+    "module_pyguirunner_btn_select": "選擇外部 .py 檔案",
+    "module_pyguirunner_lbl_no_file": "尚未選擇檔案",
+    "module_pyguirunner_grp_inputs": "輸入參數",
+    "module_pyguirunner_grp_output": "輸出結果",
+    "module_pyguirunner_btn_run": "執行",
+    "module_pyguirunner_msg_no_script": "請先選擇一個外部腳本檔案。",
+    "module_pyguirunner_msg_file_exists": "檔案 '{0}' 已存在於程式組中。要覆蓋它嗎？",
+    "module_pyguirunner_msg_added": "腳本 '{0}' 已成功加入。",
+    "module_pyguirunner_msg_copy_fail": "無法將檔案複製到程式組資料夾：\n{0}",
+    "module_pyguirunner_lbl_no_scripts": "程式組中沒有腳本",
+    "module_pyguirunner_msg_select_first": "請先從下拉清單中選擇一個腳本。",
+    "module_pyguirunner_msg_confirm_delete": "您確定要刪除腳本 '{0}' 嗎？此操作無法復原。",
+    "module_pyguirunner_msg_deleted": "腳本 '{0}' 已被刪除。",
+    "module_pyguirunner_msg_delete_fail": "無法刪除檔案：\n{0}",
+    "module_pyguirunner_msg_read_error": "無法讀取或解析檔案：\n{0}",
+    "module_pyguirunner_msg_no_file": "請先選擇一個 .py 檔案。",
+    "module_pyguirunner_btn_select_folder": "選擇資料夾",
+    "module_pyguirunner_btn_select_file": "選擇檔案"
+}

@@ -1,0 +1,21 @@
+{
+    "module_fitter_title": "Ajustador de resonador",
+    "module_fitter_grp_file": "Selección de archivo",
+    "module_fitter_lbl_path": "Ruta archivo:",
+    "module_fitter_btn_browse": "Explorar...",
+    "module_fitter_grp_params": "Parámetros análisis",
+    "module_fitter_chk_check": "Modo solo comprobación (--check)",
+    "module_fitter_lbl_left": "Límite frec izquierda (GHz):",
+    "module_fitter_lbl_right": "Límite frec derecha (GHz):",
+    "module_fitter_btn_clear": "Limpiar límites",
+    "module_fitter_lbl_outdir": "Directorio salida:",
+    "module_fitter_btn_run": "Ejecutar análisis",
+    "module_fitter_tab_full": "Espectro completo",
+    "module_fitter_tab_mag": "Ajuste magnitud",
+    "module_fitter_tab_phase": "Ajuste fase",
+    "module_fitter_tab_log": "Registro",
+    "module_fitter_msg_error": "Error",
+    "module_fitter_msg_no_file": "Por favor seleccione un archivo de datos",
+    "module_fitter_msg_invalid_freq": "La frecuencia debe ser un número válido",
+    "module_fitter_msg_help": "Instrucciones:\n\n1. Seleccionar archivo: Clic 'Explorar...' para elegir un CSV.\n2. Parámetros:\n   - Solo comprobación: Mostrar solo espectro.\n   - Límites frecuencia: Establecer rango (GHz), o dejar vacío para auto.\n     - Clic en gráfico: Clic izquierdo límite izq, Clic derecho límite der.\n   - Directorio salida: Directorio para gráficos guardados.\n   - Limpiar límites: Restablecer entradas.\n3. Clic 'Ejecutar análisis'.\n4. Ver resultados en pestañas."
+}

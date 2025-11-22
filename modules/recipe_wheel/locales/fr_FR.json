@@ -1,0 +1,9 @@
+{
+    "module_recipe_wheel_title": "Roue de recettes",
+    "module_recipewheel_lbl_wheel": "Roue de recettes !",
+    "module_recipewheel_btn_spin": "Tourner la roue !",
+    "module_recipewheel_lbl_recipe": "Recette: ",
+    "module_recipewheel_lbl_ingredients": "Ingrédients:",
+    "module_recipewheel_lbl_steps": "Étapes:",
+    "module_recipewheel_lbl_no_recipes": "Aucune recette !"
+}

@@ -1,0 +1,8 @@
+{
+    "module_notepad_title": "Bloc de notas",
+    "module_notepad_btn_open": "Abrir",
+    "module_notepad_btn_save": "Guardar",
+    "module_notepad_btn_save_as": "Guardar como...",
+    "module_notepad_msg_error_open": "Error al abrir archivo",
+    "module_notepad_msg_error_save": "Error al guardar archivo"
+}

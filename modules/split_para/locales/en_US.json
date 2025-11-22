@@ -1,0 +1,19 @@
+{
+    "module_split_para_title": "Split Parameter",
+    "module_splitpara_lbl_input": "Input CSV File:",
+    "module_splitpara_lbl_output": "Output Directory:",
+    "module_splitpara_grp_params": "Filename Parameters",
+    "module_splitpara_lbl_prefix": "Prefix:",
+    "module_splitpara_lbl_splitparam": "Split Param:",
+    "module_splitpara_lbl_paramlabel": "Param Label:",
+    "module_splitpara_lbl_suffix": "Suffix:",
+    "module_splitpara_grp_values": "{0} Values to Process",
+    "module_splitpara_btn_select_all": "Select All",
+    "module_splitpara_btn_deselect_all": "Deselect All",
+    "module_splitpara_btn_process": "Process Data",
+    "module_splitpara_status_ready": "Ready to process data",
+    "module_splitpara_msg_success": "All {0} files were processed successfully.",
+    "module_splitpara_msg_error": "Completed with {0} errors. {1} files were processed successfully.",
+    "module_splitpara_msg_no_input": "Please select an input CSV file",
+    "module_splitpara_msg_no_values": "Please select at least one value"
+}

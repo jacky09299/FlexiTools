@@ -1,0 +1,21 @@
+{
+    "module_fitter_title": "Resonator Fitter",
+    "module_fitter_grp_file": "Dateiauswahl",
+    "module_fitter_lbl_path": "Dateipfad:",
+    "module_fitter_btn_browse": "Durchsuchen...",
+    "module_fitter_grp_params": "Analyseparameter",
+    "module_fitter_chk_check": "Nur-Prüfen-Modus (--check)",
+    "module_fitter_lbl_left": "Linke Frequenzgrenze (GHz):",
+    "module_fitter_lbl_right": "Rechte Frequenzgrenze (GHz):",
+    "module_fitter_btn_clear": "Grenzen löschen",
+    "module_fitter_lbl_outdir": "Ausgabeverzeichnis:",
+    "module_fitter_btn_run": "Analyse ausführen",
+    "module_fitter_tab_full": "Vollständiges Spektrum",
+    "module_fitter_tab_mag": "Amplituden-Fit",
+    "module_fitter_tab_phase": "Phasen-Fit",
+    "module_fitter_tab_log": "Log",
+    "module_fitter_msg_error": "Fehler",
+    "module_fitter_msg_no_file": "Bitte wählen Sie eine Datendatei",
+    "module_fitter_msg_invalid_freq": "Frequenz muss eine gültige Zahl sein",
+    "module_fitter_msg_help": "Anleitung:\n\n1. Datei auswählen: Klicken Sie 'Durchsuchen...', um eine CSV zu wählen.\n2. Parameter:\n   - Nur prüfen: Nur Spektrum anzeigen.\n   - Frequenzgrenzen: Bereich (GHz) festlegen oder leer lassen für Auto.\n     - Klicken im Plot: Linksklick für linke Grenze, Rechtsklick für rechte Grenze.\n   - Ausgabeverzeichnis: Verzeichnis für gespeicherte Plots.\n   - Grenzen löschen: Eingaben zurücksetzen.\n3. Klicken Sie 'Analyse ausführen'.\n4. Ergebnisse in Tabs ansehen."
+}

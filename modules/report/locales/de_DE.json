@@ -1,0 +1,12 @@
+{
+    "module_report_title": "Berichtsviewer",
+    "module_report_btn_load": "Excel-Datei laden",
+    "module_report_lbl_sheet": "Blatt:",
+    "module_report_btn_select": "Excel-Datei auswählen",
+    "module_report_status_no_file": "Keine Excel-Datei geladen.",
+    "module_report_err_pandas": "Fehler: Pandas Bibliothek nicht gefunden.",
+    "module_report_err_read": "Fehler beim Lesen der Excel-Datei",
+    "module_report_status_loaded": "Geladen: {0} [{1}]",
+    "module_report_status_no_sheets": "Keine Blätter in: {0}",
+    "module_report_status_no_data": "Keine Daten zum Anzeigen."
+}

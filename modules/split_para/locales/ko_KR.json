@@ -1,0 +1,19 @@
+{
+    "module_split_para_title": "매개변수 분할",
+    "module_splitpara_lbl_input": "입력 CSV 파일:",
+    "module_splitpara_lbl_output": "출력 디렉토리:",
+    "module_splitpara_grp_params": "파일명 매개변수",
+    "module_splitpara_lbl_prefix": "접두사:",
+    "module_splitpara_lbl_splitparam": "분할 매개변수:",
+    "module_splitpara_lbl_paramlabel": "매개변수 라벨:",
+    "module_splitpara_lbl_suffix": "접미사:",
+    "module_splitpara_grp_values": "{0} 값 처리",
+    "module_splitpara_btn_select_all": "모두 선택",
+    "module_splitpara_btn_deselect_all": "모두 해제",
+    "module_splitpara_btn_process": "데이터 처리",
+    "module_splitpara_status_ready": "데이터 처리 준비",
+    "module_splitpara_msg_success": "모든 {0} 파일이 성공적으로 처리되었습니다.",
+    "module_splitpara_msg_error": "{0}개의 오류로 완료되었습니다. {1} 파일이 성공적으로 처리되었습니다.",
+    "module_splitpara_msg_no_input": "입력 CSV 파일을 선택하세요",
+    "module_splitpara_msg_no_values": "적어도 하나의 값을 선택하세요"
+}

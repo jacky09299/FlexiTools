@@ -1,0 +1,21 @@
+{
+    "module_fitter_title": "共振器フィッター",
+    "module_fitter_grp_file": "ファイル選択",
+    "module_fitter_lbl_path": "ファイルパス:",
+    "module_fitter_btn_browse": "参照...",
+    "module_fitter_grp_params": "分析パラメータ",
+    "module_fitter_chk_check": "チェックのみモード (--check)",
+    "module_fitter_lbl_left": "左周波数境界 (GHz):",
+    "module_fitter_lbl_right": "右周波数境界 (GHz):",
+    "module_fitter_btn_clear": "境界をクリア",
+    "module_fitter_lbl_outdir": "出力ディレクトリ:",
+    "module_fitter_btn_run": "分析を実行",
+    "module_fitter_tab_full": "全スペクトル",
+    "module_fitter_tab_mag": "振幅フィット",
+    "module_fitter_tab_phase": "位相フィット",
+    "module_fitter_tab_log": "ログ",
+    "module_fitter_msg_error": "エラー",
+    "module_fitter_msg_no_file": "データファイルを選択してください",
+    "module_fitter_msg_invalid_freq": "周波数は有効な数値である必要があります",
+    "module_fitter_msg_help": "手順:\n\n1. ファイルを選択: '参照...' をクリックして CSV を選択。\n2. パラメータ:\n   - チェックのみ: スペクトルのみを表示。\n   - 周波数境界: 範囲 (GHz) を設定、または空のままにして自動。\n     - プロットをクリック: 左クリックで左境界、右クリックで右境界。\n   - 出力ディレクトリ: 保存されたプロットのディレクトリ。\n   - 境界をクリア: 入力をリセット。\n3. '分析を実行' をクリック。\n4. タブで結果を表示。"
+}

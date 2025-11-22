@@ -1,0 +1,6 @@
+{
+    "module_system_info_title": "系統資訊",
+    "module_systeminfo_lbl_cpu": "CPU 使用率:",
+    "module_systeminfo_lbl_mem": "記憶體使用率:",
+    "module_systeminfo_err_psutil": "錯誤: 未載入 psutil"
+}

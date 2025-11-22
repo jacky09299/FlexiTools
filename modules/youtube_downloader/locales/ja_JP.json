@@ -1,0 +1,17 @@
+{
+    "module_youtube_downloader_title": "YouTube ダウンローダー",
+    "module_ytdl_lbl_folder": "ダウンロードフォルダ:",
+    "module_ytdl_btn_select": "選択...",
+    "module_ytdl_lbl_urls": "YouTube URL (1行に1つ):",
+    "module_ytdl_lbl_help": "形式例:\n• 単一動画: https://www.youtube.com/watch?v=ID\n• 完全なプレイリスト: https://www.youtube.com/playlist?list=ID\n• プレイリストのサブセット: https://www.youtube.com/playlist?list=ID [2-5,7]",
+    "module_ytdl_btn_load": ".txt を読み込む",
+    "module_ytdl_lbl_format": "形式:",
+    "module_ytdl_lbl_quality": "品質:",
+    "module_ytdl_btn_download": "すべてダウンロード",
+    "module_ytdl_btn_skip": "現在の URL をスキップ",
+    "module_ytdl_btn_stop": "すべて停止",
+    "module_ytdl_status_ready": "ステータス: 準備完了",
+    "module_ytdl_err_ytdl": "yt-dlp が利用できません。yt-dlp をインストールしてください。",
+    "module_ytdl_err_no_url": "少なくとも1つの YouTube URL を入力してください。",
+    "module_ytdl_err_no_folder": "ダウンロードフォルダを選択してください。"
+}

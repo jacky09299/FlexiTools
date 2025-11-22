@@ -1,0 +1,17 @@
+{
+    "module_youtube_downloader_title": "유튜브 다운로더",
+    "module_ytdl_lbl_folder": "다운로드 폴더:",
+    "module_ytdl_btn_select": "선택...",
+    "module_ytdl_lbl_urls": "YouTube URL (한 줄에 하나):",
+    "module_ytdl_lbl_help": "형식 예:\n• 단일 비디오: https://www.youtube.com/watch?v=ID\n• 전체 재생 목록: https://www.youtube.com/playlist?list=ID\n• 재생 목록 하위 집합: https://www.youtube.com/playlist?list=ID [2-5,7]",
+    "module_ytdl_btn_load": ".txt 불러오기",
+    "module_ytdl_lbl_format": "형식:",
+    "module_ytdl_lbl_quality": "품질:",
+    "module_ytdl_btn_download": "모두 다운로드",
+    "module_ytdl_btn_skip": "현재 URL 건너뛰기",
+    "module_ytdl_btn_stop": "모두 중지",
+    "module_ytdl_status_ready": "상태: 준비",
+    "module_ytdl_err_ytdl": "yt-dlp를 사용할 수 없습니다. yt-dlp를 설치하세요.",
+    "module_ytdl_err_no_url": "적어도 하나의 YouTube URL을 입력하세요.",
+    "module_ytdl_err_no_folder": "다운로드 폴더를 선택하세요."
+}

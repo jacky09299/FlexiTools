@@ -1,0 +1,23 @@
+{
+    "module_py_gui_runner_title": "Py GUI ランナー",
+    "module_pyguirunner_btn_add": "プールに追加",
+    "module_pyguirunner_btn_delete": "選択を削除",
+    "module_pyguirunner_btn_select": "外部 .py を選択",
+    "module_pyguirunner_lbl_no_file": "ファイルが選択されていません",
+    "module_pyguirunner_grp_inputs": "入力パラメータ",
+    "module_pyguirunner_grp_output": "出力",
+    "module_pyguirunner_btn_run": "実行",
+    "module_pyguirunner_msg_no_script": "まず外部スクリプトファイルを選択してください。",
+    "module_pyguirunner_msg_file_exists": "ファイル '{0}' は既にプールに存在します。上書きしますか？",
+    "module_pyguirunner_msg_added": "スクリプト '{0}' が正常に追加されました。",
+    "module_pyguirunner_msg_copy_fail": "プールへのファイルのコピーに失敗しました:\n{0}",
+    "module_pyguirunner_lbl_no_scripts": "プールにスクリプトがありません",
+    "module_pyguirunner_msg_select_first": "まずスクリプトを選択してください。",
+    "module_pyguirunner_msg_confirm_delete": "スクリプト '{0}' を削除しますか？元に戻せません。",
+    "module_pyguirunner_msg_deleted": "スクリプト '{0}' を削除しました。",
+    "module_pyguirunner_msg_delete_fail": "ファイルを削除できませんでした:\n{0}",
+    "module_pyguirunner_msg_read_error": "ファイルの読み込みまたは解析に失敗しました:\n{0}",
+    "module_pyguirunner_msg_no_file": "まず .py ファイルを選択してください。",
+    "module_pyguirunner_btn_select_folder": "フォルダを選択",
+    "module_pyguirunner_btn_select_file": "ファイルを選択"
+}

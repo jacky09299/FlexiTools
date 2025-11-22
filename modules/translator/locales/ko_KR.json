@@ -1,0 +1,20 @@
+{
+    "module_translator_title": "번역기",
+    "module_translator_grp_controls": "제어",
+    "module_translator_lbl_target": "대상 언어:",
+    "module_translator_chk_remove_newline": "줄바꿈 제거 (번역 전)",
+    "module_translator_lbl_mode": "표시 모드:",
+    "module_translator_rb_float": "플로팅",
+    "module_translator_rb_main": "메인 창",
+    "module_translator_lbl_font_size": "플로팅 글꼴:",
+    "module_translator_btn_toggle_on": "번역 활성화",
+    "module_translator_btn_toggle_off": "번역 비활성화",
+    "module_translator_status_on": "활성화됨 - 텍스트 강조 후 Ctrl+C",
+    "module_translator_status_off": "비활성화됨",
+    "module_translator_grp_manual": "수동 번역",
+    "module_translator_btn_translate_manual": "입력 번역",
+    "module_translator_grp_help": "지침",
+    "module_translator_help_text": "1. '번역 활성화' 클릭\n2. 아무 곳이나 텍스트 강조 & Ctrl+C\n3. 모드에 따라 결과 표시\n\n모드:\n- 플로팅: 마우스 근처 팝업\n- 메인 창: 여기에 표시",
+    "module_translator_grp_history": "기록",
+    "module_translator_win_title": "번역 결과 (드래그 가능)"
+}

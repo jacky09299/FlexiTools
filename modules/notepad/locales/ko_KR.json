@@ -1,0 +1,8 @@
+{
+    "module_notepad_title": "메모장",
+    "module_notepad_btn_open": "열기",
+    "module_notepad_btn_save": "저장",
+    "module_notepad_btn_save_as": "다른 이름으로 저장...",
+    "module_notepad_msg_error_open": "파일 열기 오류",
+    "module_notepad_msg_error_save": "파일 저장 오류"
+}

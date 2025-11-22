@@ -1,0 +1,20 @@
+{
+    "module_gui_cmd_title": "CMD",
+    "module_cmd_btn_deactivate": "일반 CMD로 전환",
+    "module_cmd_btn_activate_base": "Conda(base)로 전환",
+    "module_cmd_btn_switch": "전환",
+    "module_cmd_btn_cd": "디렉토리 변경",
+    "module_cmd_btn_run_py": "파이썬 파일 실행",
+    "module_cmd_btn_create_env": "Conda 환경 생성",
+    "module_cmd_btn_force_stop": "명령 강제 중지",
+    "module_cmd_dialog_cd_title": "디렉토리 선택",
+    "module_cmd_dialog_env_title": "Conda 환경 생성",
+    "module_cmd_lbl_env_name": "환경 이름:",
+    "module_cmd_lbl_py_ver": "파이썬 버전 (선택):",
+    "module_cmd_lbl_pkgs": "패키지 (공백 구분, 선택):",
+    "module_cmd_btn_create": "생성",
+    "module_cmd_btn_cancel": "취소",
+    "module_cmd_msg_error": "오류",
+    "module_cmd_msg_enter_name": "환경 이름을 입력하세요",
+    "module_cmd_dialog_run_py": "파이썬 파일 선택"
+}

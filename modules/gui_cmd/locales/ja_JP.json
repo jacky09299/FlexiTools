@@ -1,0 +1,20 @@
+{
+    "module_gui_cmd_title": "コマンドプロンプト",
+    "module_cmd_btn_deactivate": "通常の CMD に切り替え",
+    "module_cmd_btn_activate_base": "Conda (base) に切り替え",
+    "module_cmd_btn_switch": "切り替え",
+    "module_cmd_btn_cd": "ディレクトリ変更",
+    "module_cmd_btn_run_py": "Python ファイルを実行",
+    "module_cmd_btn_create_env": "Conda 環境を作成",
+    "module_cmd_btn_force_stop": "コマンドを強制停止",
+    "module_cmd_dialog_cd_title": "ディレクトリを選択",
+    "module_cmd_dialog_env_title": "Conda 環境を作成",
+    "module_cmd_lbl_env_name": "環境名:",
+    "module_cmd_lbl_py_ver": "Python Ver (任意):",
+    "module_cmd_lbl_pkgs": "パッケージ (スペース区切り, 任意):",
+    "module_cmd_btn_create": "作成",
+    "module_cmd_btn_cancel": "キャンセル",
+    "module_cmd_msg_error": "エラー",
+    "module_cmd_msg_enter_name": "環境名を入力してください",
+    "module_cmd_dialog_run_py": "Python ファイルを選択"
+}

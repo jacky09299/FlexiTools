@@ -1,0 +1,12 @@
+{
+    "module_report_title": "Visor de informes",
+    "module_report_btn_load": "Cargar archivo Excel",
+    "module_report_lbl_sheet": "Hoja:",
+    "module_report_btn_select": "Seleccionar archivo Excel",
+    "module_report_status_no_file": "Ningún archivo Excel cargado.",
+    "module_report_err_pandas": "Error: Biblioteca Pandas no encontrada.",
+    "module_report_err_read": "Error al leer archivo Excel",
+    "module_report_status_loaded": "Cargado: {0} [{1}]",
+    "module_report_status_no_sheets": "Sin hojas en: {0}",
+    "module_report_status_no_data": "Sin datos para mostrar."
+}

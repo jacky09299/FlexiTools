@@ -1,0 +1,17 @@
+{
+    "module_youtube_downloader_title": "Téléchargeur YouTube",
+    "module_ytdl_lbl_folder": "Dossier de téléchargement:",
+    "module_ytdl_btn_select": "Sélectionner...",
+    "module_ytdl_lbl_urls": "URLs YouTube (une par ligne):",
+    "module_ytdl_lbl_help": "Exemples de format:\n• Vidéo unique: https://www.youtube.com/watch?v=ID\n• Playlist complète: https://www.youtube.com/playlist?list=ID\n• Sous-ensemble de playlist: https://www.youtube.com/playlist?list=ID [2-5,7]",
+    "module_ytdl_btn_load": "Charger .txt",
+    "module_ytdl_lbl_format": "Format:",
+    "module_ytdl_lbl_quality": "Qualité:",
+    "module_ytdl_btn_download": "Tout télécharger",
+    "module_ytdl_btn_skip": "Sauter l'URL actuelle",
+    "module_ytdl_btn_stop": "Tout arrêter",
+    "module_ytdl_status_ready": "Statut: Prêt",
+    "module_ytdl_err_ytdl": "yt-dlp n'est pas disponible. Veuillez installer yt-dlp.",
+    "module_ytdl_err_no_url": "Veuillez entrer au moins une URL YouTube.",
+    "module_ytdl_err_no_folder": "Veuillez sélectionner un dossier de téléchargement."
+}

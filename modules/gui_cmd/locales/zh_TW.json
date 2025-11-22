@@ -1,0 +1,20 @@
+{
+    "module_gui_cmd_title": "CMD",
+    "module_cmd_btn_deactivate": "切換為正常CMD",
+    "module_cmd_btn_activate_base": "切換為Conda(base)",
+    "module_cmd_btn_switch": "切換",
+    "module_cmd_btn_cd": "切換目錄",
+    "module_cmd_btn_run_py": "執行Python檔",
+    "module_cmd_btn_create_env": "安裝Conda環境",
+    "module_cmd_btn_force_stop": "強制結束指令",
+    "module_cmd_dialog_cd_title": "選擇目錄",
+    "module_cmd_dialog_env_title": "建立Conda環境",
+    "module_cmd_lbl_env_name": "環境名稱:",
+    "module_cmd_lbl_py_ver": "Python版本 (可選):",
+    "module_cmd_lbl_pkgs": "套件 (以空格分隔，可選):",
+    "module_cmd_btn_create": "建立",
+    "module_cmd_btn_cancel": "取消",
+    "module_cmd_msg_error": "錯誤",
+    "module_cmd_msg_enter_name": "請輸入環境名稱",
+    "module_cmd_dialog_run_py": "選擇Python檔案"
+}

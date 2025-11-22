@@ -1,0 +1,10 @@
+{
+    "module_sudoku_studio_title": "數獨工作室",
+    "module_sudoku_btn_new": "新遊戲",
+    "module_sudoku_btn_check": "檢查解答",
+    "module_sudoku_btn_reset": "重置拼圖",
+    "module_sudoku_msg_no_sol": "未載入解答。",
+    "module_sudoku_msg_progress": "目前為止都不錯！繼續加油。",
+    "module_sudoku_msg_incorrect": "有些數字不正確，請檢查標示的格子。",
+    "module_sudoku_msg_congrats": "恭喜！您正確解開了數獨！"
+}

@@ -1,0 +1,20 @@
+{
+    "module_translator_title": "翻譯器",
+    "module_translator_grp_controls": "控制項",
+    "module_translator_lbl_target": "翻譯目標語言:",
+    "module_translator_chk_remove_newline": "移除換行 (翻譯前)",
+    "module_translator_lbl_mode": "顯示模式:",
+    "module_translator_rb_float": "浮動",
+    "module_translator_rb_main": "主視窗",
+    "module_translator_lbl_font_size": "浮動視窗字體:",
+    "module_translator_btn_toggle_on": "啟用翻譯",
+    "module_translator_btn_toggle_off": "停用翻譯",
+    "module_translator_status_on": "翻譯已啟用 - 反白文字後按Ctrl+C",
+    "module_translator_status_off": "翻譯未啟用",
+    "module_translator_grp_manual": "手動翻譯",
+    "module_translator_btn_translate_manual": "翻譯輸入的文字",
+    "module_translator_grp_help": "使用說明",
+    "module_translator_help_text": "1. 點擊「啟用翻譯」\n2. 在任何地方反白文字後按 Ctrl+C\n3. 翻譯結果會根據顯示模式呈現\n\n顯示模式:\n- 浮動: 結果在滑鼠旁彈出\n- 主視窗: 結果顯示於此處",
+    "module_translator_grp_history": "翻譯紀錄",
+    "module_translator_win_title": "翻譯結果 (可拖曳)"
+}

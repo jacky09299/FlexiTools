@@ -1,0 +1,20 @@
+{
+    "module_translator_title": "Traducteur",
+    "module_translator_grp_controls": "Contrôles",
+    "module_translator_lbl_target": "Langue cible:",
+    "module_translator_chk_remove_newline": "Supprimer les sauts de ligne (avant traduction)",
+    "module_translator_lbl_mode": "Mode d'affichage:",
+    "module_translator_rb_float": "Flottant",
+    "module_translator_rb_main": "Fenêtre principale",
+    "module_translator_lbl_font_size": "Police flottante:",
+    "module_translator_btn_toggle_on": "Activer la traduction",
+    "module_translator_btn_toggle_off": "Désactiver la traduction",
+    "module_translator_status_on": "Activé - Surligner le texte & Ctrl+C",
+    "module_translator_status_off": "Désactivé",
+    "module_translator_grp_manual": "Traduction manuelle",
+    "module_translator_btn_translate_manual": "Traduire l'entrée",
+    "module_translator_grp_help": "Instructions",
+    "module_translator_help_text": "1. Cliquez sur 'Activer la traduction'\n2. Surlignez du texte n'importe où & Ctrl+C\n3. Résultat affiché selon le mode\n\nModes:\n- Flottant: Pop-up près de la souris\n- Fenêtre principale: Affiché ici",
+    "module_translator_grp_history": "Historique",
+    "module_translator_win_title": "Résultat de la traduction (Déplaçable)"
+}

@@ -1,0 +1,12 @@
+{
+    "module_pdfviewer_btn_open": "PDF を開く",
+    "module_pdfviewer_btn_prev": "前のページ",
+    "module_pdfviewer_btn_next": "次のページ",
+    "module_pdfviewer_btn_back1": "1戻る",
+    "module_pdfviewer_btn_back2": "2戻る",
+    "module_pdfviewer_btn_back3": "3戻る",
+    "module_pdfviewer_btn_back4": "4戻る",
+    "module_pdfviewer_btn_reset": "表示をリセット",
+    "module_pdfviewer_status_select_pdf": "PDF ファイルを選択してください",
+    "module_pdfviewer_dialog_select": "PDF ファイルを選択"
+}

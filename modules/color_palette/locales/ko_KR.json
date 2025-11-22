@@ -1,0 +1,8 @@
+{
+    "module_color_palette_title": "색상 팔레트",
+    "module_colorpalette_btn_regenerate": "모든 팔레트 재생성",
+    "module_colorpalette_lbl_hex": "HEX:",
+    "module_colorpalette_btn_copy": "복사",
+    "module_colorpalette_btn_choose": "색상 선택...",
+    "module_colorpalette_msg_copied": "(복사됨!)"
+}

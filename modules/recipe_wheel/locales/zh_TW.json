@@ -1,0 +1,9 @@
+{
+    "module_recipe_wheel_title": "食譜轉盤",
+    "module_recipewheel_lbl_wheel": "食譜轉盤！",
+    "module_recipewheel_btn_spin": "轉動轉盤！",
+    "module_recipewheel_lbl_recipe": "食譜: ",
+    "module_recipewheel_lbl_ingredients": "食材:",
+    "module_recipewheel_lbl_steps": "步驟:",
+    "module_recipewheel_lbl_no_recipes": "沒有食譜！"
+}

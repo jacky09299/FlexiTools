@@ -1,0 +1,19 @@
+{
+    "module_split_para_title": "Divisor de parámetros",
+    "module_splitpara_lbl_input": "Entrada archivo CSV:",
+    "module_splitpara_lbl_output": "Directorio salida:",
+    "module_splitpara_grp_params": "Parámetros nombre archivo",
+    "module_splitpara_lbl_prefix": "Prefijo:",
+    "module_splitpara_lbl_splitparam": "Parám división:",
+    "module_splitpara_lbl_paramlabel": "Etiqueta parám:",
+    "module_splitpara_lbl_suffix": "Sufijo:",
+    "module_splitpara_grp_values": "{0} Valores a procesar",
+    "module_splitpara_btn_select_all": "Seleccionar todo",
+    "module_splitpara_btn_deselect_all": "Deseleccionar todo",
+    "module_splitpara_btn_process": "Procesar datos",
+    "module_splitpara_status_ready": "Listo para procesar datos",
+    "module_splitpara_msg_success": "Los {0} archivos fueron procesados exitosamente.",
+    "module_splitpara_msg_error": "Completado con {0} errores. {1} archivos fueron procesados exitosamente.",
+    "module_splitpara_msg_no_input": "Por favor seleccione un archivo CSV de entrada",
+    "module_splitpara_msg_no_values": "Por favor seleccione al menos un valor"
+}

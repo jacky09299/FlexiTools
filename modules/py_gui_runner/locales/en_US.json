@@ -1,0 +1,23 @@
+{
+    "module_py_gui_runner_title": "Py GUI Runner",
+    "module_pyguirunner_btn_add": "Add to Pool",
+    "module_pyguirunner_btn_delete": "Delete Selected",
+    "module_pyguirunner_btn_select": "Select External .py",
+    "module_pyguirunner_lbl_no_file": "No file selected",
+    "module_pyguirunner_grp_inputs": "Input Parameters",
+    "module_pyguirunner_grp_output": "Output",
+    "module_pyguirunner_btn_run": "Run",
+    "module_pyguirunner_msg_no_script": "Please select an external script file first.",
+    "module_pyguirunner_msg_file_exists": "File '{0}' already exists in pool. Overwrite?",
+    "module_pyguirunner_msg_added": "Script '{0}' added successfully.",
+    "module_pyguirunner_msg_copy_fail": "Failed to copy file to pool:\n{0}",
+    "module_pyguirunner_lbl_no_scripts": "No scripts in pool",
+    "module_pyguirunner_msg_select_first": "Please select a script first.",
+    "module_pyguirunner_msg_confirm_delete": "Delete script '{0}'? Cannot be undone.",
+    "module_pyguirunner_msg_deleted": "Script '{0}' deleted.",
+    "module_pyguirunner_msg_delete_fail": "Could not delete file:\n{0}",
+    "module_pyguirunner_msg_read_error": "Failed to read or parse file:\n{0}",
+    "module_pyguirunner_msg_no_file": "Please select a .py file first.",
+    "module_pyguirunner_btn_select_folder": "Select Folder",
+    "module_pyguirunner_btn_select_file": "Select File"
+}

@@ -1,0 +1,8 @@
+{
+    "module_notepad_title": "記事本",
+    "module_notepad_btn_open": "開啟",
+    "module_notepad_btn_save": "儲存",
+    "module_notepad_btn_save_as": "另存新檔...",
+    "module_notepad_msg_error_open": "開啟檔案錯誤",
+    "module_notepad_msg_error_save": "儲存檔案錯誤"
+}

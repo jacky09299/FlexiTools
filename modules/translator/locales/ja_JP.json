@@ -1,0 +1,20 @@
+{
+    "module_translator_title": "翻訳機",
+    "module_translator_grp_controls": "コントロール",
+    "module_translator_lbl_target": "ターゲット言語:",
+    "module_translator_chk_remove_newline": "改行を削除 (翻訳前)",
+    "module_translator_lbl_mode": "表示モード:",
+    "module_translator_rb_float": "フロート",
+    "module_translator_rb_main": "メインウィンドウ",
+    "module_translator_lbl_font_size": "フロートフォント:",
+    "module_translator_btn_toggle_on": "翻訳を有効化",
+    "module_translator_btn_toggle_off": "翻訳を無効化",
+    "module_translator_status_on": "有効 - テキストを選択して Ctrl+C",
+    "module_translator_status_off": "無効",
+    "module_translator_grp_manual": "手動翻訳",
+    "module_translator_btn_translate_manual": "入力を翻訳",
+    "module_translator_grp_help": "使用方法",
+    "module_translator_help_text": "1. '翻訳を有効化' をクリック\n2. 任意の場所でテキストを選択して Ctrl+C\n3. 結果はモードに基づいて表示されます\n\nモード:\n- フロート: マウスの近くにポップアップ\n- メインウィンドウ: ここに表示",
+    "module_translator_grp_history": "履歴",
+    "module_translator_win_title": "翻訳結果 (ドラッグ可能)"
+}

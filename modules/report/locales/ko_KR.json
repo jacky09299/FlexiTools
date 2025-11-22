@@ -1,0 +1,12 @@
+{
+    "module_report_title": "보고서 뷰어",
+    "module_report_btn_load": "엑셀 파일 불러오기",
+    "module_report_lbl_sheet": "시트:",
+    "module_report_btn_select": "엑셀 파일 선택",
+    "module_report_status_no_file": "엑셀 파일이 로드되지 않았습니다.",
+    "module_report_err_pandas": "오류: Pandas 라이브러리를 찾을 수 없습니다.",
+    "module_report_err_read": "엑셀 파일 읽기 오류",
+    "module_report_status_loaded": "로드됨: {0} [{1}]",
+    "module_report_status_no_sheets": "시트 없음: {0}",
+    "module_report_status_no_data": "표시할 데이터가 없습니다."
+}

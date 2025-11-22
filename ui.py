@@ -475,8 +475,13 @@ class ModularGUI:
         self.saves_dir = get_saves_dir()
         self.shared_state.log(f"Application saves directory set to: {self.saves_dir}", "INFO")
 
-        # Initialize Localization Manager
-        self.loc_manager = LocalizationManager(self.shared_state)
+        self.modules_dir = "modules"
+        if not os.path.exists(self.modules_dir):
+            os.makedirs(self.modules_dir)
+            self.shared_state.log(f"Created modules directory: {self.modules_dir}")
+
+        # Initialize Localization Manager with modules_dir
+        self.loc_manager = LocalizationManager(self.shared_state, modules_dir=self.modules_dir)
 
         # Load settings (including language)
         self.settings = self.load_settings()
@@ -611,11 +616,6 @@ class ModularGUI:
         self.language_menu.add_command(label="한국어", command=lambda: self.switch_language("ko_KR"))
 
         self.shared_state.log("ModularGUI initialized.")
-
-        self.modules_dir = "modules"
-        if not os.path.exists(self.modules_dir):
-            os.makedirs(self.modules_dir)
-            self.shared_state.log(f"Created modules directory: {self.modules_dir}")
 
         self.loaded_modules = {}
         self.module_instance_counters = {}
@@ -1090,28 +1090,40 @@ class ModularGUI:
         if not os.path.exists(self.modules_dir):
             self.shared_state.log(f"Modules directory '{self.modules_dir}' not found.", level=logging.WARNING)
             return
-        for filename in os.listdir(self.modules_dir):
-            if filename.endswith(".py") and not filename.startswith("_"):
-                module_name = filename[:-3]
+        for item in os.listdir(self.modules_dir):
+            item_path = os.path.join(self.modules_dir, item)
+            module_name = None
+            module_spec = None
+
+            # Case 1: Directory (package)
+            if os.path.isdir(item_path) and os.path.exists(os.path.join(item_path, "__init__.py")):
+                module_name = item
+                module_spec = importlib.util.spec_from_file_location(module_name, os.path.join(item_path, "__init__.py"))
+
+            # Case 2: File (standalone module) - kept for backward compatibility or unmigrated files
+            elif os.path.isfile(item_path) and item.endswith(".py") and not item.startswith("_"):
+                module_name = item[:-3]
+                module_spec = importlib.util.spec_from_file_location(module_name, item_path)
+
+            if module_name and module_spec:
                 try:
-                    filepath = os.path.join(self.modules_dir, filename)
-                    spec = importlib.util.spec_from_file_location(module_name, filepath)
-                    module_lib = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(module_lib)
+                    module_lib = importlib.util.module_from_spec(module_spec)
+                    module_spec.loader.exec_module(module_lib)
                     module_class_name = None
                     for item_name in dir(module_lib):
-                        item = getattr(module_lib, item_name)
-                        if isinstance(item, type) and issubclass(item, Module) and item is not Module:
+                        item_obj = getattr(module_lib, item_name)
+                        if isinstance(item_obj, type) and issubclass(item_obj, Module) and item_obj is not Module:
                             module_class_name = item_name
                             break
                     if module_class_name:
                         ModuleClass = getattr(module_lib, module_class_name)
                         self.available_module_classes[module_name] = ModuleClass
-                        self.shared_state.log(f"Discovered module class {ModuleClass.__name__} in {filename}")
+                        self.shared_state.log(f"Discovered module class {ModuleClass.__name__} in {item}")
                     else:
-                        self.shared_state.log(f"No suitable Module class found in {filename}", level=logging.WARNING)
+                        self.shared_state.log(f"No suitable Module class found in {item}", level=logging.WARNING)
                 except Exception as e:
-                    self.shared_state.log(f"Failed to discover module from {filename}: {e}", level=logging.ERROR)
+                    self.shared_state.log(f"Failed to discover module from {item}: {e}", level=logging.ERROR)
+
         self.shared_state.log(f"Module discovery complete. Available: {list(self.available_module_classes.keys())}")
 
     def instantiate_module(self, module_name, parent_layout_manager):

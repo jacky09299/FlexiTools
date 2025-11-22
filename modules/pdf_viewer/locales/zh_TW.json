@@ -1,0 +1,12 @@
+{
+    "module_pdfviewer_btn_open": "選擇 PDF",
+    "module_pdfviewer_btn_prev": "上一頁",
+    "module_pdfviewer_btn_next": "下一頁",
+    "module_pdfviewer_btn_back1": "回上1個",
+    "module_pdfviewer_btn_back2": "回上2個",
+    "module_pdfviewer_btn_back3": "回上3個",
+    "module_pdfviewer_btn_back4": "回上4個",
+    "module_pdfviewer_btn_reset": "重置檢視",
+    "module_pdfviewer_status_select_pdf": "請選擇 PDF 檔案",
+    "module_pdfviewer_dialog_select": "選擇 PDF 檔案"
+}

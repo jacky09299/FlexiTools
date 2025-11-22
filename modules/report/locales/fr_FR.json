@@ -1,0 +1,12 @@
+{
+    "module_report_title": "Visionneuse de rapports",
+    "module_report_btn_load": "Charger fichier Excel",
+    "module_report_lbl_sheet": "Feuille:",
+    "module_report_btn_select": "Sélectionner fichier Excel",
+    "module_report_status_no_file": "Aucun fichier Excel chargé.",
+    "module_report_err_pandas": "Erreur: bibliothèque Pandas introuvable.",
+    "module_report_err_read": "Erreur de lecture du fichier Excel",
+    "module_report_status_loaded": "Chargé: {0} [{1}]",
+    "module_report_status_no_sheets": "Aucune feuille dans: {0}",
+    "module_report_status_no_data": "Aucune donnée à afficher."
+}

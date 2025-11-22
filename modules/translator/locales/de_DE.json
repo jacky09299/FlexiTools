@@ -1,0 +1,20 @@
+{
+    "module_translator_title": "Übersetzer",
+    "module_translator_grp_controls": "Steuerung",
+    "module_translator_lbl_target": "Zielsprache:",
+    "module_translator_chk_remove_newline": "Zeilenumbrüche entfernen (vor Übersetzung)",
+    "module_translator_lbl_mode": "Anzeigemodus:",
+    "module_translator_rb_float": "Schwebend",
+    "module_translator_rb_main": "Hauptfenster",
+    "module_translator_lbl_font_size": "Schwebende Schrift:",
+    "module_translator_btn_toggle_on": "Übersetzung aktivieren",
+    "module_translator_btn_toggle_off": "Übersetzung deaktivieren",
+    "module_translator_status_on": "Aktiviert - Text markieren & Strg+C",
+    "module_translator_status_off": "Deaktiviert",
+    "module_translator_grp_manual": "Manuelle Übersetzung",
+    "module_translator_btn_translate_manual": "Eingabe übersetzen",
+    "module_translator_grp_help": "Anleitung",
+    "module_translator_help_text": "1. Klicken Sie 'Übersetzung aktivieren'\n2. Markieren Sie Text irgendwo & Strg+C\n3. Ergebnis wird basierend auf Modus angezeigt\n\nModi:\n- Schwebend: Pop-up neben der Maus\n- Hauptfenster: Wird hier angezeigt",
+    "module_translator_grp_history": "Verlauf",
+    "module_translator_win_title": "Übersetzungsergebnis (Verschiebbar)"
+}

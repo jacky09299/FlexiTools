@@ -1,0 +1,20 @@
+{
+    "module_translator_title": "Traductor",
+    "module_translator_grp_controls": "Controles",
+    "module_translator_lbl_target": "Idioma destino:",
+    "module_translator_chk_remove_newline": "Eliminar saltos de línea (antes de traducir)",
+    "module_translator_lbl_mode": "Modo visualización:",
+    "module_translator_rb_float": "Flotante",
+    "module_translator_rb_main": "Ventana principal",
+    "module_translator_lbl_font_size": "Fuente flotante:",
+    "module_translator_btn_toggle_on": "Activar traducción",
+    "module_translator_btn_toggle_off": "Desactivar traducción",
+    "module_translator_status_on": "Activado - Resaltar texto y Ctrl+C",
+    "module_translator_status_off": "Desactivado",
+    "module_translator_grp_manual": "Traducción manual",
+    "module_translator_btn_translate_manual": "Traducir entrada",
+    "module_translator_grp_help": "Instrucciones",
+    "module_translator_help_text": "1. Clic 'Activar traducción'\n2. Resalte texto en cualquier lugar y Ctrl+C\n3. Resultado mostrado según modo\n\nModos:\n- Flotante: Emergente cerca del ratón\n- Ventana principal: Mostrado aquí",
+    "module_translator_grp_history": "Historial",
+    "module_translator_win_title": "Resultado traducción (Arrastrable)"
+}

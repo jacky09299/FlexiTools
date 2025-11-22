@@ -1,0 +1,12 @@
+{
+    "module_report_title": "レポートビューア",
+    "module_report_btn_load": "Excel ファイルを読み込む",
+    "module_report_lbl_sheet": "シート:",
+    "module_report_btn_select": "Excel ファイルを選択",
+    "module_report_status_no_file": "Excel ファイルが読み込まれていません。",
+    "module_report_err_pandas": "エラー: Pandas ライブラリが見つかりません。",
+    "module_report_err_read": "Excel ファイル読み込みエラー",
+    "module_report_status_loaded": "読み込み完了: {0} [{1}]",
+    "module_report_status_no_sheets": "シートがありません: {0}",
+    "module_report_status_no_data": "表示するデータがありません。"
+}

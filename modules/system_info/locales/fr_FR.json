@@ -1,0 +1,6 @@
+{
+    "module_system_info_title": "Infos système",
+    "module_systeminfo_lbl_cpu": "Utilisation CPU:",
+    "module_systeminfo_lbl_mem": "Utilisation Mémoire:",
+    "module_systeminfo_err_psutil": "Erreur: psutil non chargé"
+}

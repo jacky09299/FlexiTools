@@ -1,0 +1,8 @@
+{
+    "module_color_palette_title": "Color Palette",
+    "module_colorpalette_btn_regenerate": "Regenerate All Palettes",
+    "module_colorpalette_lbl_hex": "HEX:",
+    "module_colorpalette_btn_copy": "Copy",
+    "module_colorpalette_btn_choose": "Choose Color...",
+    "module_colorpalette_msg_copied": "(Copied!)"
+}

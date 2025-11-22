@@ -1,0 +1,23 @@
+{
+    "module_py_gui_runner_title": "Py GUI Runner",
+    "module_pyguirunner_btn_add": "Zum Pool hinzufügen",
+    "module_pyguirunner_btn_delete": "Ausgewählte löschen",
+    "module_pyguirunner_btn_select": "Externe .py wählen",
+    "module_pyguirunner_lbl_no_file": "Keine Datei ausgewählt",
+    "module_pyguirunner_grp_inputs": "Eingabeparameter",
+    "module_pyguirunner_grp_output": "Ausgabe",
+    "module_pyguirunner_btn_run": "Ausführen",
+    "module_pyguirunner_msg_no_script": "Bitte wählen Sie zuerst eine externe Skriptdatei.",
+    "module_pyguirunner_msg_file_exists": "Datei '{0}' existiert bereits im Pool. Überschreiben?",
+    "module_pyguirunner_msg_added": "Skript '{0}' erfolgreich hinzugefügt.",
+    "module_pyguirunner_msg_copy_fail": "Datei konnte nicht in den Pool kopiert werden:\n{0}",
+    "module_pyguirunner_lbl_no_scripts": "Keine Skripte im Pool",
+    "module_pyguirunner_msg_select_first": "Bitte wählen Sie zuerst ein Skript aus.",
+    "module_pyguirunner_msg_confirm_delete": "Skript '{0}' löschen? Kann nicht rückgängig gemacht werden.",
+    "module_pyguirunner_msg_deleted": "Skript '{0}' gelöscht.",
+    "module_pyguirunner_msg_delete_fail": "Datei konnte nicht gelöscht werden:\n{0}",
+    "module_pyguirunner_msg_read_error": "Datei konnte nicht gelesen oder geparst werden:\n{0}",
+    "module_pyguirunner_msg_no_file": "Bitte wählen Sie zuerst eine .py Datei.",
+    "module_pyguirunner_btn_select_folder": "Ordner auswählen",
+    "module_pyguirunner_btn_select_file": "Datei auswählen"
+}

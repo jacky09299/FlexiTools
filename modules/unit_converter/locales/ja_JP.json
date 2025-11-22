@@ -1,0 +1,20 @@
+{
+    "module_unit_converter_title": "単位変換",
+    "uc_category": "カテゴリ:",
+    "uc_conversion": "変換:",
+    "uc_input": "入力:",
+    "uc_output": "出力:",
+    "uc_cat_length": "長さ",
+    "uc_cat_temperature": "温度",
+    "uc_cat_weight": "重さ",
+    "uc_conv_m_to_ft": "メートル → フィート",
+    "uc_conv_ft_to_m": "フィート → メートル",
+    "uc_conv_km_to_mi": "キロメートル → マイル",
+    "uc_conv_mi_to_km": "マイル → キロメートル",
+    "uc_conv_c_to_f": "摂氏 → 華氏",
+    "uc_conv_f_to_c": "華氏 → 摂氏",
+    "uc_conv_kg_to_lb": "キログラム → ポンド",
+    "uc_conv_lb_to_kg": "ポンド → キログラム",
+    "uc_conv_g_to_oz": "グラム → オンス",
+    "uc_conv_oz_to_g": "オンス → グラム"
+}

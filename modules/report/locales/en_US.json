@@ -1,0 +1,12 @@
+{
+    "module_report_title": "Report Viewer",
+    "module_report_btn_load": "Load Excel File",
+    "module_report_lbl_sheet": "Sheet:",
+    "module_report_btn_select": "Select Excel File",
+    "module_report_status_no_file": "No Excel file loaded.",
+    "module_report_err_pandas": "Error: Pandas library not found.",
+    "module_report_err_read": "Error reading Excel file",
+    "module_report_status_loaded": "Loaded: {0} [{1}]",
+    "module_report_status_no_sheets": "No sheets in: {0}",
+    "module_report_status_no_data": "No data to display."
+}

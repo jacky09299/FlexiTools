@@ -1,0 +1,20 @@
+{
+    "module_unit_converter_title": "Einheitenumrechner",
+    "uc_category": "Kategorie:",
+    "uc_conversion": "Umrechnung:",
+    "uc_input": "Eingabe:",
+    "uc_output": "Ausgabe:",
+    "uc_cat_length": "Länge",
+    "uc_cat_temperature": "Temperatur",
+    "uc_cat_weight": "Gewicht",
+    "uc_conv_m_to_ft": "Meter zu Fuß",
+    "uc_conv_ft_to_m": "Fuß zu Meter",
+    "uc_conv_km_to_mi": "Kilometer zu Meilen",
+    "uc_conv_mi_to_km": "Meilen zu Kilometer",
+    "uc_conv_c_to_f": "Celsius zu Fahrenheit",
+    "uc_conv_f_to_c": "Fahrenheit zu Celsius",
+    "uc_conv_kg_to_lb": "Kilogramm zu Pfund",
+    "uc_conv_lb_to_kg": "Pfund zu Kilogramm",
+    "uc_conv_g_to_oz": "Gramm zu Unzen",
+    "uc_conv_oz_to_g": "Unzen zu Gramm"
+}

@@ -1,0 +1,10 @@
+{
+    "module_sudoku_studio_title": "Sudoku Studio",
+    "module_sudoku_btn_new": "New Game",
+    "module_sudoku_btn_check": "Check Solution",
+    "module_sudoku_btn_reset": "Reset Puzzle",
+    "module_sudoku_msg_no_sol": "No puzzle solution is loaded.",
+    "module_sudoku_msg_progress": "So far so good! Keep going.",
+    "module_sudoku_msg_incorrect": "Some numbers are incorrect. Check the highlighted cells.",
+    "module_sudoku_msg_congrats": "You solved the Sudoku puzzle correctly!"
+}

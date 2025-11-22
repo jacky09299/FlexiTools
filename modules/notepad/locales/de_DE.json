@@ -1,0 +1,8 @@
+{
+    "module_notepad_title": "Notizblock",
+    "module_notepad_btn_open": "Öffnen",
+    "module_notepad_btn_save": "Speichern",
+    "module_notepad_btn_save_as": "Speichern unter...",
+    "module_notepad_msg_error_open": "Fehler beim Öffnen der Datei",
+    "module_notepad_msg_error_save": "Fehler beim Speichern der Datei"
+}

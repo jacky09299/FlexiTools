@@ -1,0 +1,20 @@
+{
+    "module_unit_converter_title": "Convertidor de unidades",
+    "uc_category": "Categoría:",
+    "uc_conversion": "Conversión:",
+    "uc_input": "Entrada:",
+    "uc_output": "Salida:",
+    "uc_cat_length": "Longitud",
+    "uc_cat_temperature": "Temperatura",
+    "uc_cat_weight": "Peso",
+    "uc_conv_m_to_ft": "Metros a Pies",
+    "uc_conv_ft_to_m": "Pies a Metros",
+    "uc_conv_km_to_mi": "Kilómetros a Millas",
+    "uc_conv_mi_to_km": "Millas a Kilómetros",
+    "uc_conv_c_to_f": "Celsius a Fahrenheit",
+    "uc_conv_f_to_c": "Fahrenheit a Celsius",
+    "uc_conv_kg_to_lb": "Kilogramos a Libras",
+    "uc_conv_lb_to_kg": "Libras a Kilogramos",
+    "uc_conv_g_to_oz": "Gramos a Onzas",
+    "uc_conv_oz_to_g": "Onzas a Gramos"
+}

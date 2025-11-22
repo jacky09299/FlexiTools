@@ -1,0 +1,21 @@
+{
+    "module_fitter_title": "Resonator Fitter",
+    "module_fitter_grp_file": "File Selection",
+    "module_fitter_lbl_path": "File Path:",
+    "module_fitter_btn_browse": "Browse...",
+    "module_fitter_grp_params": "Analysis Parameters",
+    "module_fitter_chk_check": "Check Only Mode (--check)",
+    "module_fitter_lbl_left": "Left Freq Boundary (GHz):",
+    "module_fitter_lbl_right": "Right Freq Boundary (GHz):",
+    "module_fitter_btn_clear": "Clear Boundaries",
+    "module_fitter_lbl_outdir": "Output Dir:",
+    "module_fitter_btn_run": "Run Analysis",
+    "module_fitter_tab_full": "Full Spectrum",
+    "module_fitter_tab_mag": "Magnitude Fit",
+    "module_fitter_tab_phase": "Phase Fit",
+    "module_fitter_tab_log": "Log",
+    "module_fitter_msg_error": "Error",
+    "module_fitter_msg_no_file": "Please select a data file",
+    "module_fitter_msg_invalid_freq": "Frequency must be a valid number",
+    "module_fitter_msg_help": "Instructions:\n\n1. Select File: Click 'Browse...' to choose a CSV.\n2. Parameters:\n   - Check Only: Show spectrum only.\n   - Freq Bounds: Set range (GHz), or leave empty for auto.\n     - Click on plot: Left click for Left bound, Right click for Right bound.\n   - Output Dir: Directory for saved plots.\n   - Clear Bounds: Reset inputs.\n3. Click 'Run Analysis'.\n4. View results in tabs."
+}

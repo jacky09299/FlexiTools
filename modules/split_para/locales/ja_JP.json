@@ -1,0 +1,19 @@
+{
+    "module_split_para_title": "パラメータ分割",
+    "module_splitpara_lbl_input": "入力 CSV ファイル:",
+    "module_splitpara_lbl_output": "出力ディレクトリ:",
+    "module_splitpara_grp_params": "ファイル名パラメータ",
+    "module_splitpara_lbl_prefix": "プレフィックス:",
+    "module_splitpara_lbl_splitparam": "分割パラメータ:",
+    "module_splitpara_lbl_paramlabel": "パラメータラベル:",
+    "module_splitpara_lbl_suffix": "サフィックス:",
+    "module_splitpara_grp_values": "{0} 個の値",
+    "module_splitpara_btn_select_all": "すべて選択",
+    "module_splitpara_btn_deselect_all": "すべて解除",
+    "module_splitpara_btn_process": "データを処理",
+    "module_splitpara_status_ready": "データ処理の準備完了",
+    "module_splitpara_msg_success": "全 {0} ファイルが正常に処理されました。",
+    "module_splitpara_msg_error": "{0} 件のエラーで完了しました。{1} ファイルは正常に処理されました。",
+    "module_splitpara_msg_no_input": "入力 CSV ファイルを選択してください",
+    "module_splitpara_msg_no_values": "少なくとも1つの値を選択してください"
+}

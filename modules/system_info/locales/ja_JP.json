@@ -1,0 +1,6 @@
+{
+    "module_system_info_title": "システム情報",
+    "module_systeminfo_lbl_cpu": "CPU 使用率:",
+    "module_systeminfo_lbl_mem": "メモリ使用率:",
+    "module_systeminfo_err_psutil": "エラー: psutil が読み込まれていません"
+}

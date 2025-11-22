@@ -1,0 +1,21 @@
+{
+    "module_fitter_title": "共振器擬合",
+    "module_fitter_grp_file": "檔案選擇",
+    "module_fitter_lbl_path": "檔案路徑:",
+    "module_fitter_btn_browse": "瀏覽...",
+    "module_fitter_grp_params": "分析參數",
+    "module_fitter_chk_check": "僅檢查模式 (--check)",
+    "module_fitter_lbl_left": "左側頻率邊界 (GHz):",
+    "module_fitter_lbl_right": "右側頻率邊界 (GHz):",
+    "module_fitter_btn_clear": "清空邊界",
+    "module_fitter_lbl_outdir": "輸出目錄:",
+    "module_fitter_btn_run": "執行分析",
+    "module_fitter_tab_full": "全頻譜圖",
+    "module_fitter_tab_mag": "振幅擬合",
+    "module_fitter_tab_phase": "相位擬合",
+    "module_fitter_tab_log": "日誌",
+    "module_fitter_msg_error": "錯誤",
+    "module_fitter_msg_no_file": "請選擇數據檔案",
+    "module_fitter_msg_invalid_freq": "頻率必須是有效的數字",
+    "module_fitter_msg_help": "使用說明:\n\n1. 選擇檔案: 點擊 '瀏覽...' 選擇 CSV 檔。\n2. 參數設定:\n   - 僅檢查: 僅顯示頻譜圖。\n   - 頻率邊界: 設定範圍 (GHz)，留空則自動偵測。\n     - 在圖上點擊: 左鍵設左邊界，右鍵設右邊界。\n   - 輸出目錄: 圖檔儲存位置。\n   - 清空邊界: 重置輸入。\n3. 點擊 '執行分析'。\n4. 在分頁查看結果。"
+}

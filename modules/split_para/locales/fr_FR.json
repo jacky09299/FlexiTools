@@ -1,0 +1,19 @@
+{
+    "module_split_para_title": "Séparateur de paramètres",
+    "module_splitpara_lbl_input": "Fichier CSV d'entrée:",
+    "module_splitpara_lbl_output": "Répertoire de sortie:",
+    "module_splitpara_grp_params": "Paramètres de nom de fichier",
+    "module_splitpara_lbl_prefix": "Préfixe:",
+    "module_splitpara_lbl_splitparam": "Param de division:",
+    "module_splitpara_lbl_paramlabel": "Étiquette de param:",
+    "module_splitpara_lbl_suffix": "Suffixe:",
+    "module_splitpara_grp_values": "{0} Valeurs à traiter",
+    "module_splitpara_btn_select_all": "Tout sélectionner",
+    "module_splitpara_btn_deselect_all": "Tout désélectionner",
+    "module_splitpara_btn_process": "Traiter les données",
+    "module_splitpara_status_ready": "Prêt à traiter les données",
+    "module_splitpara_msg_success": "Tous les {0} fichiers ont été traités avec succès.",
+    "module_splitpara_msg_error": "Terminé avec {0} erreurs. {1} fichiers ont été traités avec succès.",
+    "module_splitpara_msg_no_input": "Veuillez sélectionner un fichier CSV d'entrée",
+    "module_splitpara_msg_no_values": "Veuillez sélectionner au moins une valeur"
+}

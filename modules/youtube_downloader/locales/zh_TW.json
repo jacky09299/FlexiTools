@@ -1,0 +1,17 @@
+{
+    "module_youtube_downloader_title": "YouTube 下載器",
+    "module_ytdl_lbl_folder": "下載資料夾:",
+    "module_ytdl_btn_select": "選擇...",
+    "module_ytdl_lbl_urls": "YouTube 網址 (每行一個):",
+    "module_ytdl_lbl_help": "格式範例:\n• 單一影片: https://www.youtube.com/watch?v=ID\n• 完整播放清單: https://www.youtube.com/playlist?list=ID\n• 播放清單子集: https://www.youtube.com/playlist?list=ID [2-5,7]",
+    "module_ytdl_btn_load": "載入 .txt",
+    "module_ytdl_lbl_format": "格式:",
+    "module_ytdl_lbl_quality": "畫質:",
+    "module_ytdl_btn_download": "全部下載",
+    "module_ytdl_btn_skip": "跳過目前網址",
+    "module_ytdl_btn_stop": "全部停止",
+    "module_ytdl_status_ready": "狀態: 就緒",
+    "module_ytdl_err_ytdl": "yt-dlp 未安裝，請安裝 yt-dlp。",
+    "module_ytdl_err_no_url": "請至少輸入一個 YouTube 網址。",
+    "module_ytdl_err_no_folder": "請選擇下載資料夾。"
+}

@@ -1,0 +1,6 @@
+{
+    "module_system_info_title": "시스템 정보",
+    "module_systeminfo_lbl_cpu": "CPU 사용량:",
+    "module_systeminfo_lbl_mem": "메모리 사용량:",
+    "module_systeminfo_err_psutil": "오류: psutil 로드되지 않음"
+}

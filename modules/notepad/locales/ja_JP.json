@@ -1,0 +1,8 @@
+{
+    "module_notepad_title": "メモ帳",
+    "module_notepad_btn_open": "開く",
+    "module_notepad_btn_save": "保存",
+    "module_notepad_btn_save_as": "名前を付けて保存...",
+    "module_notepad_msg_error_open": "ファイルを開くエラー",
+    "module_notepad_msg_error_save": "ファイルの保存エラー"
+}

@@ -1,0 +1,23 @@
+{
+    "module_py_gui_runner_title": "Exécuteur d'interface Py",
+    "module_pyguirunner_btn_add": "Ajouter au pool",
+    "module_pyguirunner_btn_delete": "Supprimer la sélection",
+    "module_pyguirunner_btn_select": "Sélectionner .py externe",
+    "module_pyguirunner_lbl_no_file": "Aucun fichier sélectionné",
+    "module_pyguirunner_grp_inputs": "Paramètres d'entrée",
+    "module_pyguirunner_grp_output": "Sortie",
+    "module_pyguirunner_btn_run": "Exécuter",
+    "module_pyguirunner_msg_no_script": "Veuillez d'abord sélectionner un fichier de script externe.",
+    "module_pyguirunner_msg_file_exists": "Le fichier '{0}' existe déjà dans le pool. Remplacer ?",
+    "module_pyguirunner_msg_added": "Script '{0}' ajouté avec succès.",
+    "module_pyguirunner_msg_copy_fail": "Échec de la copie du fichier vers le pool:\n{0}",
+    "module_pyguirunner_lbl_no_scripts": "Aucun script dans le pool",
+    "module_pyguirunner_msg_select_first": "Veuillez d'abord sélectionner un script.",
+    "module_pyguirunner_msg_confirm_delete": "Supprimer le script '{0}' ? Impossible d'annuler.",
+    "module_pyguirunner_msg_deleted": "Script '{0}' supprimé.",
+    "module_pyguirunner_msg_delete_fail": "Impossible de supprimer le fichier:\n{0}",
+    "module_pyguirunner_msg_read_error": "Impossible de lire ou d'analyser le fichier:\n{0}",
+    "module_pyguirunner_msg_no_file": "Veuillez d'abord sélectionner un fichier .py.",
+    "module_pyguirunner_btn_select_folder": "Sélectionner un dossier",
+    "module_pyguirunner_btn_select_file": "Sélectionner un fichier"
+}

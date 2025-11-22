@@ -1,0 +1,12 @@
+{
+    "module_report_title": "報表檢視器",
+    "module_report_btn_load": "載入 Excel 檔案",
+    "module_report_lbl_sheet": "工作表:",
+    "module_report_btn_select": "選擇 Excel 檔案",
+    "module_report_status_no_file": "尚未載入 Excel 檔案。",
+    "module_report_err_pandas": "錯誤: 找不到 Pandas 函式庫。",
+    "module_report_err_read": "讀取 Excel 檔案錯誤",
+    "module_report_status_loaded": "已載入: {0} [{1}]",
+    "module_report_status_no_sheets": "無工作表: {0}",
+    "module_report_status_no_data": "無資料可顯示。"
+}

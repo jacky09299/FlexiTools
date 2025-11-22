@@ -1,0 +1,20 @@
+{
+    "module_gui_cmd_title": "CMD",
+    "module_cmd_btn_deactivate": "Zu normaler CMD wechseln",
+    "module_cmd_btn_activate_base": "Zu Conda(base) wechseln",
+    "module_cmd_btn_switch": "Wechseln",
+    "module_cmd_btn_cd": "Verzeichnis wechseln",
+    "module_cmd_btn_run_py": "Python-Datei ausführen",
+    "module_cmd_btn_create_env": "Conda Env erstellen",
+    "module_cmd_btn_force_stop": "Befehl stoppen erzwingen",
+    "module_cmd_dialog_cd_title": "Verzeichnis auswählen",
+    "module_cmd_dialog_env_title": "Conda Env erstellen",
+    "module_cmd_lbl_env_name": "Env Name:",
+    "module_cmd_lbl_py_ver": "Python Ver (Opt):",
+    "module_cmd_lbl_pkgs": "Pakete (Leerzeichen getrennt, Opt):",
+    "module_cmd_btn_create": "Erstellen",
+    "module_cmd_btn_cancel": "Abbrechen",
+    "module_cmd_msg_error": "Fehler",
+    "module_cmd_msg_enter_name": "Bitte geben Sie den Umgebungsnamen ein",
+    "module_cmd_dialog_run_py": "Python-Datei auswählen"
+}

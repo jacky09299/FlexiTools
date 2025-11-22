@@ -1,0 +1,20 @@
+{
+    "module_translator_title": "Translator",
+    "module_translator_grp_controls": "Controls",
+    "module_translator_lbl_target": "Target Language:",
+    "module_translator_chk_remove_newline": "Remove newlines (pre-translate)",
+    "module_translator_lbl_mode": "Display Mode:",
+    "module_translator_rb_float": "Float",
+    "module_translator_rb_main": "Main Window",
+    "module_translator_lbl_font_size": "Floating Font:",
+    "module_translator_btn_toggle_on": "Enable Translate",
+    "module_translator_btn_toggle_off": "Disable Translate",
+    "module_translator_status_on": "Enabled - Highlight & Ctrl+C",
+    "module_translator_status_off": "Disabled",
+    "module_translator_grp_manual": "Manual Translate",
+    "module_translator_btn_translate_manual": "Translate Input",
+    "module_translator_grp_help": "Instructions",
+    "module_translator_help_text": "1. Click 'Enable Translate'\n2. Highlight text anywhere & Ctrl+C\n3. Result shown based on mode\n\nModes:\n- Float: Pop-up near mouse\n- Main Window: Shown here",
+    "module_translator_grp_history": "History",
+    "module_translator_win_title": "Translation Result (Draggable)"
+}

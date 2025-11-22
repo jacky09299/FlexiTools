@@ -1,0 +1,8 @@
+{
+    "module_color_palette_title": "調色盤",
+    "module_colorpalette_btn_regenerate": "重新生成所有調色盤",
+    "module_colorpalette_lbl_hex": "HEX:",
+    "module_colorpalette_btn_copy": "複製",
+    "module_colorpalette_btn_choose": "選擇顏色...",
+    "module_colorpalette_msg_copied": "(已複製!)"
+}

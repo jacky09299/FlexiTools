@@ -1,0 +1,12 @@
+{
+    "module_pdfviewer_btn_open": "PDF 열기",
+    "module_pdfviewer_btn_prev": "이전 페이지",
+    "module_pdfviewer_btn_next": "다음 페이지",
+    "module_pdfviewer_btn_back1": "뒤로 1",
+    "module_pdfviewer_btn_back2": "뒤로 2",
+    "module_pdfviewer_btn_back3": "뒤로 3",
+    "module_pdfviewer_btn_back4": "뒤로 4",
+    "module_pdfviewer_btn_reset": "보기 재설정",
+    "module_pdfviewer_status_select_pdf": "PDF 파일을 선택하세요",
+    "module_pdfviewer_dialog_select": "PDF 파일 선택"
+}

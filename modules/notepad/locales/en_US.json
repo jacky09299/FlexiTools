@@ -1,0 +1,8 @@
+{
+    "module_notepad_title": "Notepad",
+    "module_notepad_btn_open": "Open",
+    "module_notepad_btn_save": "Save",
+    "module_notepad_btn_save_as": "Save As...",
+    "module_notepad_msg_error_open": "Error Opening File",
+    "module_notepad_msg_error_save": "Error Saving File"
+}

@@ -1,0 +1,9 @@
+{
+    "module_recipe_wheel_title": "레시피 휠",
+    "module_recipewheel_lbl_wheel": "레시피 휠!",
+    "module_recipewheel_btn_spin": "휠 돌리기!",
+    "module_recipewheel_lbl_recipe": "레시피: ",
+    "module_recipewheel_lbl_ingredients": "재료:",
+    "module_recipewheel_lbl_steps": "단계:",
+    "module_recipewheel_lbl_no_recipes": "레시피 없음!"
+}

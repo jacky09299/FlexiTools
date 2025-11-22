@@ -1,0 +1,21 @@
+{
+    "module_fitter_title": "Ajustement de résonateur",
+    "module_fitter_grp_file": "Sélection de fichier",
+    "module_fitter_lbl_path": "Chemin du fichier:",
+    "module_fitter_btn_browse": "Parcourir...",
+    "module_fitter_grp_params": "Paramètres d'analyse",
+    "module_fitter_chk_check": "Mode vérification seule (--check)",
+    "module_fitter_lbl_left": "Limite de fréquence gauche (GHz):",
+    "module_fitter_lbl_right": "Limite de fréquence droite (GHz):",
+    "module_fitter_btn_clear": "Effacer les limites",
+    "module_fitter_lbl_outdir": "Répertoire de sortie:",
+    "module_fitter_btn_run": "Lancer l'analyse",
+    "module_fitter_tab_full": "Spectre complet",
+    "module_fitter_tab_mag": "Ajustement d'amplitude",
+    "module_fitter_tab_phase": "Ajustement de phase",
+    "module_fitter_tab_log": "Journal",
+    "module_fitter_msg_error": "Erreur",
+    "module_fitter_msg_no_file": "Veuillez sélectionner un fichier de données",
+    "module_fitter_msg_invalid_freq": "La fréquence doit être un nombre valide",
+    "module_fitter_msg_help": "Instructions:\n\n1. Sélectionner un fichier: Cliquez sur 'Parcourir...' pour choisir un CSV.\n2. Paramètres:\n   - Vérification seule: Afficher uniquement le spectre.\n   - Limites de fréquence: Définir la plage (GHz), ou laisser vide pour auto.\n     - Cliquez sur le tracé: Clic gauche pour limite gauche, Clic droit pour limite droite.\n   - Répertoire de sortie: Répertoire pour les tracés enregistrés.\n   - Effacer les limites: Réinitialiser les entrées.\n3. Cliquez sur 'Lancer l'analyse'.\n4. Voir les résultats dans les onglets."
+}
