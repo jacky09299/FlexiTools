@@ -176,16 +176,7 @@ class Module:
             self.gui_manager.restore_modules()
 
     def _on_resize_start(self, event):
-        if self.gui_manager and hasattr(self.gui_manager, 'root') and hasattr(self.gui_manager.root, 'resizable'):
-            # Temporarily make the window non-resizable to strictly prevent it from expanding
-            # during the internal module resize operation.
-            try:
-                self.gui_manager._resize_backup = self.gui_manager.root.resizable()
-                self.gui_manager.root.resizable(False, False)
-            except Exception as e:
-                if hasattr(self.gui_manager, 'shared_state'):
-                    self.gui_manager.shared_state.log(f"Error locking window size: {e}", "WARNING")
-
+        # Window stability is enforced via static propagation control (pack_propagate(False)).
         self.resize_start_x = event.x_root
         self.resize_start_y = event.y_root
 
@@ -230,15 +221,6 @@ class Module:
 
     def _on_resize_release(self, event):
         if self.gui_manager:
-            # Restore window resize capability
-            if hasattr(self.gui_manager, '_resize_backup') and self.gui_manager._resize_backup:
-                try:
-                    self.gui_manager.root.resizable(*self.gui_manager._resize_backup)
-                except Exception as e:
-                    if hasattr(self.gui_manager, 'shared_state'):
-                        self.gui_manager.shared_state.log(f"Error restoring window resizability: {e}", "WARNING")
-                self.gui_manager._resize_backup = None
-
             self.gui_manager.update_layout_scrollregion()
             if hasattr(self.gui_manager, "save_layout_config"):
                 self.gui_manager.save_layout_config()
@@ -1932,6 +1914,7 @@ class ModularGUI:
         self.shared_state.log(f"Maximizing module: {instance_id}", "INFO")
 
         layout_data = self.main_layout_manager.get_layout_data()
+        self.canvas.update_idletasks()
         canvas_w = self.canvas.winfo_width()
         if canvas_w > 1:
             for info in layout_data.values():
@@ -1967,6 +1950,7 @@ class ModularGUI:
         self.main_layout_manager.config(width=content_width, height=content_height)
         self.canvas.itemconfig(self.main_layout_manager_window_id, width=content_width, height=content_height)
         if self._pre_maximize_layout:
+            self.canvas.update_idletasks()
             current_w = self.canvas.winfo_width()
             for iid, props in self._pre_maximize_layout.items():
                 if iid in self.loaded_modules:
