@@ -683,7 +683,7 @@ class ModularGUI:
         self.loaded_modules = {}
         self.module_instance_counters = {}
         self.map_event_handled = 0
-        self.root.after(10, lambda: self.show_on_taskbar(self.root))
+        # self.root.after(10, lambda: self.show_on_taskbar(self.root)) # Moved to show_main_window
         self.maximized_module_name = None
         self._pre_maximize_layout = None
 
@@ -753,6 +753,18 @@ class ModularGUI:
 
         self.root.after(1000, self.ui_check_for_updates_startup)
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def show_main_window(self):
+        """Make the main window visible and apply final platform-specific settings."""
+        if sys.platform == "win32":
+             self.root.deiconify()
+             self.show_on_taskbar(self.root)
+        else:
+             self.root.deiconify()
+             # Re-apply overrideredirect if needed for Linux/Mac after deiconify
+             self.root.overrideredirect(True)
+
+        self.shared_state.log("Main window shown.", "INFO")
 
     def update_status_bar_log(self, message):
         try:
@@ -2052,10 +2064,20 @@ class ModularGUI:
     def on_mouse_up(self, event):
         self.resize_mode = None; self.root.configure(cursor="arrow")
 
-    def start_move(self, event): self.drag_start_x = event.x; self.drag_start_y = event.y
+    def start_move(self, event):
+        if sys.platform == "win32":
+            try:
+                windll.user32.ReleaseCapture()
+                # 0xA1 = WM_NCLBUTTONDOWN, 2 = HTCAPTION
+                windll.user32.SendMessageW(windll.user32.GetParent(self.root.winfo_id()), 0xA1, 2, 0)
+            except Exception as e:
+                self.shared_state.log(f"Error starting native drag: {e}", "WARNING")
+        else:
+            self.drag_start_x = event.x
+            self.drag_start_y = event.y
 
     def do_move(self, event):
-        if self.is_maximized: return
+        if self.is_maximized or sys.platform == "win32": return
         x = event.x_root - self.drag_start_x; y = event.y_root - self.drag_start_y
         self.root.geometry(f"+{x}+{y}")
 
