@@ -547,7 +547,11 @@ class ModularGUI:
         self.loc_manager.load_locale(saved_lang)
         self.shared_state.set("language", saved_lang)
 
-        self.root.overrideredirect(True)
+        if sys.platform == "win32":
+             self.root.after(10, self.setup_custom_frame_windows)
+        else:
+             self.root.overrideredirect(True)
+
         try: # Try to set icon, ignore if fails (e.g. file not found)
             root.iconbitmap("tools.ico")
         except tk.TclError:
@@ -2072,9 +2076,37 @@ class ModularGUI:
 
     def close_window(self): self.on_closing()
 
+    GWL_STYLE = -16
     GWL_EXSTYLE = -20
+    WS_CAPTION = 0x00C00000
+    WS_THICKFRAME = 0x00040000
     WS_EX_TOOLWINDOW = 0x00000080
     WS_EX_APPWINDOW = 0x00040000
+    SWP_FRAMECHANGED = 0x0020
+    SWP_NOMOVE = 0x0002
+    SWP_NOSIZE = 0x0001
+    SWP_NOZORDER = 0x0004
+
+    def setup_custom_frame_windows(self):
+        """Removes standard window decorations using Windows API while keeping it a standard window."""
+        self.root.update_idletasks()
+        try:
+            hwnd = windll.user32.GetParent(self.root.winfo_id())
+            # Get current style
+            old_style = windll.user32.GetWindowLongW(hwnd, self.GWL_STYLE)
+            # Remove Caption and ThickFrame
+            new_style = old_style & ~self.WS_CAPTION
+            new_style = new_style & ~self.WS_THICKFRAME
+            windll.user32.SetWindowLongW(hwnd, self.GWL_STYLE, new_style)
+            # Force refresh
+            windll.user32.SetWindowPos(
+                hwnd, 0, 0, 0, 0, 0,
+                self.SWP_NOMOVE | self.SWP_NOSIZE | self.SWP_NOZORDER | self.SWP_FRAMECHANGED
+            )
+            self.shared_state.log("Applied custom frame styles via Windows API.", "DEBUG")
+        except Exception as e:
+            self.shared_state.log(f"Error setting up custom frame on Windows: {e}", "ERROR")
+
     def show_on_taskbar(self, root_window):
         if sys.platform == "win32" and windll:
             try:
@@ -2100,20 +2132,28 @@ class ModularGUI:
 
 
     def minimize_window(self, event=None):
-        self.root.overrideredirect(False)
-        self.root.update_idletasks()
-        self.root.iconify()
-        self.root.bind('<Map>', lambda e: self.restore_window())
+        if sys.platform == "win32":
+            self.root.iconify()
+        else:
+            self.root.overrideredirect(False)
+            self.root.update_idletasks()
+            self.root.iconify()
+            self.root.bind('<Map>', lambda e: self.restore_window())
 
     def restore_window(self, event=None):
-        self.map_event_handled += 1
-        if self.map_event_handled == 2: # This count might need adjustment based on OS/Tk version
-            self.root.unbind('<Map>')
-            self.root.withdraw() # Temporarily hide
-            self.root.after(100, self._finish_restore) # Delay to ensure proper state change
+        if sys.platform == "win32":
+            # Native Windows restoration doesn't need the complex overrideredirect logic
+            pass
+        else:
+            self.map_event_handled += 1
+            if self.map_event_handled == 2: # This count might need adjustment based on OS/Tk version
+                self.root.unbind('<Map>')
+                self.root.withdraw() # Temporarily hide
+                self.root.after(100, self._finish_restore) # Delay to ensure proper state change
 
     def _finish_restore(self):
         self.root.deiconify() # Bring back
-        self.root.overrideredirect(True) # Re-apply borderless
+        if sys.platform != "win32":
+            self.root.overrideredirect(True) # Re-apply borderless only on non-Windows
         self.show_on_taskbar(self.root) # Ensure it's in taskbar
         self.map_event_handled = 0 # Reset for next time
