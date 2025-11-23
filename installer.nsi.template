@@ -112,6 +112,11 @@ Section "Main Program" SEC01
   ; 複製語言檔案 (locales)
   SetOutPath "$INSTDIR\locales"
   File /r "locales\*.*"
+
+  ; 複製法律文件
+  SetOutPath "$INSTDIR\docs"
+  File "docs\LEGAL.html"
+  File "licenses_pypi.json"
   
   ; 只在首次安裝或手動安裝時建立捷徑
   ${If} $IsUpdateMode != "1"
