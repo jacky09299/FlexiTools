@@ -547,7 +547,13 @@ class ModularGUI:
         self.loc_manager.load_locale(saved_lang)
         self.shared_state.set("language", saved_lang)
 
-        self.root.overrideredirect(True)
+        # Ensure window is hidden initially (important for splash screen sequence)
+        self.root.withdraw()
+        if sys.platform == "win32":
+            self.root.overrideredirect(False) # Standard window for native taskbar behavior
+        else:
+            self.root.overrideredirect(True)
+
         try: # Try to set icon, ignore if fails (e.g. file not found)
             root.iconbitmap("tools.ico")
         except tk.TclError:
@@ -2048,10 +2054,30 @@ class ModularGUI:
     def on_mouse_up(self, event):
         self.resize_mode = None; self.root.configure(cursor="arrow")
 
-    def start_move(self, event): self.drag_start_x = event.x; self.drag_start_y = event.y
+    def start_move(self, event):
+        if sys.platform == "win32" and windll:
+            if self.is_maximized: return
+            try:
+                windll.user32.ReleaseCapture()
+                WM_NCLBUTTONDOWN = 0xA1
+                HTCAPTION = 2
+                hwnd = windll.user32.GetParent(self.root.winfo_id())
+                # Fallback if GetParent fails or returns 0
+                if hwnd == 0:
+                    hwnd = self.root.winfo_id()
+                windll.user32.SendMessageW(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0)
+            except Exception as e:
+                self.shared_state.log(f"Native drag failed: {e}", "WARNING")
+                self.drag_start_x = event.x
+                self.drag_start_y = event.y
+        else:
+            self.drag_start_x = event.x
+            self.drag_start_y = event.y
 
     def do_move(self, event):
         if self.is_maximized: return
+        if sys.platform == "win32" and windll:
+            return # Native drag handles this
         x = event.x_root - self.drag_start_x; y = event.y_root - self.drag_start_y
         self.root.geometry(f"+{x}+{y}")
 
@@ -2075,45 +2101,56 @@ class ModularGUI:
     GWL_EXSTYLE = -20
     WS_EX_TOOLWINDOW = 0x00000080
     WS_EX_APPWINDOW = 0x00040000
+    GWL_STYLE = -16
+    WS_CAPTION = 0x00C00000
+    WS_THICKFRAME = 0x00040000
+
     def show_on_taskbar(self, root_window):
         if sys.platform == "win32" and windll:
             try:
                 hwnd = windll.user32.GetParent(root_window.winfo_id())
-                style = windll.user32.GetWindowLongW(hwnd, self.GWL_EXSTYLE)
-                style = style & ~self.WS_EX_TOOLWINDOW | self.WS_EX_APPWINDOW
-                windll.user32.SetWindowLongW(hwnd, self.GWL_EXSTYLE, style)
-                root_window.wm_withdraw()
-                root_window.after(10, lambda: root_window.wm_deiconify())
+                if hwnd == 0: # Fallback
+                    hwnd = root_window.winfo_id()
+
+                # 1. Ensure borderless style (Remove Caption and ThickFrame)
+                style = windll.user32.GetWindowLongW(hwnd, self.GWL_STYLE)
+                style = style & ~self.WS_CAPTION
+                style = style & ~self.WS_THICKFRAME
+                windll.user32.SetWindowLongW(hwnd, self.GWL_STYLE, style)
+
+                # 2. Ensure Taskbar Icon (APPWINDOW)
+                ex_style = windll.user32.GetWindowLongW(hwnd, self.GWL_EXSTYLE)
+                ex_style = ex_style & ~self.WS_EX_TOOLWINDOW | self.WS_EX_APPWINDOW
+                windll.user32.SetWindowLongW(hwnd, self.GWL_EXSTYLE, ex_style)
+
+                # 3. Apply changes
+                SWP_NOMOVE = 0x0002
+                SWP_NOSIZE = 0x0001
+                SWP_NOZORDER = 0x0004
+                SWP_FRAMECHANGED = 0x0020
+                windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED)
+
+                root_window.deiconify()
             except Exception as e:
-                self.shared_state.log(f"Failed to show on taskbar (Windows-specific): {e}", "WARNING")
+                self.shared_state.log(f"Failed to apply Windows styles: {e}", "WARNING")
+                root_window.deiconify()
         else:
-            # For non-Windows, just deiconify if needed, or do nothing if already visible
-            # This part might need more nuanced handling depending on desired behavior on other OS
+            # For non-Windows, just deiconify if needed
             try:
                 if root_window.state() == 'withdrawn':
                     root_window.deiconify()
                 self.shared_state.log("show_on_taskbar: Non-Windows platform, standard deiconify behavior.", "DEBUG")
             except tk.TclError as e:
                  self.shared_state.log(f"show_on_taskbar: Error during non-Windows deiconify: {e}", "WARNING")
-            # root_window.wm_withdraw()
-            # root_window.after(10, lambda: root_window.wm_deiconify())
 
 
     def minimize_window(self, event=None):
-        self.root.overrideredirect(False)
-        self.root.update_idletasks()
         self.root.iconify()
-        self.root.bind('<Map>', lambda e: self.restore_window())
 
     def restore_window(self, event=None):
-        self.map_event_handled += 1
-        if self.map_event_handled == 2: # This count might need adjustment based on OS/Tk version
-            self.root.unbind('<Map>')
-            self.root.withdraw() # Temporarily hide
-            self.root.after(100, self._finish_restore) # Delay to ensure proper state change
+        # Not strictly needed for standard windows, but if bound to Map, can ensure style
+        pass
 
     def _finish_restore(self):
-        self.root.deiconify() # Bring back
-        self.root.overrideredirect(True) # Re-apply borderless
-        self.show_on_taskbar(self.root) # Ensure it's in taskbar
-        self.map_event_handled = 0 # Reset for next time
+        # Legacy
+        pass
