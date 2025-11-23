@@ -764,7 +764,22 @@ class ModularGUI:
              # Re-apply overrideredirect if needed for Linux/Mac after deiconify
              self.root.overrideredirect(True)
 
-        self.shared_state.log("Main window shown.", "INFO")
+        # Force initial layout update to ensure correct module sizing immediately
+        try:
+            self.root.wait_visibility(self.root)
+        except tk.TclError:
+            pass
+
+        if self.resize_debounce_timer is not None:
+             self.root.after_cancel(self.resize_debounce_timer)
+             self.resize_debounce_timer = None
+
+        current_w = self.canvas.winfo_width()
+        class MockEvent:
+            width = current_w
+        self._handle_canvas_resize_debounced(MockEvent())
+
+        self.shared_state.log("Main window shown and layout refreshed.", "INFO")
 
     def update_status_bar_log(self, message):
         try:
