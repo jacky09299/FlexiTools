@@ -176,25 +176,8 @@ class Module:
             self.gui_manager.restore_modules()
 
     def _on_resize_start(self, event):
-        if self.gui_manager and hasattr(self.gui_manager, 'window_size_fixed_after_init') and self.gui_manager.window_size_fixed_after_init and hasattr(self.gui_manager, 'root') and hasattr(self.gui_manager.root, 'maxsize') and hasattr(self.gui_manager.root, 'winfo_width') and hasattr(self.gui_manager.root, 'winfo_height'):
-            self.gui_manager.is_module_resizing = True
-            self.gui_manager.root_maxsize_backup = self.gui_manager.root.maxsize()
-            self.gui_manager.root_minsize_backup = self.gui_manager.root.minsize()
-            current_width = self.gui_manager.root.winfo_width()
-            current_height = self.gui_manager.root.winfo_height()
-            self.gui_manager.window_geometry_before_module_resize = f"{current_width}x{current_height}"
-            self.gui_manager.root.maxsize(current_width, current_height)
-            self.gui_manager.root.minsize(current_width, current_height)
-            if hasattr(self.gui_manager, 'shared_state'):
-                self.gui_manager.shared_state.log(
-                    f"Module resize started: Geometry '{self.gui_manager.window_geometry_before_module_resize}' stored. Maxsize/minsize temporarily set to {current_width}x{current_height}.", "DEBUG"
-                )
-        elif self.gui_manager and hasattr(self.gui_manager, 'shared_state'):
-             if not (hasattr(self.gui_manager, 'window_size_fixed_after_init') and self.gui_manager.window_size_fixed_after_init):
-                 self.gui_manager.shared_state.log("Module resize started: window_size_fixed_after_init is False, not modifying window constraints.", "DEBUG")
-             else:
-                 self.gui_manager.shared_state.log("Module resize started: Could not set temporary window constraints (root or methods missing).", "WARNING")
-
+        # Dynamic locking logic removed to prevent window widening/jumping on hybrid windows.
+        # Window stability is now enforced via static propagation control (pack_propagate(False)).
         self.resize_start_x = event.x_root
         self.resize_start_y = event.y_root
 
@@ -242,49 +225,6 @@ class Module:
             self.gui_manager.update_layout_scrollregion()
             if hasattr(self.gui_manager, "save_layout_config"):
                 self.gui_manager.save_layout_config()
-        if self.gui_manager:
-            self.gui_manager.update_layout_scrollregion()
-
-        if self.gui_manager and hasattr(self.gui_manager, 'is_module_resizing') and self.gui_manager.is_module_resizing:
-            if hasattr(self.gui_manager, 'root_maxsize_backup') and self.gui_manager.root_maxsize_backup is not None and hasattr(self.gui_manager, 'root') and hasattr(self.gui_manager.root, 'maxsize'):
-                self.gui_manager.root.maxsize(
-                    self.gui_manager.root_maxsize_backup[0],
-                    self.gui_manager.root_maxsize_backup[1]
-                )
-                if hasattr(self.gui_manager, 'shared_state'):
-                    self.gui_manager.shared_state.log(
-                        f"Module resize ended: Main window maxsize restored to {self.gui_manager.root_maxsize_backup}.", "DEBUG"
-                    )
-            elif self.gui_manager and hasattr(self.gui_manager, 'shared_state'):
-                self.gui_manager.shared_state.log(
-                    "Module resize ended: No valid maxsize backup found to restore.", "WARNING"
-                )
-            if hasattr(self.gui_manager, 'root_minsize_backup') and self.gui_manager.root_minsize_backup is not None and hasattr(self.gui_manager, 'root') and hasattr(self.gui_manager.root, 'minsize'):
-                self.gui_manager.root.minsize(
-                    self.gui_manager.root_minsize_backup[0],
-                    self.gui_manager.root_minsize_backup[1]
-                )
-                if hasattr(self.gui_manager, 'shared_state'):
-                    self.gui_manager.shared_state.log(
-                        f"Module resize ended: Main window minsize restored to {self.gui_manager.root_minsize_backup}.", "DEBUG"
-                    )
-            elif self.gui_manager and hasattr(self.gui_manager, 'shared_state'):
-                self.gui_manager.shared_state.log(
-                    "Module resize ended: No valid minsize backup found to restore.", "WARNING"
-                )
-
-            if hasattr(self.gui_manager, 'root'):
-                w = self.gui_manager.root.winfo_width()
-                h = self.gui_manager.root.winfo_height()
-                self.gui_manager.root.geometry(f"{w}x{h}")
-
-            self.gui_manager.is_module_resizing = False
-            if hasattr(self.gui_manager, 'root_maxsize_backup'):
-                self.gui_manager.root_maxsize_backup = None
-            if hasattr(self.gui_manager, 'root_minsize_backup'):
-                self.gui_manager.root_minsize_backup = None
-            if hasattr(self.gui_manager, 'window_geometry_before_module_resize'):
-                self.gui_manager.window_geometry_before_module_resize = None
 
     def get_frame(self):
         return self.frame
@@ -572,6 +512,7 @@ class ModularGUI:
 
         self.main_frame = tk.Frame(self.root, bg=COLOR_WINDOW_BORDER, bd=1, relief="solid")
         self.main_frame.pack(fill="both", expand=True)
+        self.main_frame.pack_propagate(False) # Prevent inner content (modules) from resizing the window
 
         self.title_bar = tk.Frame(self.main_frame, bg=COLOR_TITLE_BAR_BG, height=35, relief="flat")
         self.title_bar.pack(fill="x")
@@ -707,6 +648,7 @@ class ModularGUI:
 
         self.canvas_container = ttk.Frame(self.content_frame, style='Main.TFrame')
         self.canvas_container.pack(fill=tk.BOTH, expand=True)
+        self.canvas_container.pack_propagate(False) # Additional layer of protection against resize propagation
 
         self.canvas = tk.Canvas(self.canvas_container, bg=COLOR_PRIMARY_BG, highlightthickness=0)
 
