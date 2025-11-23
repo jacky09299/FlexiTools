@@ -176,8 +176,16 @@ class Module:
             self.gui_manager.restore_modules()
 
     def _on_resize_start(self, event):
-        # Dynamic locking logic removed to prevent window widening/jumping on hybrid windows.
-        # Window stability is now enforced via static propagation control (pack_propagate(False)).
+        if self.gui_manager and hasattr(self.gui_manager, 'root') and hasattr(self.gui_manager.root, 'resizable'):
+            # Temporarily make the window non-resizable to strictly prevent it from expanding
+            # during the internal module resize operation.
+            try:
+                self.gui_manager._resize_backup = self.gui_manager.root.resizable()
+                self.gui_manager.root.resizable(False, False)
+            except Exception as e:
+                if hasattr(self.gui_manager, 'shared_state'):
+                    self.gui_manager.shared_state.log(f"Error locking window size: {e}", "WARNING")
+
         self.resize_start_x = event.x_root
         self.resize_start_y = event.y_root
 
@@ -222,6 +230,15 @@ class Module:
 
     def _on_resize_release(self, event):
         if self.gui_manager:
+            # Restore window resize capability
+            if hasattr(self.gui_manager, '_resize_backup') and self.gui_manager._resize_backup:
+                try:
+                    self.gui_manager.root.resizable(*self.gui_manager._resize_backup)
+                except Exception as e:
+                    if hasattr(self.gui_manager, 'shared_state'):
+                        self.gui_manager.shared_state.log(f"Error restoring window resizability: {e}", "WARNING")
+                self.gui_manager._resize_backup = None
+
             self.gui_manager.update_layout_scrollregion()
             if hasattr(self.gui_manager, "save_layout_config"):
                 self.gui_manager.save_layout_config()
@@ -1913,7 +1930,17 @@ class ModularGUI:
     def maximize_module(self, instance_id):
         if self.maximized_module_name == instance_id: return
         self.shared_state.log(f"Maximizing module: {instance_id}", "INFO")
-        self._pre_maximize_layout = self.main_layout_manager.get_layout_data()
+
+        layout_data = self.main_layout_manager.get_layout_data()
+        canvas_w = self.canvas.winfo_width()
+        if canvas_w > 1:
+            for info in layout_data.values():
+                info['rel_width'] = info['width'] / canvas_w
+                # Height is usually absolute in flow layout, or relative to width if we want aspect ratio.
+                # Current scale logic uses width ratio for both. Let's store rel_height relative to width too for consistency with scale_modules
+                info['rel_height'] = info['height'] / canvas_w
+        self._pre_maximize_layout = layout_data
+
         self.maximized_module_name = instance_id
         canvas_width = self.canvas.winfo_width(); canvas_height = self.canvas.winfo_height()
         self.main_layout_manager.config(width=canvas_width, height=canvas_height)
@@ -1940,8 +1967,17 @@ class ModularGUI:
         self.main_layout_manager.config(width=content_width, height=content_height)
         self.canvas.itemconfig(self.main_layout_manager_window_id, width=content_width, height=content_height)
         if self._pre_maximize_layout:
+            current_w = self.canvas.winfo_width()
             for iid, props in self._pre_maximize_layout.items():
-                if iid in self.loaded_modules: self.main_layout_manager.resize_module(iid, props.get('width', 200), props.get('height', 150))
+                if iid in self.loaded_modules:
+                    w = props.get('width', 200)
+                    h = props.get('height', 150)
+                    # Restore relative to new width if available
+                    if 'rel_width' in props and current_w > 1:
+                        w = int(props['rel_width'] * current_w)
+                        if 'rel_height' in props:
+                            h = int(props['rel_height'] * current_w)
+                    self.main_layout_manager.resize_module(iid, w, h)
             self.main_layout_manager.reflow_layout()
         else: self.main_layout_manager.reflow_layout()
         self.canvas.config(scrollregion=(0, 0, content_width, content_height))
