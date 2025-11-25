@@ -176,7 +176,25 @@ class Module:
             self.gui_manager.restore_modules()
 
     def _on_resize_start(self, event):
-        # Window stability is enforced via static propagation control (pack_propagate(False)).
+        if self.gui_manager and hasattr(self.gui_manager, 'window_size_fixed_after_init') and self.gui_manager.window_size_fixed_after_init and hasattr(self.gui_manager, 'root') and hasattr(self.gui_manager.root, 'maxsize') and hasattr(self.gui_manager.root, 'winfo_width') and hasattr(self.gui_manager.root, 'winfo_height'):
+            self.gui_manager.is_module_resizing = True
+            self.gui_manager.root_maxsize_backup = self.gui_manager.root.maxsize()
+            self.gui_manager.root_minsize_backup = self.gui_manager.root.minsize()
+            current_width = self.gui_manager.root.winfo_width()
+            current_height = self.gui_manager.root.winfo_height()
+            self.gui_manager.window_geometry_before_module_resize = f"{current_width}x{current_height}"
+            self.gui_manager.root.maxsize(current_width, current_height)
+            self.gui_manager.root.minsize(current_width, current_height)
+            if hasattr(self.gui_manager, 'shared_state'):
+                self.gui_manager.shared_state.log(
+                    f"Module resize started: Geometry '{self.gui_manager.window_geometry_before_module_resize}' stored. Maxsize/minsize temporarily set to {current_width}x{current_height}.", "DEBUG"
+                )
+        elif self.gui_manager and hasattr(self.gui_manager, 'shared_state'):
+             if not (hasattr(self.gui_manager, 'window_size_fixed_after_init') and self.gui_manager.window_size_fixed_after_init):
+                 self.gui_manager.shared_state.log("Module resize started: window_size_fixed_after_init is False, not modifying window constraints.", "DEBUG")
+             else:
+                 self.gui_manager.shared_state.log("Module resize started: Could not set temporary window constraints (root or methods missing).", "WARNING")
+
         self.resize_start_x = event.x_root
         self.resize_start_y = event.y_root
 
@@ -224,6 +242,49 @@ class Module:
             self.gui_manager.update_layout_scrollregion()
             if hasattr(self.gui_manager, "save_layout_config"):
                 self.gui_manager.save_layout_config()
+        if self.gui_manager:
+            self.gui_manager.update_layout_scrollregion()
+
+        if self.gui_manager and hasattr(self.gui_manager, 'is_module_resizing') and self.gui_manager.is_module_resizing:
+            if hasattr(self.gui_manager, 'root_maxsize_backup') and self.gui_manager.root_maxsize_backup is not None and hasattr(self.gui_manager, 'root') and hasattr(self.gui_manager.root, 'maxsize'):
+                self.gui_manager.root.maxsize(
+                    self.gui_manager.root_maxsize_backup[0],
+                    self.gui_manager.root_maxsize_backup[1]
+                )
+                if hasattr(self.gui_manager, 'shared_state'):
+                    self.gui_manager.shared_state.log(
+                        f"Module resize ended: Main window maxsize restored to {self.gui_manager.root_maxsize_backup}.", "DEBUG"
+                    )
+            elif self.gui_manager and hasattr(self.gui_manager, 'shared_state'):
+                self.gui_manager.shared_state.log(
+                    "Module resize ended: No valid maxsize backup found to restore.", "WARNING"
+                )
+            if hasattr(self.gui_manager, 'root_minsize_backup') and self.gui_manager.root_minsize_backup is not None and hasattr(self.gui_manager, 'root') and hasattr(self.gui_manager.root, 'minsize'):
+                self.gui_manager.root.minsize(
+                    self.gui_manager.root_minsize_backup[0],
+                    self.gui_manager.root_minsize_backup[1]
+                )
+                if hasattr(self.gui_manager, 'shared_state'):
+                    self.gui_manager.shared_state.log(
+                        f"Module resize ended: Main window minsize restored to {self.gui_manager.root_minsize_backup}.", "DEBUG"
+                    )
+            elif self.gui_manager and hasattr(self.gui_manager, 'shared_state'):
+                self.gui_manager.shared_state.log(
+                    "Module resize ended: No valid minsize backup found to restore.", "WARNING"
+                )
+
+            if hasattr(self.gui_manager, 'root'):
+                w = self.gui_manager.root.winfo_width()
+                h = self.gui_manager.root.winfo_height()
+                self.gui_manager.root.geometry(f"{w}x{h}")
+
+            self.gui_manager.is_module_resizing = False
+            if hasattr(self.gui_manager, 'root_maxsize_backup'):
+                self.gui_manager.root_maxsize_backup = None
+            if hasattr(self.gui_manager, 'root_minsize_backup'):
+                self.gui_manager.root_minsize_backup = None
+            if hasattr(self.gui_manager, 'window_geometry_before_module_resize'):
+                self.gui_manager.window_geometry_before_module_resize = None
 
     def get_frame(self):
         return self.frame
@@ -486,13 +547,7 @@ class ModularGUI:
         self.loc_manager.load_locale(saved_lang)
         self.shared_state.set("language", saved_lang)
 
-        # Ensure window is hidden initially (important for splash screen sequence)
-        self.root.withdraw()
-        if sys.platform == "win32":
-            self.root.overrideredirect(False) # Standard window for native taskbar behavior
-        else:
-            self.root.overrideredirect(True)
-
+        self.root.overrideredirect(True)
         try: # Try to set icon, ignore if fails (e.g. file not found)
             root.iconbitmap("tools.ico")
         except tk.TclError:
@@ -511,7 +566,6 @@ class ModularGUI:
 
         self.main_frame = tk.Frame(self.root, bg=COLOR_WINDOW_BORDER, bd=1, relief="solid")
         self.main_frame.pack(fill="both", expand=True)
-        self.main_frame.pack_propagate(False) # Prevent inner content (modules) from resizing the window
 
         self.title_bar = tk.Frame(self.main_frame, bg=COLOR_TITLE_BAR_BG, height=35, relief="flat")
         self.title_bar.pack(fill="x")
@@ -647,7 +701,6 @@ class ModularGUI:
 
         self.canvas_container = ttk.Frame(self.content_frame, style='Main.TFrame')
         self.canvas_container.pack(fill=tk.BOTH, expand=True)
-        self.canvas_container.pack_propagate(False) # Additional layer of protection against resize propagation
 
         self.canvas = tk.Canvas(self.canvas_container, bg=COLOR_PRIMARY_BG, highlightthickness=0)
 
@@ -1912,18 +1965,7 @@ class ModularGUI:
     def maximize_module(self, instance_id):
         if self.maximized_module_name == instance_id: return
         self.shared_state.log(f"Maximizing module: {instance_id}", "INFO")
-
-        layout_data = self.main_layout_manager.get_layout_data()
-        self.canvas.update_idletasks()
-        canvas_w = self.canvas.winfo_width()
-        if canvas_w > 1:
-            for info in layout_data.values():
-                info['rel_width'] = info['width'] / canvas_w
-                # Height is usually absolute in flow layout, or relative to width if we want aspect ratio.
-                # Current scale logic uses width ratio for both. Let's store rel_height relative to width too for consistency with scale_modules
-                info['rel_height'] = info['height'] / canvas_w
-        self._pre_maximize_layout = layout_data
-
+        self._pre_maximize_layout = self.main_layout_manager.get_layout_data()
         self.maximized_module_name = instance_id
         canvas_width = self.canvas.winfo_width(); canvas_height = self.canvas.winfo_height()
         self.main_layout_manager.config(width=canvas_width, height=canvas_height)
@@ -1950,18 +1992,8 @@ class ModularGUI:
         self.main_layout_manager.config(width=content_width, height=content_height)
         self.canvas.itemconfig(self.main_layout_manager_window_id, width=content_width, height=content_height)
         if self._pre_maximize_layout:
-            self.canvas.update_idletasks()
-            current_w = self.canvas.winfo_width()
             for iid, props in self._pre_maximize_layout.items():
-                if iid in self.loaded_modules:
-                    w = props.get('width', 200)
-                    h = props.get('height', 150)
-                    # Restore relative to new width if available
-                    if 'rel_width' in props and current_w > 1:
-                        w = int(props['rel_width'] * current_w)
-                        if 'rel_height' in props:
-                            h = int(props['rel_height'] * current_w)
-                    self.main_layout_manager.resize_module(iid, w, h)
+                if iid in self.loaded_modules: self.main_layout_manager.resize_module(iid, props.get('width', 200), props.get('height', 150))
             self.main_layout_manager.reflow_layout()
         else: self.main_layout_manager.reflow_layout()
         self.canvas.config(scrollregion=(0, 0, content_width, content_height))
@@ -2016,30 +2048,10 @@ class ModularGUI:
     def on_mouse_up(self, event):
         self.resize_mode = None; self.root.configure(cursor="arrow")
 
-    def start_move(self, event):
-        if sys.platform == "win32" and windll:
-            if self.is_maximized: return
-            try:
-                windll.user32.ReleaseCapture()
-                WM_NCLBUTTONDOWN = 0xA1
-                HTCAPTION = 2
-                hwnd = windll.user32.GetParent(self.root.winfo_id())
-                # Fallback if GetParent fails or returns 0
-                if hwnd == 0:
-                    hwnd = self.root.winfo_id()
-                windll.user32.SendMessageW(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0)
-            except Exception as e:
-                self.shared_state.log(f"Native drag failed: {e}", "WARNING")
-                self.drag_start_x = event.x
-                self.drag_start_y = event.y
-        else:
-            self.drag_start_x = event.x
-            self.drag_start_y = event.y
+    def start_move(self, event): self.drag_start_x = event.x; self.drag_start_y = event.y
 
     def do_move(self, event):
         if self.is_maximized: return
-        if sys.platform == "win32" and windll:
-            return # Native drag handles this
         x = event.x_root - self.drag_start_x; y = event.y_root - self.drag_start_y
         self.root.geometry(f"+{x}+{y}")
 
@@ -2063,56 +2075,45 @@ class ModularGUI:
     GWL_EXSTYLE = -20
     WS_EX_TOOLWINDOW = 0x00000080
     WS_EX_APPWINDOW = 0x00040000
-    GWL_STYLE = -16
-    WS_CAPTION = 0x00C00000
-    WS_THICKFRAME = 0x00040000
-
     def show_on_taskbar(self, root_window):
         if sys.platform == "win32" and windll:
             try:
                 hwnd = windll.user32.GetParent(root_window.winfo_id())
-                if hwnd == 0: # Fallback
-                    hwnd = root_window.winfo_id()
-
-                # 1. Ensure borderless style (Remove Caption and ThickFrame)
-                style = windll.user32.GetWindowLongW(hwnd, self.GWL_STYLE)
-                style = style & ~self.WS_CAPTION
-                style = style & ~self.WS_THICKFRAME
-                windll.user32.SetWindowLongW(hwnd, self.GWL_STYLE, style)
-
-                # 2. Ensure Taskbar Icon (APPWINDOW)
-                ex_style = windll.user32.GetWindowLongW(hwnd, self.GWL_EXSTYLE)
-                ex_style = ex_style & ~self.WS_EX_TOOLWINDOW | self.WS_EX_APPWINDOW
-                windll.user32.SetWindowLongW(hwnd, self.GWL_EXSTYLE, ex_style)
-
-                # 3. Apply changes
-                SWP_NOMOVE = 0x0002
-                SWP_NOSIZE = 0x0001
-                SWP_NOZORDER = 0x0004
-                SWP_FRAMECHANGED = 0x0020
-                windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED)
-
-                root_window.deiconify()
+                style = windll.user32.GetWindowLongW(hwnd, self.GWL_EXSTYLE)
+                style = style & ~self.WS_EX_TOOLWINDOW | self.WS_EX_APPWINDOW
+                windll.user32.SetWindowLongW(hwnd, self.GWL_EXSTYLE, style)
+                root_window.wm_withdraw()
+                root_window.after(10, lambda: root_window.wm_deiconify())
             except Exception as e:
-                self.shared_state.log(f"Failed to apply Windows styles: {e}", "WARNING")
-                root_window.deiconify()
+                self.shared_state.log(f"Failed to show on taskbar (Windows-specific): {e}", "WARNING")
         else:
-            # For non-Windows, just deiconify if needed
+            # For non-Windows, just deiconify if needed, or do nothing if already visible
+            # This part might need more nuanced handling depending on desired behavior on other OS
             try:
                 if root_window.state() == 'withdrawn':
                     root_window.deiconify()
                 self.shared_state.log("show_on_taskbar: Non-Windows platform, standard deiconify behavior.", "DEBUG")
             except tk.TclError as e:
                  self.shared_state.log(f"show_on_taskbar: Error during non-Windows deiconify: {e}", "WARNING")
+            # root_window.wm_withdraw()
+            # root_window.after(10, lambda: root_window.wm_deiconify())
 
 
     def minimize_window(self, event=None):
+        self.root.overrideredirect(False)
+        self.root.update_idletasks()
         self.root.iconify()
+        self.root.bind('<Map>', lambda e: self.restore_window())
 
     def restore_window(self, event=None):
-        # Not strictly needed for standard windows, but if bound to Map, can ensure style
-        pass
+        self.map_event_handled += 1
+        if self.map_event_handled == 2: # This count might need adjustment based on OS/Tk version
+            self.root.unbind('<Map>')
+            self.root.withdraw() # Temporarily hide
+            self.root.after(100, self._finish_restore) # Delay to ensure proper state change
 
     def _finish_restore(self):
-        # Legacy
-        pass
+        self.root.deiconify() # Bring back
+        self.root.overrideredirect(True) # Re-apply borderless
+        self.show_on_taskbar(self.root) # Ensure it's in taskbar
+        self.map_event_handled = 0 # Reset for next time
