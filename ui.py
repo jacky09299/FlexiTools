@@ -715,6 +715,12 @@ class ModularGUI:
         self.root.after(1000, self.ui_check_for_updates_startup)
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+    def tr(self, key, default=None, **kwargs):
+        """Helper to get translated string from the localization manager."""
+        if hasattr(self, 'loc_manager'):
+            return self.loc_manager.get(key, default, **kwargs)
+        return default if default is not None else key
+
     def update_status_bar_log(self, message):
         try:
             status_bar_width = self.status_bar.winfo_width()
