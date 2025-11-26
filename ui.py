@@ -547,7 +547,7 @@ class ModularGUI:
             except Exception as e:
                 self.shared_state.log(f"Could not load logo: {e}", "WARNING")
 
-        self.title_label = tk.Label(self.title_bar, text="FlexiTools",
+        self.title_label = tk.Label(self.title_bar, text=self.loc_manager.get("title_app", "FlexiTools"),
                                    bg=COLOR_TITLE_BAR_BG, fg="white", font=("Arial", 10, "bold"))
         self.title_label.pack(side="left", padx=(0, 10), pady=8)
 
@@ -621,7 +621,7 @@ class ModularGUI:
         self.help_menubutton.pack(side="left")
         self.help_menubutton.bind("<Button-1>", lambda e: self.help_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
         self.help_menu.add_command(label=self.loc_manager.get("menu_manage_modules"), command=self.manage_modules_dialog)
-        self.help_menu.add_command(label="Module Store", command=self.open_module_store)
+        self.help_menu.add_command(label=self.loc_manager.get("menu_module_store", "Module Store"), command=self.open_module_store)
         self.help_menu.add_command(label=self.loc_manager.get("menu_check_updates"), command=self.ui_check_for_updates_manual)
 
         # Language Menu
@@ -766,22 +766,21 @@ class ModularGUI:
                     if chunk:
                         f.write(chunk)
             self.shared_state.log(f"Installer downloaded to {installer_path}", "INFO")
-            messagebox.showinfo("下載完成", f"安裝檔已下載到：\n{installer_path}")
+            messagebox.showinfo(self.tr("update_dialog_download_complete_title"), self.tr("update_dialog_download_complete_message", installer_path))
             self.root.after(0, self._launch_update_helper, installer_path)
         except requests.exceptions.RequestException as e:
             self.shared_state.log(f"Download failed: {e}", "ERROR")
-            messagebox.showerror("Update Error", f"下載更新失敗：{e}")
+            messagebox.showerror(self.tr("update_dialog_download_failed_title"), self.tr("update_dialog_download_failed_message", str(e)))
         except Exception as e:
             self.shared_state.log(f"Unexpected error: {e}", "ERROR")
-            messagebox.showerror("Update Error", f"下載更新時發生錯誤：{e}")
+            messagebox.showerror(self.tr("update_dialog_generic_error_title"), self.tr("update_dialog_generic_error_message", str(e)))
 
     def _launch_update_helper(self, installer_path):
         self.shared_state.log("Preparing to launch update helper script.", "INFO")
 
-        confirm_update = messagebox.askyesno("Ready to Update",
-                                             "The update has been downloaded.\n\n"
-                                             "FlexiTools will now close to install the update and then restart automatically.\n\n"
-                                             "Do you want to proceed?", parent=self.root)
+        confirm_update = messagebox.askyesno(self.tr("update_dialog_ready_title"),
+                                             self.tr("update_dialog_ready_message"),
+                                             parent=self.root)
         if not confirm_update:
             self.shared_state.log("User cancelled update before applying.", "INFO")
             try:
@@ -839,28 +838,26 @@ class ModularGUI:
                 version = update_details["version"]
                 url = update_details["url"]
                 current_version_str = update_manager.get_current_version()
-                msg = (f"A new version ({version}) of {update_manager.APP_NAME} is available!\n"
-                       f"You are currently running version {current_version_str}.\n\n"
-                       "Would you like to download and install it now?")
-                if messagebox.askyesno("Update Available", msg):
+                msg = self.tr("update_dialog_message", version, update_manager.APP_NAME, current_version_str)
+                if messagebox.askyesno(self.tr("update_dialog_title"), msg):
                     self._initiate_update_download_and_install(version, url)
                 else:
                     self.shared_state.log("User declined automatic update.", "INFO")
             else:
                  if manual_check:
-                    messagebox.showerror("Update Error", "Update information is inconsistent. Please try again.")
+                    messagebox.showerror(self.tr("update_dialog_error_title"), self.tr("update_dialog_error_message"))
                  self.shared_state.log("Update status was AVAILABLE but no details found in update_info.json.", "ERROR")
         elif status_code == update_manager.NO_UPDATE_FOUND:
             if manual_check:
-                messagebox.showinfo("No Updates", f"{update_manager.APP_NAME} is up to date.")
+                messagebox.showinfo(self.tr("update_dialog_no_update_title"), self.tr("update_dialog_no_update_message", update_manager.APP_NAME))
             self.shared_state.log("No new update found.", "INFO")
         elif status_code == update_manager.ERROR_FETCHING:
             if manual_check:
-                messagebox.showerror("Update Check Failed", "Could not connect to the update server.")
+                messagebox.showerror(self.tr("update_dialog_check_failed_title"), self.tr("update_dialog_check_failed_message"))
             self.shared_state.log("Error fetching update information.", "WARNING")
         elif status_code == update_manager.ERROR_CONFIG:
             if manual_check:
-                 messagebox.showerror("Update Error", "Update configuration error.")
+                 messagebox.showerror(self.tr("update_dialog_config_error_title"), self.tr("update_dialog_config_error_message"))
             self.shared_state.log("Update configuration error.", "ERROR")
         elif status_code in [update_manager.CHECK_SKIPPED_RATE_LIMIT, update_manager.CHECK_SKIPPED_ALREADY_PENDING]:
             if manual_check:
@@ -972,7 +969,7 @@ class ModularGUI:
         self.shared_state.log("Manual update check initiated by user.", "INFO")
         if hasattr(self, 'help_menu'):
             try:
-                messagebox.showinfo("Checking for Updates", "Checking for updates in the background...", parent=self.root)
+                messagebox.showinfo(self.tr("update_dialog_checking_title"), self.tr("update_dialog_checking_message"), parent=self.root)
             except tk.TclError: pass
         thread = threading.Thread(target=self._perform_update_check_threaded, args=(True, True), daemon=True)
         thread.start()
@@ -1393,8 +1390,8 @@ class ModularGUI:
             dialog.destroy()
         btn_frame = tk.Frame(dialog)
         btn_frame.pack(pady=(0,10))
-        tk.Button(btn_frame, text="確定", width=8, command=on_ok).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text="取消", width=8, command=on_cancel).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame, text=self.tr("btn_ok"), width=8, command=on_ok).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame, text=self.tr("btn_cancel"), width=8, command=on_cancel).pack(side=tk.LEFT, padx=5)
         dialog.protocol("WM_DELETE_WINDOW", on_cancel)  # 關閉視窗也當作取消
         dialog.wait_window()
         return result["value"]
@@ -1440,12 +1437,12 @@ class ModularGUI:
     def manage_modules_dialog(self):
         """Dialog to manage module visibility in the Add menu."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Manage Modules")
+        dialog.title(self.tr("dialog_manage_modules_title"))
         dialog.geometry("400x500")
         dialog.transient(self.root)
         dialog.grab_set()
 
-        tk.Label(dialog, text="Select modules to show in the 'Modules' menu:").pack(pady=10)
+        tk.Label(dialog, text=self.tr("dialog_manage_modules_prompt")).pack(pady=10)
 
         canvas_frame = ttk.Frame(dialog)
         canvas_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
@@ -1493,7 +1490,7 @@ class ModularGUI:
         all_modules = sorted(self.available_module_classes.keys())
 
         if not all_modules:
-             tk.Label(scrollable_frame, text="No modules found.").pack(pady=20)
+             tk.Label(scrollable_frame, text=self.tr("dialog_manage_modules_no_modules")).pack(pady=20)
 
         for module_name in all_modules:
             var = tk.BooleanVar(value=(module_name not in self.hidden_modules))
@@ -1516,16 +1513,16 @@ class ModularGUI:
             self.shared_state.log(f"Updated module visibility. Hidden: {self.hidden_modules}")
             dialog.destroy()
 
-        ttk.Button(btn_frame, text="Save", command=on_save).pack(side="right", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side="right", padx=5)
+        ttk.Button(btn_frame, text=self.tr("btn_save"), command=on_save).pack(side="right", padx=5)
+        ttk.Button(btn_frame, text=self.tr("btn_cancel"), command=dialog.destroy).pack(side="right", padx=5)
 
     def open_module_store(self):
         if not StoreManager:
-            messagebox.showerror("Error", "StoreManager unavailable.", parent=self.root)
+            messagebox.showerror(self.tr("store_install_failed_title"), self.tr("store_error_unavailable"), parent=self.root)
             return
 
         store_window = tk.Toplevel(self.root)
-        store_window.title(self.loc_manager.get("window_module_store", "Module Store"))
+        store_window.title(self.tr("store_window_title"))
         store_window.geometry("600x400")
         store_window.transient(self.root)
         store_window.grab_set()
@@ -1536,7 +1533,7 @@ class ModularGUI:
         top_frame = ttk.Frame(store_window)
         top_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        status_var = tk.StringVar(value="Loading...")
+        status_var = tk.StringVar(value=self.tr("store_status_loading"))
         ttk.Label(top_frame, textvariable=status_var).pack(side=tk.LEFT)
 
         # Listbox area
@@ -1551,9 +1548,9 @@ class ModularGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        tree.heading("Name", text="Name")
-        tree.heading("Latest Version", text="Latest Version")
-        tree.heading("Status", text="Status")
+        tree.heading("Name", text=self.tr("store_col_name"))
+        tree.heading("Latest Version", text=self.tr("store_col_version"))
+        tree.heading("Status", text=self.tr("store_col_status"))
 
         tree.column("Name", width=200)
         tree.column("Latest Version", width=100)
@@ -1564,15 +1561,15 @@ class ModularGUI:
         action_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Version selection
-        ttk.Label(action_frame, text="Version:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(action_frame, text=self.tr("store_label_version")).pack(side=tk.LEFT, padx=5)
         version_var = tk.StringVar()
         cb_version = ttk.Combobox(action_frame, textvariable=version_var, state="readonly", width=10)
         cb_version.pack(side=tk.LEFT, padx=5)
 
-        btn_install = ttk.Button(action_frame, text="Install/Update", state=tk.DISABLED)
+        btn_install = ttk.Button(action_frame, text=self.tr("store_btn_install_update"), state=tk.DISABLED)
         btn_install.pack(side=tk.RIGHT, padx=5)
 
-        btn_uninstall = ttk.Button(action_frame, text="Uninstall", state=tk.DISABLED)
+        btn_uninstall = ttk.Button(action_frame, text=self.tr("store_btn_uninstall"), state=tk.DISABLED)
         btn_uninstall.pack(side=tk.RIGHT, padx=5)
 
         # Data placeholders
@@ -1580,7 +1577,7 @@ class ModularGUI:
         installed_info = store_mgr.get_installed_modules_info() # {module_name: version}
 
         def refresh_list():
-            status_var.set("Fetching catalog...")
+            status_var.set(self.tr("store_status_fetching"))
             store_window.update_idletasks()
 
             # Threaded fetch
@@ -1603,10 +1600,10 @@ class ModularGUI:
         def _populate_tree(cat):
             tree.delete(*tree.get_children())
             if not cat:
-                status_var.set("Failed to fetch catalog.")
+                status_var.set(self.tr("store_status_failed_fetch"))
                 return
 
-            status_var.set("Catalog loaded.")
+            status_var.set(self.tr("store_status_loaded"))
             nonlocal installed_info
             installed_info = store_mgr.get_installed_modules_info() # Refresh installed
 
@@ -1614,12 +1611,12 @@ class ModularGUI:
                 local_ver = installed_info.get(pid)
                 remote_ver = plugin.get("latest_version", plugin.get("version", "0.0.0"))
 
-                status_str = "Not Installed"
+                status_str = self.tr("store_status_not_installed")
                 if local_ver:
                     if local_ver == remote_ver:
-                        status_str = "Installed"
+                        status_str = self.tr("store_status_installed")
                     else:
-                        status_str = "Update Available"
+                        status_str = self.tr("store_status_update_available")
 
                 display_title = plugin.get("title", pid)
                 tree.insert("", tk.END, values=(display_title, remote_ver, status_str), iid=pid)
@@ -1660,11 +1657,11 @@ class ModularGUI:
 
         def check_btn_text(local_ver, selected_ver):
             if not local_ver:
-                btn_install.config(text="Install")
+                btn_install.config(text=self.tr("store_btn_install"))
             elif local_ver == selected_ver:
-                btn_install.config(text="Reinstall")
+                btn_install.config(text=self.tr("store_btn_reinstall"))
             else:
-                btn_install.config(text="Update/Switch")
+                btn_install.config(text=self.tr("store_btn_switch_version"))
 
         tree.bind("<<TreeviewSelect>>", on_select)
         cb_version.bind("<<ComboboxSelected>>", lambda e: check_btn_text(installed_info.get(tree.selection()[0]) if tree.selection() else None, cb_version.get()))
@@ -1691,11 +1688,11 @@ class ModularGUI:
                         break
 
             if not url:
-                messagebox.showerror("Error", "No download URL for this version.", parent=store_window)
+                messagebox.showerror(self.tr("store_install_failed_title"), self.tr("store_error_no_url"), parent=store_window)
                 return
 
             btn_install.config(state=tk.DISABLED)
-            status_var.set(f"Installing {module_name}...")
+            status_var.set(self.tr("store_status_installing", module_name))
 
             def cb(success, msg):
                 store_window.after(0, lambda: _post_install(success, msg, module_name))
@@ -1705,30 +1702,28 @@ class ModularGUI:
         def _post_install(success, msg, module_name):
             btn_install.config(state=tk.NORMAL)
             if success:
-                status_var.set(f"Installed {module_name}.")
                 refresh_list()
                 # Refresh main app module list
                 self.discover_modules()
                 self.refresh_modules_menu()
-                messagebox.showinfo("Success", f"Installed {module_name} successfully.", parent=store_window)
+                messagebox.showinfo(self.tr("store_install_success_title"), self.tr("store_install_success_message", module_name), parent=store_window)
             else:
-                status_var.set(f"Install failed: {msg}")
-                messagebox.showerror("Error", f"Installation failed: {msg}", parent=store_window)
+                messagebox.showerror(self.tr("store_install_failed_title"), self.tr("store_install_failed_message", msg), parent=store_window)
 
         def do_uninstall():
             selected = tree.selection()
             if not selected: return
             module_name = selected[0]
 
-            if messagebox.askyesno("Confirm", f"Uninstall {module_name}?", parent=store_window):
+            if messagebox.askyesno(self.tr("store_uninstall_confirm_title"), self.tr("store_uninstall_confirm_message", module_name), parent=store_window):
                 success, msg = store_mgr.uninstall_plugin(module_name)
                 if success:
                     refresh_list()
                     self.discover_modules()
                     self.refresh_modules_menu()
-                    messagebox.showinfo("Success", "Uninstalled successfully.", parent=store_window)
+                    messagebox.showinfo(self.tr("store_uninstall_success_title"), self.tr("store_uninstall_success_message"), parent=store_window)
                 else:
-                    messagebox.showerror("Error", msg, parent=store_window)
+                    messagebox.showerror(self.tr("store_uninstall_failed_title"), self.tr("store_uninstall_failed_message", msg), parent=store_window)
 
         btn_install.config(command=do_install)
         btn_uninstall.config(command=do_uninstall)
@@ -1762,7 +1757,7 @@ class ModularGUI:
         self.shared_state.log(f"[LOAD] Try loading layout config from file: {path}", "DEBUG")
         if not os.path.exists(path):
             self.shared_state.log(f"[LOAD] File not found: {path}", "WARNING")
-            messagebox.showerror("載入失敗", "找不到設定檔。", parent=self.root)
+            messagebox.showerror(self.tr("dialog_load_profile_fail_title"), self.tr("err_profile_not_found"), parent=self.root)
             return False
         try:
             with open(path, "r", encoding="utf-8") as f: config = json.load(f)
@@ -1817,11 +1812,11 @@ class ModularGUI:
             maximized = config.get("maximized_module_name")
             if maximized and maximized in self.loaded_modules: self.maximize_module(maximized)
             self.shared_state.log("[LOAD] Layout config loaded and restored from file.", "DEBUG")
-            messagebox.showinfo("載入成功", "設定檔已載入。", parent=self.root)
+            messagebox.showinfo(self.tr("dialog_load_profile_success_title"), self.tr("msg_profile_loaded"), parent=self.root)
             return True
         except Exception as e:
             self.shared_state.log(f"[LOAD][ERROR] Failed to load layout config from file {path}: {e}", "ERROR")
-            messagebox.showerror("載入失敗", f"無法載入設定檔：{e}", parent=self.root)
+            messagebox.showerror(self.tr("dialog_load_profile_fail_title"), self.tr("err_profile_load", str(e)), parent=self.root)
             return False
 
     def on_closing(self):
@@ -1834,8 +1829,7 @@ class ModularGUI:
 
     def show_context_menu(self, event):
         self.context_menu.delete(0, tk.END)
-        # "Toggle Module Visibility:" doesn't have a key yet, I'll add one or just use "Modules"
-        self.context_menu.add_command(label=self.loc_manager.get("menu_modules"), state=tk.DISABLED)
+        self.context_menu.add_command(label=self.loc_manager.get("context_menu_modules_title"), state=tk.DISABLED)
         self.context_menu.add_separator()
         for instance_id, mod_data in self.loaded_modules.items():
             is_visible = mod_data.get('frame_wrapper') and mod_data.get('frame_wrapper').winfo_exists()
