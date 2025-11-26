@@ -1285,7 +1285,7 @@ class ModularGUI:
                     self.main_layout_manager.current_canvas_width = canvas_width
                 width = int(mod.get("relative_width", 0.25) * canvas_width)
                 height = int(mod.get("relative_height", 0.187) * canvas_width)
-                width = max(50, width); height = max(50, height)
+                width = max(20, width); height = max(20, height)
                 if module_name in self.available_module_classes:
                     old_counter = self.module_instance_counters.get(module_name, 1)
                     try:
@@ -1798,7 +1798,7 @@ class ModularGUI:
                     self.main_layout_manager.current_canvas_width = canvas_width
                 width = int(mod.get("relative_width", 0.25) * canvas_width)
                 height = int(mod.get("relative_height", 0.187) * canvas_width)
-                width = max(50, width); height = max(50, height)
+                width = max(20, width); height = max(20, height)
                 if module_name in self.available_module_classes:
                     old_counter = self.module_instance_counters.get(module_name, 1)
                     try:
