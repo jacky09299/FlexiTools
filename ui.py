@@ -1219,14 +1219,19 @@ class ModularGUI:
                 self.shared_state.log(f"[SAVE][ERROR] Failed to clear layout config: {e}", "ERROR")
             return
         config = {"modules": [], "maximized_module_name": self.maximized_module_name, "module_order": []}
+        
+        # Save current canvas width to ensure correct restoration ratio
+        current_canvas_width = self.canvas.winfo_width()
+        if current_canvas_width <= 1: current_canvas_width = 800
+        config["canvas_width"] = current_canvas_width
+
         current_instance_ids = set(self.loaded_modules.keys()) & set(self.main_layout_manager.modules.keys())
         config["module_order"] = [iid for iid in self.main_layout_manager.modules.keys() if iid in current_instance_ids]
         for iid in config["module_order"]:
             mod_data = self.loaded_modules.get(iid)
             info = self.main_layout_manager.get_module_info(iid)
             if mod_data:
-                canvas_width = self.canvas.winfo_width();
-                if canvas_width <= 1: canvas_width = 800
+                canvas_width = current_canvas_width # Use the consistent width
                 relative_width = info["width"] / canvas_width if info else 0.25
                 relative_height = info["height"] / canvas_width if info else 0.187
                 config["modules"].append({
@@ -1269,11 +1274,11 @@ class ModularGUI:
                 current_real_width = self.canvas.winfo_width()
                 
                 canvas_width = 800 # Default fallback
-                if current_real_width > 1:
-                    canvas_width = current_real_width
-                elif saved_canvas_width and saved_canvas_width > 1:
+                if saved_canvas_width and saved_canvas_width > 1:
                     canvas_width = saved_canvas_width
                     self.shared_state.log(f"[LOAD] Using saved canvas width: {canvas_width}", "DEBUG")
+                elif current_real_width > 1:
+                    canvas_width = current_real_width
                 
                 # Update layout manager's current width to match what we are using for restoration
                 if self.main_layout_manager:
@@ -1782,11 +1787,11 @@ class ModularGUI:
                 current_real_width = self.canvas.winfo_width()
                 
                 canvas_width = 800 # Default fallback
-                if current_real_width > 1:
-                    canvas_width = current_real_width
-                elif saved_canvas_width and saved_canvas_width > 1:
+                if saved_canvas_width and saved_canvas_width > 1:
                     canvas_width = saved_canvas_width
                     self.shared_state.log(f"[LOAD] Using saved canvas width: {canvas_width}", "DEBUG")
+                elif current_real_width > 1:
+                    canvas_width = current_real_width
                 
                 # Update layout manager's current width to match what we are using for restoration
                 if self.main_layout_manager:
