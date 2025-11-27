@@ -200,10 +200,27 @@ class PDFViewerModule(Module):
             # 渲染設定
             if self.current_crop_rect:
                 # pypdfium2: page.render(scale, crop=(l, b, r, t))
-                bitmap = page.render(
-                    scale=self.zoom_level,
-                    crop=self.current_crop_rect
-                )
+                try:
+                    bitmap = page.render(
+                        scale=self.zoom_level,
+                        crop=self.current_crop_rect
+                    )
+                except Exception as e:
+                    # If crop fails (e.g. "Crop exceeds page dimensions"), try with a safety margin
+                    print(f"Render failed with crop {self.current_crop_rect}: {e}")
+                    l, b, r, t = self.current_crop_rect
+                    # Shrink crop slightly to ensure it's within bounds
+                    safe_crop = (l + 1, b + 1, r - 1, t - 1)
+                    try:
+                        bitmap = page.render(
+                            scale=self.zoom_level,
+                            crop=safe_crop
+                        )
+                    except Exception as e2:
+                        # If still fails, fallback to full page
+                        print(f"Safe crop failed: {e2}. Falling back to full page.")
+                        bitmap = page.render(scale=self.zoom_level)
+                        self.current_crop_rect = None # Reset invalid crop
             else:
                 # Render full page
                 bitmap = page.render(scale=self.zoom_level)
@@ -361,11 +378,18 @@ class PDFViewerModule(Module):
         bottom = min(new_pdf_y1, new_pdf_y2)
         top = max(new_pdf_y1, new_pdf_y2)
 
-        # Clamp to page dimensions
+        # Clamp to page dimensions with safety margin
+        # Using 1 point safety margin to avoid "Crop exceeds page dimensions"
         left = max(0, left)
         bottom = max(0, bottom)
         right = min(pdf_width, right)
         top = min(pdf_height, top)
+        
+        # Ensure we are strictly within bounds (integers preferred for safety)
+        left = math.ceil(left)
+        bottom = math.ceil(bottom)
+        right = math.floor(right)
+        top = math.floor(top)
 
         # Ensure we have some width/height
         if right - left < 1 or top - bottom < 1:
