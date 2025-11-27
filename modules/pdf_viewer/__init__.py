@@ -1,8 +1,9 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-import fitz  # PyMuPDF
+import pypdfium2 as pdfium
 from PIL import Image, ImageTk
 import io
+import math
 from ui import Module
 
 class PDFViewerModule(Module):
@@ -17,7 +18,7 @@ class PDFViewerModule(Module):
         self.zoom_level = 1.0
         
         # 當前檢視狀態
-        self.current_crop_rect = None  # 當前的裁切區域（PDF座標系）
+        self.current_crop_rect = None  # 當前的裁切區域（PDF座標系: left, bottom, right, top）
         
         # 歷史記錄用於回上一步
         self.view_history = []
@@ -131,17 +132,23 @@ class PDFViewerModule(Module):
         """計算讓整個PDF頁面剛好顯示於畫布的縮放比例"""
         if not self.pdf_document:
             return 1.0
-        page = self.pdf_document[self.current_page]
-        page_rect = page.rect
-        canvas_width = self.canvas.winfo_width()
-        canvas_height = self.canvas.winfo_height()
-        # 若canvas尚未顯示，預設1200x800
-        if canvas_width < 10 or canvas_height < 10:
-            canvas_width = 1200
-            canvas_height = 800
-        zoom_x = canvas_width / page_rect.width
-        zoom_y = canvas_height / page_rect.height
-        return min(zoom_x, zoom_y) * 0.95
+        try:
+            page = self.pdf_document[self.current_page]
+            width, height = page.get_size()
+
+            canvas_width = self.canvas.winfo_width()
+            canvas_height = self.canvas.winfo_height()
+
+            # 若canvas尚未顯示，預設1200x800
+            if canvas_width < 10 or canvas_height < 10:
+                canvas_width = 1200
+                canvas_height = 800
+
+            zoom_x = canvas_width / width
+            zoom_y = canvas_height / height
+            return min(zoom_x, zoom_y) * 0.95
+        except Exception:
+            return 1.0
 
     def open_pdf(self):
         """開啟 PDF 檔案"""
@@ -153,11 +160,15 @@ class PDFViewerModule(Module):
         
         if file_path:
             try:
-                self.pdf_document = fitz.open(file_path)
+                if self.pdf_document:
+                    self.pdf_document.close()
+
+                self.pdf_document = pdfium.PdfDocument(file_path)
                 self.current_page = 0
                 self.current_crop_rect = None
                 self.view_history = []
                 self.initial_fit_done = False
+
                 # 先顯示頁面，等canvas顯示後再fit
                 self.display_page()
                 self.frame.after(100, self.initial_fit_page)
@@ -180,29 +191,24 @@ class PDFViewerModule(Module):
             return
         
         try:
-            # 重新獲取頁面以清除之前的裁切設定
             page = self.pdf_document[self.current_page]
             
             # 更新當前裁切區域
             if crop_rect is not None:
                 self.current_crop_rect = crop_rect
             
-            # 設定縮放矩陣
-            mat = fitz.Matrix(self.zoom_level, self.zoom_level)
-            
-            # 如果有裁切區域，先設定裁切
+            # 渲染設定
             if self.current_crop_rect:
-                page.set_cropbox(self.current_crop_rect)
+                # pypdfium2: page.render(scale, crop=(l, b, r, t))
+                bitmap = page.render(
+                    scale=self.zoom_level,
+                    crop=self.current_crop_rect
+                )
             else:
-                # 如果沒有裁切區域，重置為完整頁面
-                page.set_cropbox(page.mediabox)
+                # Render full page
+                bitmap = page.render(scale=self.zoom_level)
             
-            # 渲染頁面為圖片
-            pix = page.get_pixmap(matrix=mat)
-            img_data = pix.tobytes("ppm")
-            
-            # 轉換為 PIL 圖片
-            self.current_pil_image = Image.open(io.BytesIO(img_data))
+            self.current_pil_image = bitmap.to_pil()
             self.current_image = ImageTk.PhotoImage(self.current_pil_image)
             
             # 清除畫布並顯示圖片
@@ -222,6 +228,8 @@ class PDFViewerModule(Module):
             self.zoom_label.config(text=f"縮放: {int(self.zoom_level * 100)}%")
             self.update_history_label()
             
+            bitmap.close()
+
         except Exception as e:
             messagebox.showerror("錯誤", f"無法顯示頁面: {str(e)}")
     
@@ -229,7 +237,7 @@ class PDFViewerModule(Module):
         """上一頁"""
         if self.pdf_document and self.current_page > 0:
             self.current_page -= 1
-            self.zoom_level = 1.0
+            self.zoom_level = 1.0 # Reset zoom on page change, usually expected
             self.current_crop_rect = None
             self.display_page()
     
@@ -285,7 +293,9 @@ class PDFViewerModule(Module):
         end_x = self.canvas.canvasx(event.x)
         end_y = self.canvas.canvasy(event.y)
         
-        # 計算選擇區域
+        # 計算選擇區域 (Canvas coordinates)
+        # Note: Canvas coordinates are relative to the top-left of the *image displayed* (0,0)
+
         x1 = min(self.start_x, end_x)
         y1 = min(self.start_y, end_y)
         x2 = max(self.start_x, end_x)
@@ -304,67 +314,69 @@ class PDFViewerModule(Module):
             'crop': self.current_crop_rect
         })
         
-        # 獲取頁面資訊
         page = self.pdf_document[self.current_page]
+        pdf_width, pdf_height = page.get_size()
         
-        # 如果當前有裁切區域，需要基於裁切後的區域計算
+        # Determine current view boundaries in PDF points
         if self.current_crop_rect:
-            # 當前顯示的是裁切後的區域
-            display_rect = self.current_crop_rect
-            display_width = display_rect.width
-            display_height = display_rect.height
+            # Current view is a crop: (left, bottom, right, top)
+            view_l, view_b, view_r, view_t = self.current_crop_rect
+            view_width = view_r - view_l
+            view_height = view_t - view_b
         else:
-            # 當前顯示的是完整頁面
-            display_rect = page.rect
-            display_width = display_rect.width
-            display_height = display_rect.height
+            # Full page
+            view_l, view_b, view_r, view_t = 0, 0, pdf_width, pdf_height
+            view_width = pdf_width
+            view_height = pdf_height
+
+        # Calculate scaling from Canvas Pixels -> PDF Points
+        # The current image displayed corresponds to 'view_width' x 'view_height' in PDF points.
+        img_width = self.current_pil_image.width
+        img_height = self.current_pil_image.height
         
-        # 計算畫布座標在當前顯示區域中的相對位置
-        canvas_to_display_scale_x = display_width / self.current_pil_image.width
-        canvas_to_display_scale_y = display_height / self.current_pil_image.height
+        scale_x = view_width / img_width
+        scale_y = view_height / img_height
         
-        # 將畫布座標轉換為當前顯示區域內的相對座標
-        rel_x1 = x1 * canvas_to_display_scale_x
-        rel_y1 = y1 * canvas_to_display_scale_y
-        rel_x2 = x2 * canvas_to_display_scale_x
-        rel_y2 = y2 * canvas_to_display_scale_y
+        # Convert selection (x1, y1, x2, y2) from Canvas/Image to Relative PDF Points (from view top-left)
+        rel_x1 = x1 * scale_x
+        rel_y1 = y1 * scale_y
+        rel_x2 = x2 * scale_x
+        rel_y2 = y2 * scale_y
         
-        # 計算在PDF頁面完整座標系中的絕對位置
-        if self.current_crop_rect:
-            # 如果當前有裁切，需要加上裁切區域的偏移
-            pdf_x1 = display_rect.x0 + rel_x1
-            pdf_y1 = display_rect.y0 + rel_y1
-            pdf_x2 = display_rect.x0 + rel_x2
-            pdf_y2 = display_rect.y0 + rel_y2
-        else:
-            # 如果沒有裁切，直接使用相對座標
-            pdf_x1 = rel_x1
-            pdf_y1 = rel_y1
-            pdf_x2 = rel_x2
-            pdf_y2 = rel_y2
+        # Map to Absolute PDF Coordinates (Bottom-Left Origin)
+        # Absolute X:
+        new_pdf_x1 = view_l + rel_x1
+        new_pdf_x2 = view_l + rel_x2
+
+        # Absolute Y:
+        # Image Top (0) -> PDF Top (view_t)
+        # Image Y -> PDF Y = view_t - (y * scale_y)
+        new_pdf_y2 = view_t - rel_y1 # Top of selection becomes top of new crop
+        new_pdf_y1 = view_t - rel_y2 # Bottom of selection becomes bottom of new crop
         
-        # 創建新的裁切矩形
-        new_crop_rect = fitz.Rect(pdf_x1, pdf_y1, pdf_x2, pdf_y2)
+        # Ensure coordinates are valid
+        new_crop_rect = (
+            max(0, new_pdf_x1),
+            max(0, new_pdf_y1),
+            min(pdf_width, new_pdf_x2),
+            min(pdf_height, new_pdf_y2)
+        )
+
+        # Calculate new zoom level to fit this crop into the canvas
+        crop_width = new_crop_rect[2] - new_crop_rect[0]
+        crop_height = new_crop_rect[3] - new_crop_rect[1]
         
-        # 調整縮放等級以讓裁剪區域佔滿視窗
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
         
-        # 計算裁剪區域的實際尺寸（PDF座標系）
-        crop_width = new_crop_rect.width
-        crop_height = new_crop_rect.height
-        
-        # 計算需要的縮放比例以佔滿視窗
         zoom_x = canvas_width / crop_width
         zoom_y = canvas_height / crop_height
         
-        # 選擇較小的縮放比例以確保完整顯示，並留一點邊距
         self.zoom_level = min(zoom_x, zoom_y) * 0.95
         
-        # 顯示放大的區域
+        # Display cropped area
         self.display_page(new_crop_rect)
         
-        # 刪除選擇框
         if self.rect_id:
             self.canvas.delete(self.rect_id)
     

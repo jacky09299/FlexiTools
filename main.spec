@@ -88,7 +88,7 @@ a = Analysis(
         # PDF 相關
         'PyPDF2',
         'pdfrw',
-        'fitz',
+        'pypdfium2',
         'reportlab',
         'reportlab.pdfgen',
         'reportlab.platypus',

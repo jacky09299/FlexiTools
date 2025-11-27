@@ -12,12 +12,12 @@ from reportlab.pdfgen import canvas as reportlab_canvas
 from reportlab.lib.colors import Color as ReportlabColor
 # from reportlab.lib.units import inch # Not strictly needed for this implementation
 
-# PyMuPDF (fitz) for PDF to image conversion
+# pypdfium2 for PDF to image conversion
 try:
-    import fitz  # PyMuPDF
+    import pypdfium2 as pdfium
 except ImportError:
-    fitz = None
-    logging.error("PyMuPDF (fitz) is not installed. PDF to Image functionality will be disabled.")
+    pdfium = None
+    logging.error("pypdfium2 is not installed. PDF to Image functionality will be disabled.")
 
 
 # Import the base Module class
@@ -70,7 +70,7 @@ class PdfProcessorModule(Module):
         self.notebook.add(self.tab_to_image_pdf, text="To Image PDF")
 
         # --- Convert to Image PDF Tab ---
-        if fitz:
+        if pdfium:
             to_image_frame = ttk.Frame(self.tab_to_image_pdf, padding="10")
             to_image_frame.pack(expand=True, fill=tk.BOTH)
 
@@ -106,8 +106,8 @@ class PdfProcessorModule(Module):
 
             to_image_frame.columnconfigure(1, weight=1)
         else:
-            # Display a message if PyMuPDF is not installed
-            disabled_label = ttk.Label(self.tab_to_image_pdf, text="This feature is disabled because PyMuPDF (fitz) is not installed.", style="Error.TLabel")
+            # Display a message if pypdfium2 is not installed
+            disabled_label = ttk.Label(self.tab_to_image_pdf, text="This feature is disabled because pypdfium2 is not installed.", style="Error.TLabel")
             disabled_label.pack(padx=20, pady=20)
 
 
@@ -366,11 +366,11 @@ class PdfProcessorModule(Module):
         self.notebook.tab(self.tab_compress, text=self.tr("module_pdf_tab_compress", "Compress PDF"))
         self.notebook.tab(self.tab_watermark, text=self.tr("module_pdf_tab_watermark", "Add Watermark"))
         self.notebook.tab(self.tab_extract_text, text=self.tr("module_pdf_tab_extract", "Extract Text"))
-        if fitz:
+        if pdfium:
             self.notebook.tab(self.tab_to_image_pdf, text=self.tr("module_pdf_tab_to_image_pdf", "To Image PDF"))
 
         # To Image PDF Tab
-        if fitz:
+        if pdfium:
             self.lbl_to_img_input.config(text=self.tr("module_pdf_lbl_input_pdf", "Input PDF:"))
             self.btn_to_img_browse_in.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
             self.lbl_to_img_output.config(text=self.tr("module_pdf_lbl_out_image_pdf", "Output Image PDF:"))
@@ -1293,28 +1293,48 @@ class PdfProcessorModule(Module):
                 messagebox.showerror("Directory Error", f"Could not create output directory: {output_dir}\n{e}", parent=self.tab_to_image_pdf)
                 return
 
+        # Prepare ReportLab Canvas for Output
         try:
-            input_doc = fitz.open(input_pdf_path)
-            output_doc = fitz.open()  # Create a new, empty PDF
+            # Open input PDF with pypdfium2
+            pdf = pdfium.PdfDocument(input_pdf_path)
 
-            num_pages = len(input_doc)
-            for i, page in enumerate(input_doc):
+            # Create a temporary canvas
+            c = reportlab_canvas.Canvas(output_pdf_path)
+
+            num_pages = len(pdf)
+            for i in range(num_pages):
                 self.to_img_status_var.set(f"Processing page {i + 1}/{num_pages}...")
                 self.tab_to_image_pdf.update_idletasks()
 
-                # Render page to a pixmap (image)
-                pix = page.get_pixmap(dpi=dpi)
+                # Get page from pypdfium2
+                page = pdf[i]
 
-                # Convert pixmap to a memory buffer (e.g., PNG)
-                img_data = pix.tobytes("png")
+                # Render page to PIL image
+                # Scale calculation: DPI / 72 (since PDF base unit is 1/72 inch)
+                scale = dpi / 72.0
+                bitmap = page.render(scale=scale)
+                pil_image = bitmap.to_pil()
 
-                # Create a new page in the output PDF with the same dimensions
-                new_page = output_doc.new_page(width=page.rect.width, height=page.rect.height)
+                # Get dimensions
+                width, height = page.get_size() # In PDF points
 
-                # Insert the image onto the new page
-                new_page.insert_image(page.rect, stream=img_data)
+                # Set page size for ReportLab
+                c.setPageSize((width, height))
 
-            output_doc.save(output_pdf_path)
+                # ReportLab draws images. We need to pass the PIL image.
+                from reportlab.lib.utils import ImageReader
+
+                img_reader = ImageReader(pil_image)
+
+                # Draw the image covering the entire page
+                c.drawImage(img_reader, 0, 0, width=width, height=height)
+
+                c.showPage()
+
+                # Cleanup bitmap to free memory
+                bitmap.close()
+
+            c.save()
 
             final_message = f"Successfully converted to image PDF: '{os.path.basename(output_pdf_path)}'."
             self.to_img_status_var.set(final_message)
@@ -1326,11 +1346,6 @@ class PdfProcessorModule(Module):
             self.to_img_status_var.set(error_msg)
             messagebox.showerror("Conversion Error", error_msg, parent=self.tab_to_image_pdf)
             self.shared_state.log(f"To Image PDF Tab: {error_msg}", "ERROR")
-        finally:
-            if 'input_doc' in locals() and input_doc:
-                input_doc.close()
-            if 'output_doc' in locals() and output_doc:
-                output_doc.close()
 
 
     def _select_split_output_folder(self):
