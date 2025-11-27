@@ -165,11 +165,15 @@
       "title": "Pdf Processor",
       "description": "The pdf_processor module.",
       "author": "李紘宇",
-      "latest_version": "1.0.0",
+      "latest_version": "1.1.0",
       "versions": [
         {
           "version": "1.0.0",
           "url": "https://jacky09299.github.io/FlexiTools/plugins/pdf_processor/pdf_processor_1.0.0.zip"
+        },
+        {
+          "version": "1.1.0",
+          "url": "https://jacky09299.github.io/FlexiTools/plugins/pdf_processor/pdf_processor_1.1.0.zip"
         }
       ]
     },
@@ -178,7 +182,7 @@
       "title": "Template Module",
       "description": "The template_module module. (v1.4.0 Demo)",
       "author": "李紘宇",
-      "latest_version": "1.4.0",
+      "latest_version": "1.5.0",
       "versions": [
         {
           "version": "1.0.0",
@@ -195,6 +199,10 @@
         {
           "version": "1.4.0",
           "url": "https://jacky09299.github.io/FlexiTools/plugins/template_module/template_module_1.4.0.zip"
+        },
+        {
+          "version": "1.5.0",
+          "url": "https://jacky09299.github.io/FlexiTools/plugins/template_module/template_module_1.5.0.zip"
         }
       ]
     },
