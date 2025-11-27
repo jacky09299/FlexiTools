@@ -12,6 +12,14 @@ from reportlab.pdfgen import canvas as reportlab_canvas
 from reportlab.lib.colors import Color as ReportlabColor
 # from reportlab.lib.units import inch # Not strictly needed for this implementation
 
+# PyMuPDF (fitz) for PDF to image conversion
+try:
+    import fitz  # PyMuPDF
+except ImportError:
+    fitz = None
+    logging.error("PyMuPDF (fitz) is not installed. PDF to Image functionality will be disabled.")
+
+
 # Import the base Module class
 # Assuming main.py (and thus the Module class definition) is in the parent directory.
 # Adjust the import path if your project structure is different.
@@ -50,6 +58,8 @@ class PdfProcessorModule(Module):
         # self.tab_rotate = ttk.Frame(self.notebook) # SKIPPED
         self.tab_watermark = ttk.Frame(self.notebook)
         self.tab_extract_text = ttk.Frame(self.notebook)
+        self.tab_to_image_pdf = ttk.Frame(self.notebook)
+
 
         # Add tabs to the notebook
         self.notebook.add(self.tab_split, text="Split PDF") # Text will be updated in update_language
@@ -57,6 +67,49 @@ class PdfProcessorModule(Module):
         self.notebook.add(self.tab_compress, text="Compress PDF")
         self.notebook.add(self.tab_watermark, text="Add Watermark")
         self.notebook.add(self.tab_extract_text, text="Extract Text")
+        self.notebook.add(self.tab_to_image_pdf, text="To Image PDF")
+
+        # --- Convert to Image PDF Tab ---
+        if fitz:
+            to_image_frame = ttk.Frame(self.tab_to_image_pdf, padding="10")
+            to_image_frame.pack(expand=True, fill=tk.BOTH)
+
+            # Input PDF
+            self.lbl_to_img_input = ttk.Label(to_image_frame, text="Input PDF:")
+            self.lbl_to_img_input.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+            self.to_img_input_pdf_path_var = tk.StringVar()
+            ttk.Entry(to_image_frame, textvariable=self.to_img_input_pdf_path_var, width=50, state="readonly").grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+            self.btn_to_img_browse_in = ttk.Button(to_image_frame, text="Browse...", command=self._select_input_pdf_to_image)
+            self.btn_to_img_browse_in.grid(row=0, column=2, padx=5, pady=5)
+
+            # Output PDF
+            self.lbl_to_img_output = ttk.Label(to_image_frame, text="Output Image PDF:")
+            self.lbl_to_img_output.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+            self.to_img_output_pdf_path_var = tk.StringVar()
+            ttk.Entry(to_image_frame, textvariable=self.to_img_output_pdf_path_var, width=50, state="readonly").grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+            self.btn_to_img_browse_out = ttk.Button(to_image_frame, text="Browse...", command=self._select_output_pdf_to_image)
+            self.btn_to_img_browse_out.grid(row=1, column=2, padx=5, pady=5)
+
+            # DPI Setting
+            self.lbl_to_img_dpi = ttk.Label(to_image_frame, text="Image Quality (DPI):")
+            self.lbl_to_img_dpi.grid(row=2, column=0, padx=5, pady=5, sticky="w")
+            self.to_img_dpi_var = tk.StringVar(value="300")
+            ttk.Entry(to_image_frame, textvariable=self.to_img_dpi_var, width=10).grid(row=2, column=1, padx=5, pady=5, sticky="w")
+
+            # Execute Button
+            self.btn_to_img_execute = ttk.Button(to_image_frame, text="Convert to Image PDF", command=self._execute_convert_to_image_pdf)
+            self.btn_to_img_execute.grid(row=3, column=1, padx=5, pady=10)
+
+            # Status Label
+            self.to_img_status_var = tk.StringVar()
+            ttk.Label(to_image_frame, textvariable=self.to_img_status_var, wraplength=400).grid(row=4, column=0, columnspan=3, padx=5, pady=5, sticky="w")
+
+            to_image_frame.columnconfigure(1, weight=1)
+        else:
+            # Display a message if PyMuPDF is not installed
+            disabled_label = ttk.Label(self.tab_to_image_pdf, text="This feature is disabled because PyMuPDF (fitz) is not installed.", style="Error.TLabel")
+            disabled_label.pack(padx=20, pady=20)
+
 
         # --- Split PDF Tab ---
         # Clear placeholder
@@ -313,6 +366,17 @@ class PdfProcessorModule(Module):
         self.notebook.tab(self.tab_compress, text=self.tr("module_pdf_tab_compress", "Compress PDF"))
         self.notebook.tab(self.tab_watermark, text=self.tr("module_pdf_tab_watermark", "Add Watermark"))
         self.notebook.tab(self.tab_extract_text, text=self.tr("module_pdf_tab_extract", "Extract Text"))
+        if fitz:
+            self.notebook.tab(self.tab_to_image_pdf, text=self.tr("module_pdf_tab_to_image_pdf", "To Image PDF"))
+
+        # To Image PDF Tab
+        if fitz:
+            self.lbl_to_img_input.config(text=self.tr("module_pdf_lbl_input_pdf", "Input PDF:"))
+            self.btn_to_img_browse_in.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
+            self.lbl_to_img_output.config(text=self.tr("module_pdf_lbl_out_image_pdf", "Output Image PDF:"))
+            self.btn_to_img_browse_out.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
+            self.lbl_to_img_dpi.config(text=self.tr("module_pdf_lbl_dpi", "Image Quality (DPI):"))
+            self.btn_to_img_execute.config(text=self.tr("module_pdf_btn_convert_to_image", "Convert to Image PDF"))
 
         # Split Tab
         self.lbl_split_input.config(text=self.tr("module_pdf_lbl_input_pdf", "Input PDF:"))
@@ -1157,6 +1221,117 @@ class PdfProcessorModule(Module):
     def on_destroy(self):
         super().on_destroy()
         self.shared_state.log(f"{self.module_name} instance destroyed.")
+
+    def _select_input_pdf_to_image(self):
+        filepath = filedialog.askopenfilename(
+            title="Select Input PDF to Convert",
+            defaultextension=".pdf",
+            filetypes=[("PDF Files", "*.pdf"), ("All Files", "*.*")],
+            parent=self.tab_to_image_pdf
+        )
+        if filepath:
+            self.to_img_input_pdf_path_var.set(filepath)
+            self.to_img_status_var.set(f"Selected: {os.path.basename(filepath)}")
+            self.shared_state.log(f"To Image PDF Tab: Input PDF selected: {filepath}")
+        else:
+            self.to_img_status_var.set("Input PDF selection cancelled.")
+
+    def _select_output_pdf_to_image(self):
+        input_path = self.to_img_input_pdf_path_var.get()
+        initial_name = "image_version.pdf"
+        if input_path:
+            base, ext = os.path.splitext(os.path.basename(input_path))
+            initial_name = f"{base}_image{ext}"
+
+        filepath = filedialog.asksaveasfilename(
+            title="Save Image PDF As...",
+            defaultextension=".pdf",
+            filetypes=[("PDF Files", "*.pdf"), ("All Files", "*.*")],
+            initialfile=initial_name,
+            parent=self.tab_to_image_pdf
+        )
+        if filepath:
+            self.to_img_output_pdf_path_var.set(filepath)
+            self.to_img_status_var.set(f"Output will be saved as: {os.path.basename(filepath)}")
+            self.shared_state.log(f"To Image PDF Tab: Output path set to: {filepath}")
+        else:
+            self.to_img_status_var.set("Output PDF save location not set.")
+
+    def _execute_convert_to_image_pdf(self):
+        self.shared_state.log("To Image PDF Tab: Attempting to execute conversion.")
+        self.to_img_status_var.set("Processing...")
+        self.tab_to_image_pdf.update_idletasks()
+
+        input_pdf_path = self.to_img_input_pdf_path_var.get()
+        output_pdf_path = self.to_img_output_pdf_path_var.get()
+
+        if not input_pdf_path or not os.path.exists(input_pdf_path):
+            self.to_img_status_var.set("Error: Input PDF not selected or not found.")
+            messagebox.showerror("Error", "Please select a valid input PDF file.", parent=self.tab_to_image_pdf)
+            return
+
+        if not output_pdf_path:
+            self.to_img_status_var.set("Error: Output PDF file path not specified.")
+            messagebox.showerror("Error", "Please specify an output file path.", parent=self.tab_to_image_pdf)
+            return
+
+        try:
+            dpi = int(self.to_img_dpi_var.get())
+            if dpi <= 0:
+                raise ValueError("DPI must be a positive number.")
+        except ValueError:
+            self.to_img_status_var.set("Error: Invalid DPI. Please enter a positive number.")
+            messagebox.showerror("Error", "Invalid DPI value. Please enter a positive integer.", parent=self.tab_to_image_pdf)
+            return
+
+        output_dir = os.path.dirname(output_pdf_path)
+        if output_dir and not os.path.exists(output_dir):
+            try:
+                os.makedirs(output_dir, exist_ok=True)
+            except OSError as e:
+                self.to_img_status_var.set(f"Error creating output directory: {e}")
+                messagebox.showerror("Directory Error", f"Could not create output directory: {output_dir}\n{e}", parent=self.tab_to_image_pdf)
+                return
+
+        try:
+            input_doc = fitz.open(input_pdf_path)
+            output_doc = fitz.open()  # Create a new, empty PDF
+
+            num_pages = len(input_doc)
+            for i, page in enumerate(input_doc):
+                self.to_img_status_var.set(f"Processing page {i + 1}/{num_pages}...")
+                self.tab_to_image_pdf.update_idletasks()
+
+                # Render page to a pixmap (image)
+                pix = page.get_pixmap(dpi=dpi)
+
+                # Convert pixmap to a memory buffer (e.g., PNG)
+                img_data = pix.tobytes("png")
+
+                # Create a new page in the output PDF with the same dimensions
+                new_page = output_doc.new_page(width=page.rect.width, height=page.rect.height)
+
+                # Insert the image onto the new page
+                new_page.insert_image(page.rect, stream=img_data)
+
+            output_doc.save(output_pdf_path)
+
+            final_message = f"Successfully converted to image PDF: '{os.path.basename(output_pdf_path)}'."
+            self.to_img_status_var.set(final_message)
+            messagebox.showinfo("Conversion Successful", final_message, parent=self.tab_to_image_pdf)
+            self.shared_state.log(f"To Image PDF Tab: {final_message}")
+
+        except Exception as e:
+            error_msg = f"An error occurred during conversion: {e}"
+            self.to_img_status_var.set(error_msg)
+            messagebox.showerror("Conversion Error", error_msg, parent=self.tab_to_image_pdf)
+            self.shared_state.log(f"To Image PDF Tab: {error_msg}", "ERROR")
+        finally:
+            if 'input_doc' in locals() and input_doc:
+                input_doc.close()
+            if 'output_doc' in locals() and output_doc:
+                output_doc.close()
+
 
     def _select_split_output_folder(self):
         folder_selected = filedialog.askdirectory(
