@@ -353,18 +353,31 @@ class PDFViewerModule(Module):
         # Image Y -> PDF Y = view_t - (y * scale_y)
         new_pdf_y2 = view_t - rel_y1 # Top of selection becomes top of new crop
         new_pdf_y1 = view_t - rel_y2 # Bottom of selection becomes bottom of new crop
-        
+
         # Ensure coordinates are valid
-        new_crop_rect = (
-            max(0, new_pdf_x1),
-            max(0, new_pdf_y1),
-            min(pdf_width, new_pdf_x2),
-            min(pdf_height, new_pdf_y2)
-        )
+        # Swap if coordinates are inverted (though logic suggests they shouldn't be)
+        left = min(new_pdf_x1, new_pdf_x2)
+        right = max(new_pdf_x1, new_pdf_x2)
+        bottom = min(new_pdf_y1, new_pdf_y2)
+        top = max(new_pdf_y1, new_pdf_y2)
+
+        # Clamp to page dimensions
+        left = max(0, left)
+        bottom = max(0, bottom)
+        right = min(pdf_width, right)
+        top = min(pdf_height, top)
+
+        # Ensure we have some width/height
+        if right - left < 1 or top - bottom < 1:
+            if self.rect_id:
+                self.canvas.delete(self.rect_id)
+            return
+
+        new_crop_rect = (left, bottom, right, top)
 
         # Calculate new zoom level to fit this crop into the canvas
-        crop_width = new_crop_rect[2] - new_crop_rect[0]
-        crop_height = new_crop_rect[3] - new_crop_rect[1]
+        crop_width = right - left
+        crop_height = top - bottom
         
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
