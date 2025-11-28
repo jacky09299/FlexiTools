@@ -25,6 +25,7 @@ from PIL import Image as PILImage
 import logging
 import subprocess
 import math
+import numpy as np
 
 # PyAcoustics for audio effects
 try:
@@ -546,6 +547,7 @@ class VideoPlayerModule(Module):
         self.current_playlist_index = -1
         self.unplayed_indices = []
         self.history_indices = []
+        self.last_playback_time = 0
 
         self.max_workers = multiprocessing.cpu_count()
         self.frame_processing_pool = ThreadPoolExecutor(max_workers=self.max_workers)
@@ -1225,6 +1227,7 @@ class VideoPlayerModule(Module):
             time.sleep(0.1)
             meta = self.player.get_metadata()
             self.video_duration = meta.get('duration', 0)
+            self.last_playback_time = 0
 
             # Setup Visualizer if we have a processed wav (or we are in audio mode)
             if is_audio_mode and self.current_processed_wav and os.path.exists(self.current_processed_wav):
@@ -1294,6 +1297,7 @@ class VideoPlayerModule(Module):
         if self.canvas and self.canvas.winfo_exists(): self.canvas.delete("all")
         if hasattr(self, 'timeline_var'): self.timeline_var.set(0)
         if hasattr(self, 'time_current_label'): self.time_current_label.config(text="00:00")
+        self.last_playback_time = 0
 
         if clear_playlist:
              self.playlist = []
@@ -1309,23 +1313,35 @@ class VideoPlayerModule(Module):
             pass
         return None
 
+    def handle_eof(self):
+        if self.playlist and (len(self.playlist) > 1 or (self.play_mode_var.get() == 'random' and self.unplayed_indices)):
+            self.play_next_video()
+        else:
+            self.stop_video()
+
     def update_frame(self):
         if not self.player: return
 
         frame, val = self.player.get_frame()
 
         if val == 'eof':
-            if self.playlist and (len(self.playlist) > 1 or (self.play_mode_var.get() == 'random' and self.unplayed_indices)):
-                self.play_next_video()
-            else:
-                self.stop_video()
+            self.handle_eof()
             return
+
+        current_pts = self.player.get_pts()
+
+        # Robust loop detection: If time resets to near zero while playing and not seeking
+        if self.is_playing and not self.is_paused and not self.seeking and current_pts is not None and self.video_duration > 0:
+             if current_pts < 1.0 and self.last_playback_time > self.video_duration - 2.0:
+                  # Detected internal loop or reset
+                  self.handle_eof()
+                  return
+             self.last_playback_time = current_pts
 
         if frame is None:
             # Audio-only playback or no video frame yet
             # If we are playing, check timestamp and update visualizer
             if self.is_playing and not self.is_paused:
-                current_pts = self.player.get_pts()
                 if current_pts is not None:
                      if self.visualizer:
                          self.visualizer.draw(current_pts)
