@@ -49,10 +49,6 @@ try:
 except ImportError:
     sys.modules['cv2'] = type('cv2', (), {})()
 
-try:
-    import pygame
-except ImportError:
-    sys.modules['pygame'] = type('pygame', (), {'mixer': type('mixer', (), {'init': lambda: None, 'music': type('music', (), {'get_busy': lambda: False})})})()
 
 try:
     import moviepy.editor
