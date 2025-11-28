@@ -24,6 +24,7 @@ from io import BytesIO
 from PIL import Image as PILImage
 import logging
 import subprocess
+import math
 
 # PyAcoustics for audio effects
 try:
@@ -392,6 +393,133 @@ class EffectsSettingsWindow(tk.Toplevel):
         self.result = None
         self.destroy()
 
+class AudioVisualizer:
+    def __init__(self, canvas, wave_path, num_bars=64):
+        self.canvas = canvas
+        self.wave_path = wave_path
+        self.num_bars = num_bars
+        self.wf = None
+        self.bar_ids = []
+        self.width = 0
+        self.height = 0
+
+        try:
+            self.wf = wave.open(self.wave_path, 'rb')
+            self.params = self.wf.getparams()
+            self.framerate = self.params.framerate
+            self.n_channels = self.params.nchannels
+            self.sampwidth = self.params.sampwidth
+            self.n_frames = self.params.nframes
+        except Exception as e:
+            print(f"Visualizer init failed: {e}")
+            self.wf = None
+
+    def setup_ui(self, width, height):
+        self.width = width
+        self.height = height
+        self.bar_ids = []
+        self.canvas.delete("visualizer_bar") # Tag based deletion
+
+        # Calculate dimensions
+        # Keep some margin
+        margin_x = 50
+        draw_width = width - 2 * margin_x
+        bar_width = draw_width / self.num_bars
+        gap = bar_width * 0.2
+        actual_bar_width = bar_width - gap
+
+        for i in range(self.num_bars):
+            x0 = margin_x + i * bar_width + gap/2
+            x1 = x0 + actual_bar_width
+
+            # Center of screen is height/2.
+            cy = height / 2
+
+            # Create rectangle (initially flat)
+            rect = self.canvas.create_rectangle(x0, cy, x1, cy, fill="#4A90E2", outline="", tags="visualizer_bar")
+            self.bar_ids.append(rect)
+
+    def draw(self, current_time):
+        if not self.wf: return
+
+        # Calculate frame position
+        frame_pos = int(current_time * self.framerate)
+        if frame_pos < 0: frame_pos = 0
+        if frame_pos >= self.n_frames: return
+
+        # Seek and read
+        try:
+            self.wf.setpos(frame_pos)
+            chunk_size = 1024 # Samples for FFT
+            data = self.wf.readframes(chunk_size)
+        except Exception:
+            return
+
+        if len(data) == 0: return
+
+        # Convert to numpy
+        dtype = np.int16 if self.sampwidth == 2 else np.uint8
+        audio_data = np.frombuffer(data, dtype=dtype)
+
+        # Normalize to float -1..1
+        if self.sampwidth == 2:
+            audio_data = audio_data.astype(np.float64) / 32768.0
+        else:
+            audio_data = (audio_data.astype(np.float64) - 128) / 128.0
+
+        if self.n_channels > 1:
+            audio_data = audio_data.reshape(-1, self.n_channels)
+            audio_data = np.mean(audio_data, axis=1)
+
+        if len(audio_data) < chunk_size:
+            audio_data = np.pad(audio_data, (0, chunk_size - len(audio_data)))
+
+        # FFT
+        window = np.hanning(len(audio_data))
+        fft_data = np.fft.rfft(audio_data * window)
+        fft_mag = np.abs(fft_data)
+
+        # Simple binning
+        bin_size = len(fft_mag) // self.num_bars
+        if bin_size < 1: bin_size = 1
+
+        for i in range(self.num_bars):
+            start = i * bin_size
+            end = start + bin_size
+            mag = np.mean(fft_mag[start:end])
+
+            # Log scale magnitude mapping
+            if mag > 0:
+                h = math.log10(mag + 1) * 60 # Scaling factor
+            else:
+                h = 0
+
+            h = min(h, self.height / 2 - 20) # Cap height
+
+            if i < len(self.bar_ids):
+                bar_id = self.bar_ids[i]
+
+                # Center grow
+                cy = self.height / 2
+                half_h = h * 2 # Scale up visual
+
+                # Dynamic color
+                color = "#4A90E2"
+                if h > 80: color = "#D0021B"
+                elif h > 50: color = "#F5A623"
+
+                self.canvas.coords(bar_id,
+                                   self.canvas.coords(bar_id)[0],
+                                   cy - half_h,
+                                   self.canvas.coords(bar_id)[2],
+                                   cy + half_h)
+                self.canvas.itemconfig(bar_id, fill=color)
+
+    def close(self):
+        if self.wf:
+            self.wf.close()
+            self.wf = None
+
 class VideoPlayerModule(Module):
     def __init__(self, master, shared_state, module_name="VideoPlayer", gui_manager=None):
         super().__init__(master, shared_state, module_name, gui_manager)
@@ -409,6 +537,8 @@ class VideoPlayerModule(Module):
 
         self.video_path = ""
         self.player = None
+        self.visualizer = None
+        self.current_processed_wav = None
         self.is_playing = False
         self.is_paused = False
         self.after_id = None
@@ -797,6 +927,10 @@ class VideoPlayerModule(Module):
         self.shared_state.log(f"VideoPlayerModule {self.module_name} destroyed.", level=logging.INFO)
 
     def cleanup_temp_cache(self):
+        if self.visualizer:
+            self.visualizer.close()
+            self.visualizer = None
+
         if self.temp_cache_dir and os.path.exists(self.temp_cache_dir):
             try:
                 shutil.rmtree(self.temp_cache_dir, ignore_errors=True)
@@ -924,7 +1058,7 @@ class VideoPlayerModule(Module):
         folder_path = filedialog.askdirectory(title=self.tr("module_videoplayer_btn_folder", "Select Video Folder"), parent=self.frame.winfo_toplevel())
         if not folder_path: return
         self.current_folder_path = folder_path
-        valid_extensions = ('.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.wmv')
+        valid_extensions = ('.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.wmv', '.mp3', '.wav', '.aac', '.flac', '.ogg')
         try:
             video_files = [os.path.join(folder_path, item) for item in os.listdir(folder_path) if item.lower().endswith(valid_extensions) and os.path.isfile(os.path.join(folder_path, item))]
         except OSError: return
@@ -939,7 +1073,7 @@ class VideoPlayerModule(Module):
         self.start_playlist(video_files)
 
     def select_file(self):
-        filepath = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov *.mkv *.webm *.flv *.wmv"), ("All files", "*.*")], parent=self.frame.winfo_toplevel())
+        filepath = filedialog.askopenfilename(filetypes=[("Media files", "*.mp4 *.avi *.mov *.mkv *.webm *.flv *.wmv *.mp3 *.wav *.aac *.flac *.ogg"), ("All files", "*.*")], parent=self.frame.winfo_toplevel())
         if not filepath: return
         self.current_folder_path = None
         if hasattr(self, 'btn_adjust_order'): self.btn_adjust_order.config(state=tk.DISABLED)
@@ -1025,47 +1159,61 @@ class VideoPlayerModule(Module):
         self.cleanup_temp_cache()
         self.video_path = filepath
 
+        is_audio_file = any(filepath.lower().endswith(ext) for ext in ('.mp3', '.wav', '.aac', '.flac', '.ogg'))
+
         # Check if we need to apply effects
         effects_active = any(self.audio_effects_settings.get(k, "無" if isinstance(self.audio_effects_settings.get(k), str) else False) not in [False, "無"] for k in self.audio_effects_settings)
 
         final_playback_path = filepath
+        self.current_processed_wav = None
 
-        if effects_active:
+        if effects_active or is_audio_file:
              try:
                 if hasattr(self, 'progress_label') and self.frame.winfo_exists():
-                     self.frame.after(0, lambda: self.progress_label.config(text="Applying Effects..."))
+                     self.frame.after(0, lambda: self.progress_label.config(text="Processing..." if is_audio_file else "Applying Effects..."))
 
                 video_dir = os.path.dirname(filepath)
                 self.temp_cache_dir = tempfile.mkdtemp(prefix='.vidplayer_cache_', dir=video_dir)
 
-                # 1. Extract Audio
+                # 1. Extract/Convert to standardized Audio WAV (44.1k, 16bit)
                 temp_wav_path = os.path.join(self.temp_cache_dir, "temp.wav")
-                with VideoFileClip(filepath) as video:
-                    if video.audio:
-                        video.audio.write_audiofile(temp_wav_path, codec='pcm_s16le', logger=None)
-                    else:
-                        raise Exception("No audio to process")
 
-                # 2. Process Audio
+                # Use ffmpeg to handle any input format
+                cmd_extract = f'ffmpeg -y -loglevel error -i "{filepath}" -vn -acodec pcm_s16le -ar 44100 -ac 2 "{temp_wav_path}"'
+                subprocess.run(cmd_extract, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
+                if not os.path.exists(temp_wav_path):
+                     raise Exception("Audio extraction failed")
+
+                # 2. Process Audio (Effects)
                 effects_out_path = os.path.join(self.temp_cache_dir, "temp_effects.wav")
-                self.apply_audio_effects(temp_wav_path, effects_out_path)
+                if effects_active:
+                    self.apply_audio_effects(temp_wav_path, effects_out_path)
+                else:
+                    shutil.copy(temp_wav_path, effects_out_path)
 
-                # 3. Remux
-                output_video = os.path.join(self.temp_cache_dir, "output.mp4")
-                cmd = f'ffmpeg -y -loglevel error -i "{filepath}" -i "{effects_out_path}" -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 "{output_video}"'
-                subprocess.run(cmd, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                self.current_processed_wav = effects_out_path
 
-                if os.path.exists(output_video) and os.path.getsize(output_video) > 0:
-                    final_playback_path = output_video
+                if is_audio_file:
+                    final_playback_path = effects_out_path
+                else:
+                    # 3. Remux for Video
+                    output_video = os.path.join(self.temp_cache_dir, "output.mp4")
+                    cmd = f'ffmpeg -y -loglevel error -i "{filepath}" -i "{effects_out_path}" -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 "{output_video}"'
+                    subprocess.run(cmd, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
+                    if os.path.exists(output_video) and os.path.getsize(output_video) > 0:
+                        final_playback_path = output_video
              except Exception as e:
                  self.shared_state.log(f"Effects processing failed: {e}", level=logging.ERROR)
                  # Fallback to original file
+                 final_playback_path = filepath
 
         # Init ffpyplayer
         if self.frame and self.frame.winfo_exists():
-            self.frame.after(0, lambda: self.init_player(final_playback_path))
+            self.frame.after(0, lambda: self.init_player(final_playback_path, is_audio_mode=is_audio_file))
 
-    def init_player(self, path):
+    def init_player(self, path, is_audio_mode=False):
         if not self.frame.winfo_exists(): return
         self.stop_video(clear_playlist=False)
         self.video_path = path
@@ -1077,6 +1225,12 @@ class VideoPlayerModule(Module):
             time.sleep(0.1)
             meta = self.player.get_metadata()
             self.video_duration = meta.get('duration', 0)
+
+            # Setup Visualizer if we have a processed wav (or we are in audio mode)
+            if is_audio_mode and self.current_processed_wav and os.path.exists(self.current_processed_wav):
+                self.visualizer = AudioVisualizer(self.canvas, self.current_processed_wav)
+                if self.canvas.winfo_exists():
+                    self.visualizer.setup_ui(self.canvas.winfo_width(), self.canvas.winfo_height())
 
             self.enable_button_states()
 
@@ -1168,7 +1322,19 @@ class VideoPlayerModule(Module):
             return
 
         if frame is None:
-            pass
+            # Audio-only playback or no video frame yet
+            # If we are playing, check timestamp and update visualizer
+            if self.is_playing and not self.is_paused:
+                current_pts = self.player.get_pts()
+                if current_pts is not None:
+                     if self.visualizer:
+                         self.visualizer.draw(current_pts)
+
+                     if self.video_duration > 0 and not self.seeking:
+                          progress_percent = (current_pts / float(self.video_duration)) * 100.0
+                          if hasattr(self, 'timeline_var'): self.timeline_var.set(progress_percent)
+                          if hasattr(self, 'time_current_label'):
+                            self.time_current_label.config(text=self.format_time(current_pts))
         else:
             img, t = frame
             w, h = img.get_size()
@@ -1198,8 +1364,10 @@ class VideoPlayerModule(Module):
                             # But canvas.create_image is fast.
                             # Better: delete only if needed?
                             # Standard tkinter video player approach:
-                            self.canvas.delete("all")
-                            self.canvas.create_image(self.canvas.winfo_width() / 2, self.canvas.winfo_height() / 2, anchor=tk.CENTER, image=self.photo)
+                            # If video, we might want to delete only "video_frame" tag.
+
+                            self.canvas.delete("video_frame")
+                            self.canvas.create_image(self.canvas.winfo_width() / 2, self.canvas.winfo_height() / 2, anchor=tk.CENTER, image=self.photo, tags="video_frame")
                 except Exception:
                     pass # Skip frame if processing too slow?
 
@@ -1221,6 +1389,10 @@ class VideoPlayerModule(Module):
             new_size = (event.width, event.height)
             with self.canvas_size_lock:
                 self.last_known_canvas_size = new_size
+
+            # Re-setup visualizer if active
+            if self.visualizer:
+                self.visualizer.setup_ui(event.width, event.height)
 
     def on_timeline_press(self, event):
         if self.video_duration > 0 and self.player:
