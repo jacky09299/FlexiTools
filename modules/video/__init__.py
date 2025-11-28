@@ -222,7 +222,7 @@ def apply_equalizer(wav_path, out_path, gains):
             for i, (low, high) in enumerate(EQ_BANDS):
                 gain = db_to_gain(gains[i])
                 if abs(gain - 1.0) < 1e-4:
-                    continue # Fixed logic here as well
+                    continue
 
                 nyquist = framerate / 2.0
                 if low >= nyquist: continue
@@ -418,7 +418,7 @@ class VideoPlayerModule(Module):
         self.history_indices = []
 
         self.max_workers = multiprocessing.cpu_count()
-        self.frame_processing_pool = ThreadPoolExecutor(max_workers=self.max_workers) # Re-introduced for scaling
+        self.frame_processing_pool = ThreadPoolExecutor(max_workers=self.max_workers)
 
         self.total_frames = 0
         self.video_duration = 0
@@ -818,9 +818,285 @@ class VideoPlayerModule(Module):
             self.current_playlist_index = 0 if self.playlist else -1
         self.play_current_video_in_playlist()
 
-    # ... (JumpTo/Playlist logic remains same, skipping repeat block for brevity but implemented fully above)
+    def open_jump_to_window(self):
+        if not self.playlist: return
+        JumpToWindow(self, self.playlist, self.current_playlist_index)
 
-    # Re-implemented calculate_proportional_size for thread usage
+    def jump_to_selected_video(self, new_index):
+        if self.current_playlist_index == new_index: return
+        mode = self.play_mode_var.get()
+        if mode == 'random':
+            self.current_playlist_index = new_index
+            all_indices = list(range(len(self.playlist)))
+            self.unplayed_indices = [i for i in all_indices if i not in self.history_indices and i != self.current_playlist_index]
+            random.shuffle(self.unplayed_indices)
+        else:
+            self.current_playlist_index = new_index
+        self.stop_video()
+        self.play_current_video_in_playlist()
+
+    def on_play_mode_change(self):
+        mode = self.play_mode_var.get()
+        if mode == "json" and self.current_folder_path:
+            if hasattr(self, 'btn_adjust_order'): self.btn_adjust_order.config(state=tk.NORMAL)
+        else:
+            if hasattr(self, 'btn_adjust_order'): self.btn_adjust_order.config(state=tk.DISABLED)
+        if self.playlist:
+            if mode == "random":
+                self.reset_random_playlist()
+            self.rebuild_playlist()
+            if mode == 'random' and not self.is_playing and self.unplayed_indices:
+                 self.play_next_video()
+
+    def reset_random_playlist(self):
+        if not self.playlist:
+            self.unplayed_indices, self.history_indices = [], []
+            return
+        all_indices = list(range(len(self.playlist)))
+        current_video_playing_idx = self.current_playlist_index
+        self.history_indices = []
+        potential_unplayed = [i for i in all_indices if i != current_video_playing_idx]
+        random.shuffle(potential_unplayed)
+        self.unplayed_indices = potential_unplayed
+
+    def rebuild_playlist(self):
+        if not self.playlist: return
+        current_video_path = None
+        if self.current_playlist_index != -1 and self.current_playlist_index < len(self.playlist):
+            current_video_path = self.playlist[self.current_playlist_index]
+        mode = self.play_mode_var.get()
+        if mode == "ctime":
+            self.playlist.sort(key=lambda p: os.path.getctime(p))
+        elif mode == "json" and self.current_folder_path:
+            self.playlist = self.sort_by_json(self.playlist, self.current_folder_path)
+        if current_video_path and mode != "random":
+            try: self.current_playlist_index = self.playlist.index(current_video_path)
+            except ValueError: self.current_playlist_index = 0 if self.playlist else -1
+        elif mode != "random":
+             self.current_playlist_index = 0 if self.playlist else -1
+        self.update_nav_buttons_state()
+        self.update_module_title()
+
+    def sort_by_json(self, file_paths, folder_path):
+        json_path = os.path.join(folder_path, "playlist.json")
+        disk_basenames = {os.path.basename(p) for p in file_paths}
+        json_basenames = []
+        json_exists = os.path.exists(json_path)
+        if json_exists:
+            try:
+                with open(json_path, 'r', encoding='utf-8') as f: json_basenames = json.load(f)
+            except (json.JSONDecodeError, IOError): json_exists = False
+        if not json_exists:
+            sorted_by_ctime_paths = sorted(file_paths, key=lambda p: os.path.getctime(p))
+            json_basenames = [os.path.basename(p) for p in sorted_by_ctime_paths]
+            try:
+                with open(json_path, 'w', encoding='utf-8') as f: json.dump(json_basenames, f, ensure_ascii=False, indent=4)
+            except IOError: pass
+            return [os.path.join(folder_path, name) for name in json_basenames if name in disk_basenames]
+        json_basenames_set = set(json_basenames)
+        deleted_files = json_basenames_set - disk_basenames
+        new_files = disk_basenames - json_basenames_set
+        final_json_list = [name for name in json_basenames if name not in deleted_files]
+        final_json_list.extend(sorted(list(new_files)))
+        if deleted_files or new_files:
+            try:
+                with open(json_path, 'w', encoding='utf-8') as f: json.dump(final_json_list, f, ensure_ascii=False, indent=4)
+            except IOError: pass
+        return [os.path.join(folder_path, basename) for basename in final_json_list if basename in disk_basenames]
+
+    def open_playlist_editor(self):
+        if not self.playlist or not self.current_folder_path: return
+        PlaylistEditor(self, self.playlist, self.current_folder_path, self.play_mode_var.get())
+
+    def update_playlist_from_editor(self, new_order_basenames):
+        current_video_path = None
+        if self.current_playlist_index != -1 and self.current_playlist_index < len(self.playlist):
+             current_video_path = self.playlist[self.current_playlist_index]
+        self.playlist = [os.path.join(self.current_folder_path, basename) for basename in new_order_basenames]
+        if current_video_path:
+            try: self.current_playlist_index = self.playlist.index(current_video_path)
+            except ValueError: self.current_playlist_index = 0 if self.playlist else -1
+        else: self.current_playlist_index = 0 if self.playlist else -1
+        self.update_nav_buttons_state()
+        self.update_module_title()
+
+    def select_folder(self):
+        folder_path = filedialog.askdirectory(title=self.tr("module_videoplayer_btn_folder", "Select Video Folder"), parent=self.frame.winfo_toplevel())
+        if not folder_path: return
+        self.current_folder_path = folder_path
+        valid_extensions = ('.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.wmv')
+        try:
+            video_files = [os.path.join(folder_path, item) for item in os.listdir(folder_path) if item.lower().endswith(valid_extensions) and os.path.isfile(os.path.join(folder_path, item))]
+        except OSError: return
+        if not video_files:
+            self.current_folder_path = None
+            self.playlist = []
+            self.current_playlist_index = -1
+            self.update_nav_buttons_state()
+            self.update_module_title()
+            return
+        self.on_play_mode_change()
+        self.start_playlist(video_files)
+
+    def select_file(self):
+        filepath = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov *.mkv *.webm *.flv *.wmv"), ("All files", "*.*")], parent=self.frame.winfo_toplevel())
+        if not filepath: return
+        self.current_folder_path = None
+        if hasattr(self, 'btn_adjust_order'): self.btn_adjust_order.config(state=tk.DISABLED)
+        if hasattr(self, 'btn_jump_to'): self.btn_jump_to.config(state=tk.DISABLED)
+        self.start_playlist([filepath])
+
+    def update_module_title(self):
+        base_title = self.module_name
+        if self.is_maximized: base_title = f"[Maximized] {base_title}"
+        new_title = base_title
+        if self.playlist and self.current_playlist_index != -1:
+            filepath = self.playlist[self.current_playlist_index]
+            playlist_info = f"({self.current_playlist_index + 1}/{len(self.playlist)})"
+            new_title = f"{base_title}: {os.path.basename(filepath)} {playlist_info}"
+        if hasattr(self, 'title_label') and self.title_label:
+            self.title_label.config(text=new_title)
+
+    def play_current_video_in_playlist(self):
+        if not self.playlist or not (0 <= self.current_playlist_index < len(self.playlist)):
+            self.stop_video()
+            self.playlist = []
+            self.current_playlist_index = -1
+            self.update_module_title()
+            if hasattr(self, 'progress_label'): self.progress_label.config(text=self.tr("module_videoplayer_lbl_ready", "Ready"))
+            self.enable_button_states()
+            return
+        filepath = self.playlist[self.current_playlist_index]
+        self.video_path = filepath
+        self.update_module_title()
+        if hasattr(self, 'btn_select_file'): self.btn_select_file.config(state=tk.DISABLED)
+        if hasattr(self, 'btn_select_folder'): self.btn_select_folder.config(state=tk.DISABLED)
+        if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(state=tk.DISABLED)
+        self.update_nav_buttons_state()
+        if hasattr(self, 'progress_label'): self.progress_label.config(text="Preparing...")
+
+        # Start preparation in a thread
+        threading.Thread(target=self.prepare_video, args=(filepath,), daemon=True).start()
+
+    def play_next_video(self):
+        if not self.playlist: return
+        mode = self.play_mode_var.get()
+        if mode == 'random':
+            if self.current_playlist_index != -1: self.history_indices.append(self.current_playlist_index)
+            if not self.unplayed_indices:
+                self.reset_random_playlist()
+            if self.unplayed_indices:
+                self.current_playlist_index = self.unplayed_indices.pop(0)
+            else:
+                self.stop_video()
+                return
+        else:
+            self.current_playlist_index = (self.current_playlist_index + 1) % len(self.playlist)
+        self.stop_video()
+        self.play_current_video_in_playlist()
+
+    def play_previous_video(self):
+        if not self.playlist: return
+        mode = self.play_mode_var.get()
+        if mode == 'random':
+            if self.history_indices:
+                if self.current_playlist_index != -1: self.unplayed_indices.insert(0, self.current_playlist_index)
+                self.current_playlist_index = self.history_indices.pop()
+            else: return
+        else:
+            self.current_playlist_index = (self.current_playlist_index - 1 + len(self.playlist)) % len(self.playlist)
+        self.stop_video()
+        self.play_current_video_in_playlist()
+
+    def update_nav_buttons_state(self):
+        mode = self.play_mode_var.get()
+        can_go_next, can_go_prev = False, False
+        if self.playlist:
+            if mode == 'random':
+                can_go_next = bool(self.unplayed_indices) or len(self.playlist) > 1
+                can_go_prev = bool(self.history_indices)
+            else:
+                can_go_next = can_go_prev = len(self.playlist) > 1
+        if hasattr(self, 'btn_prev'): self.btn_prev.config(state=tk.NORMAL if can_go_prev else tk.DISABLED)
+        if hasattr(self, 'btn_next'): self.btn_next.config(state=tk.NORMAL if can_go_next else tk.DISABLED)
+        if hasattr(self, 'btn_jump_to'): self.btn_jump_to.config(state=tk.NORMAL if self.playlist else tk.DISABLED)
+
+    def prepare_video(self, filepath):
+        self.cleanup_temp_cache()
+        self.video_path = filepath
+
+        # Check if we need to apply effects
+        effects_active = any(self.audio_effects_settings.get(k, "無" if isinstance(self.audio_effects_settings.get(k), str) else False) not in [False, "無"] for k in self.audio_effects_settings)
+
+        final_playback_path = filepath
+
+        if effects_active:
+             try:
+                if hasattr(self, 'progress_label') and self.frame.winfo_exists():
+                     self.frame.after(0, lambda: self.progress_label.config(text="Applying Effects..."))
+
+                video_dir = os.path.dirname(filepath)
+                self.temp_cache_dir = tempfile.mkdtemp(prefix='.vidplayer_cache_', dir=video_dir)
+
+                # 1. Extract Audio
+                temp_wav_path = os.path.join(self.temp_cache_dir, "temp.wav")
+                with VideoFileClip(filepath) as video:
+                    if video.audio:
+                        video.audio.write_audiofile(temp_wav_path, codec='pcm_s16le', logger=None)
+                    else:
+                        raise Exception("No audio to process")
+
+                # 2. Process Audio
+                effects_out_path = os.path.join(self.temp_cache_dir, "temp_effects.wav")
+                self.apply_audio_effects(temp_wav_path, effects_out_path)
+
+                # 3. Remux
+                output_video = os.path.join(self.temp_cache_dir, "output.mp4")
+                cmd = f'ffmpeg -y -loglevel error -i "{filepath}" -i "{effects_out_path}" -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 "{output_video}"'
+                subprocess.run(cmd, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
+                if os.path.exists(output_video) and os.path.getsize(output_video) > 0:
+                    final_playback_path = output_video
+             except Exception as e:
+                 self.shared_state.log(f"Effects processing failed: {e}", level=logging.ERROR)
+                 # Fallback to original file
+
+        # Init ffpyplayer
+        if self.frame and self.frame.winfo_exists():
+            self.frame.after(0, lambda: self.init_player(final_playback_path))
+
+    def init_player(self, path):
+        if not self.frame.winfo_exists(): return
+        self.stop_video(clear_playlist=False)
+        self.video_path = path
+
+        try:
+            # Request RGB24 output for compatibility with PIL/Tkinter
+            self.player = MediaPlayer(path, ff_opts={'paused': True, 'loop': 0, 'out_fmt': 'rgb24'})
+
+            time.sleep(0.1)
+            meta = self.player.get_metadata()
+            self.video_duration = meta.get('duration', 0)
+
+            self.enable_button_states()
+
+            self.player.set_volume(self.volume_var.get() / 100.0)
+            self.player.toggle_pause()
+            self.is_playing = True
+            self.is_paused = False
+
+            self.time_total_label.config(text=self.format_time(self.video_duration))
+            self.timeline_scale.config(to=100)
+
+            if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_pause", "Pause"))
+            if hasattr(self, 'progress_label'): self.progress_label.config(text=self.tr("module_videoplayer_lbl_playing", "Playing..."))
+
+            self.update_frame()
+
+        except Exception as e:
+            self.shared_state.log(f"Failed to init ffpyplayer: {e}", level=logging.ERROR)
+            messagebox.showerror("Error", f"Failed to play video:\n{e}")
+
     def calculate_proportional_size(self, canvas_w, canvas_h, video_w, video_h):
         if video_w == 0 or video_h == 0: return (max(1, canvas_w), max(1, canvas_h))
         canvas_ratio = canvas_w / canvas_h
@@ -832,6 +1108,42 @@ class VideoPlayerModule(Module):
              new_w = canvas_w
              new_h = int(canvas_w / video_ratio)
         return (max(1, new_w), max(1, new_h))
+
+    def enable_button_states(self):
+        if hasattr(self, 'btn_select_file'): self.btn_select_file.config(state=tk.NORMAL)
+        if hasattr(self, 'btn_select_folder'): self.btn_select_folder.config(state=tk.NORMAL)
+        play_pause_state = tk.NORMAL if self.player else tk.DISABLED
+        if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(state=play_pause_state)
+        self.update_nav_buttons_state()
+        if hasattr(self, 'btn_adjust_order'):
+            adj_order_state = tk.NORMAL if (self.play_mode_var.get() == 'json' and self.current_folder_path) else tk.DISABLED
+            self.btn_adjust_order.config(state=adj_order_state)
+        if hasattr(self, 'progress_label'):
+            if self.is_playing and not self.is_paused: self.progress_label.config(text=self.tr("module_videoplayer_lbl_playing", "Playing..."))
+            elif self.is_paused: self.progress_label.config(text=self.tr("module_videoplayer_lbl_paused", "Paused"))
+            else:
+                if self.playlist and self.current_playlist_index != -1:
+                    self.progress_label.config(text=f"{self.tr('module_videoplayer_lbl_ready', 'Ready')} ({self.current_playlist_index + 1}/{len(self.playlist)})")
+                else: self.progress_label.config(text=f"{self.tr('module_videoplayer_lbl_ready', 'Ready')}. {self.tr('module_videoplayer_msg_select', 'Select file/folder.')}")
+
+    def stop_video(self, clear_playlist=False):
+        self.is_playing = False
+        self.is_paused = False
+        if self.after_id:
+            if self.frame and self.frame.winfo_exists(): self.frame.after_cancel(self.after_id)
+            self.after_id = None
+
+        if self.player:
+            self.player.close_player()
+            self.player = None
+
+        if self.canvas and self.canvas.winfo_exists(): self.canvas.delete("all")
+        if hasattr(self, 'timeline_var'): self.timeline_var.set(0)
+        if hasattr(self, 'time_current_label'): self.time_current_label.config(text="00:00")
+
+        if clear_playlist:
+             self.playlist = []
+             self.current_playlist_index = -1
 
     def _process_image_job(self, img_data, w, h, target_w, target_h):
         try:
@@ -854,24 +1166,24 @@ class VideoPlayerModule(Module):
             else:
                 self.stop_video()
             return
-            
+
         if frame is None:
             pass
         else:
             img, t = frame
             w, h = img.get_size()
-            
+
             # Using ThreadPool to offload resizing
             with self.canvas_size_lock:
                 target_w, target_h = self.last_known_canvas_size
-            
+
             # We must get data here in main thread safely from ffpyplayer object
             try:
                 data = img.to_bytearray()[0]
-                
+
                 # Submit job
                 future = self.frame_processing_pool.submit(self._process_image_job, data, w, h, target_w, target_h)
-                
+
                 # We want to display THIS frame now to stay in sync.
                 # Waiting for resizing might slightly delay it, but ensures GUI responsiveness.
                 # Ideally we pipeline this, but for simple sync:
@@ -904,8 +1216,6 @@ class VideoPlayerModule(Module):
         if self.is_playing and not self.is_paused:
              self.after_id = self.frame.after(10, self.update_frame)
 
-    # ... (Rest of controls: seek, volume, toggle)
-    # Re-pasting the full class methods for completeness in the file creation block
     def on_resize(self, event):
         if event.width > 1 and event.height > 1:
             new_size = (event.width, event.height)
