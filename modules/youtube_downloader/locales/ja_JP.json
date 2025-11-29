@@ -13,5 +13,22 @@
     "module_ytdl_status_ready": "ステータス: 準備完了",
     "module_ytdl_err_ytdl": "yt-dlp が利用できません。yt-dlp をインストールしてください。",
     "module_ytdl_err_no_url": "少なくとも1つの YouTube URL を入力してください。",
-    "module_ytdl_err_no_folder": "ダウンロードフォルダを選択してください。"
+    "module_ytdl_err_no_folder": "ダウンロードフォルダを選択してください。",
+    "module_ytdl_lbl_error_log": "エラーログ",
+    "module_ytdl_btn_clear": "クリア",
+    "module_ytdl_btn_show_log": "エラーログを表示",
+    "module_ytdl_btn_hide_log": "エラーログを非表示",
+    "module_ytdl_chk_skip_unavailable": "利用不可の動画をスキップ (スマートプレイリスト)",
+    "module_ytdl_status_skipping": "ステータス: URL {0}/{1} をスキップ中...",
+    "module_ytdl_status_stopping": "ステータス: すべてのダウンロードを停止中...",
+    "module_ytdl_status_stopped_user": "ステータス: ユーザーによりダウンロードが停止されました。",
+    "module_ytdl_status_processing": "ステータス: URL {0}/{1} を処理中: {2}...",
+    "module_ytdl_status_skipped_idx": "ステータス: URL {0}/{1} をスキップしました",
+    "module_ytdl_status_completed_errors": "ステータス: {0} 件のエラーで完了しました。ログを確認してください。",
+    "module_ytdl_status_completed_success": "ステータス: すべてのダウンロードが正常に完了しました！",
+    "module_ytdl_status_fetching_meta": "ステータス: プレイリストのメタデータを取得中 (スマートモード)...",
+    "module_ytdl_status_downloading": "ステータス: [{0}/{1}] {2} をダウンロード中",
+    "module_ytdl_status_finished_file": "ステータス: [{0}/{1}] {2} のダウンロード完了",
+    "module_ytdl_err_metadata": "プレイリストのメタデータの取得に失敗しました。",
+    "module_ytdl_err_no_valid_videos": "指定された範囲内にダウンロード可能な有効な動画が見つかりませんでした。"
 }

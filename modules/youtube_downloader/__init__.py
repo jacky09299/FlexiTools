@@ -93,8 +93,10 @@ class YoutubeDownloaderModule(Module):
         # --- Sidebar Content ---
         sidebar_header = ttk.Frame(self.sidebar_frame)
         sidebar_header.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Label(sidebar_header, text="Error Log", font=("TkDefaultFont", 10, "bold")).pack(side=tk.LEFT)
-        ttk.Button(sidebar_header, text="Clear", command=self.clear_log, width=6).pack(side=tk.RIGHT)
+        self.log_lbl = ttk.Label(sidebar_header, text="Error Log", font=("TkDefaultFont", 10, "bold"))
+        self.log_lbl.pack(side=tk.LEFT)
+        self.clear_btn = ttk.Button(sidebar_header, text="Clear", command=self.clear_log, width=6)
+        self.clear_btn.pack(side=tk.RIGHT)
 
         self.log_text = tk.Text(self.sidebar_frame, width=40, state="disabled", font=("TkFixedFont", 9))
         self.log_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -212,7 +214,10 @@ class YoutubeDownloaderModule(Module):
         self.stop_button.config(text=self.tr("module_ytdl_btn_stop", "Stop All"))
         self.skip_unavailable_chk.config(text=self.tr("module_ytdl_chk_skip_unavailable", "Skip unavailable videos (Smart Playlist)"))
         
-        log_btn_text = "Hide Error Log" if self.log_visible else "Show Error Log"
+        self.log_lbl.config(text=self.tr("module_ytdl_lbl_error_log", "Error Log"))
+        self.clear_btn.config(text=self.tr("module_ytdl_btn_clear", "Clear"))
+
+        log_btn_text = self.tr("module_ytdl_btn_hide_log", "Hide Error Log") if self.log_visible else self.tr("module_ytdl_btn_show_log", "Show Error Log")
         self.log_toggle_btn.config(text=log_btn_text)
 
         if self.status_label.cget("text") in ["Status: Ready", "狀態: 就緒"]:
@@ -221,11 +226,11 @@ class YoutubeDownloaderModule(Module):
     def toggle_error_log(self):
         if self.log_visible:
             self.sidebar_frame.pack_forget()
-            self.log_toggle_btn.config(text="Show Error Log")
+            self.log_toggle_btn.config(text=self.tr("module_ytdl_btn_show_log", "Show Error Log"))
             self.log_visible = False
         else:
             self.sidebar_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=(5, 0))
-            self.log_toggle_btn.config(text="Hide Error Log")
+            self.log_toggle_btn.config(text=self.tr("module_ytdl_btn_hide_log", "Hide Error Log"))
             self.log_visible = True
 
     def clear_log(self):
@@ -321,7 +326,7 @@ class YoutubeDownloaderModule(Module):
                 self.current_ydl._stop_download = True
             except:
                 pass
-        self.update_status(f"Status: Skipping URL {self.current_url_index}/{self.total_urls}...")
+        self.update_status(self.tr("module_ytdl_status_skipping", "Status: Skipping URL {0}/{1}...").format(self.current_url_index, self.total_urls))
 
     def stop_all_downloads(self):
         """停止所有下載"""
@@ -332,7 +337,7 @@ class YoutubeDownloaderModule(Module):
                 self.current_ydl._stop_download = True
             except:
                 pass
-        self.update_status("Status: Stopping all downloads...")
+        self.update_status(self.tr("module_ytdl_status_stopping", "Status: Stopping all downloads..."))
         
         # 重置按鈕狀態
         self.download_button.config(state="normal")
@@ -367,7 +372,7 @@ class YoutubeDownloaderModule(Module):
             for idx, line in enumerate(lines, 1):
                 # 檢查是否需要停止所有下載
                 if self.stop_download:
-                    self.update_status("Status: Download stopped by user.")
+                    self.update_status(self.tr("module_ytdl_status_stopped_user", "Status: Download stopped by user."))
                     break
                     
                 # 更新當前 URL 索引
@@ -377,7 +382,7 @@ class YoutubeDownloaderModule(Module):
                 if not url:
                     continue
                     
-                self.update_status(f"Status: Processing URL {idx}/{self.total_urls}: {url[:50]}...")
+                self.update_status(self.tr("module_ytdl_status_processing", "Status: Processing URL {0}/{1}: {2}...").format(idx, self.total_urls, url[:50]))
                 self.progress_bar['value'] = 0
                 
                 # 重置跳過標記（每個新 URL 開始時重置）
@@ -388,7 +393,7 @@ class YoutubeDownloaderModule(Module):
                     
                     # 如果這個 URL 被跳過，繼續下一個
                     if self.skip_current:
-                        self.update_status(f"Status: Skipped URL {idx}/{self.total_urls}")
+                        self.update_status(self.tr("module_ytdl_status_skipped_idx", "Status: Skipped URL {0}/{1}").format(idx, self.total_urls))
                         continue
                         
                     if not success:
@@ -406,11 +411,11 @@ class YoutubeDownloaderModule(Module):
                 if errors:
                     # Don't show popup if log is used, or show a small notification?
                     # User requested log, so maybe just update status
-                    self.update_status(f"Status: Completed with {len(errors)} errors. Check log.")
+                    self.update_status(self.tr("module_ytdl_status_completed_errors", "Status: Completed with {0} errors. Check log.").format(len(errors)))
                     if not self.log_visible:
                          self.master.after(0, self.toggle_error_log)
                 else:
-                    self.update_status("Status: All downloads completed successfully!")
+                    self.update_status(self.tr("module_ytdl_status_completed_success", "Status: All downloads completed successfully!"))
         
         finally:
             # 重置按鈕狀態
@@ -475,7 +480,7 @@ class YoutubeDownloaderModule(Module):
             if is_playlist_url:
                 if self.skip_unavailable_var.get():
                     # Smart Mode: Filter unavailable videos first
-                    self.update_status("Status: Fetching playlist metadata (Smart Mode)...")
+                    self.update_status(self.tr("module_ytdl_status_fetching_meta", "Status: Fetching playlist metadata (Smart Mode)..."))
                     
                     # 1. Fetch metadata
                     meta_opts = ydl_opts.copy()
@@ -528,7 +533,7 @@ class YoutubeDownloaderModule(Module):
                     
                     # 4. Download specific items
                     if not items_to_download:
-                        self.log_error("No valid videos found to download in the specified range.")
+                        self.log_error(self.tr("module_ytdl_err_no_valid_videos", "No valid videos found to download in the specified range."))
                         return False
                         
                     # Convert list of indices to string for playlist_items
@@ -603,8 +608,8 @@ class YoutubeDownloaderModule(Module):
             filename = d.get('filename')
             if filename:
                 basename = os.path.basename(filename)
-                self.master.after(0, lambda: self.status_label.config(
-                    text=f"Status: [{self.current_url_index}/{self.total_urls}] Downloading {basename}"))
+                status_msg = self.tr("module_ytdl_status_downloading", "Status: [{0}/{1}] Downloading {2}").format(self.current_url_index, self.total_urls, basename)
+                self.master.after(0, lambda: self.status_label.config(text=status_msg))
             if 'total_bytes' in d:
                 percentage = (d['downloaded_bytes'] / d['total_bytes']) * 100
                 self.master.after(0, lambda: self.progress_bar.config(value=percentage))
@@ -618,8 +623,8 @@ class YoutubeDownloaderModule(Module):
             filename = d.get('filename')
             if filename:
                 basename = os.path.basename(filename)
-                self.master.after(0, lambda: self.status_label.config(
-                    text=f"Status: [{self.current_url_index}/{self.total_urls}] Finished downloading {basename}"))
+                status_msg = self.tr("module_ytdl_status_finished_file", "Status: [{0}/{1}] Finished downloading {2}").format(self.current_url_index, self.total_urls, basename)
+                self.master.after(0, lambda: self.status_label.config(text=status_msg))
 
     def update_status(self, message):
         """更新狀態"""

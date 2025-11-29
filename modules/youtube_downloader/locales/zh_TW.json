@@ -13,5 +13,22 @@
     "module_ytdl_status_ready": "狀態: 就緒",
     "module_ytdl_err_ytdl": "yt-dlp 未安裝，請安裝 yt-dlp。",
     "module_ytdl_err_no_url": "請至少輸入一個 YouTube 網址。",
-    "module_ytdl_err_no_folder": "請選擇下載資料夾。"
+    "module_ytdl_err_no_folder": "請選擇下載資料夾。",
+    "module_ytdl_lbl_error_log": "錯誤日誌",
+    "module_ytdl_btn_clear": "清除",
+    "module_ytdl_btn_show_log": "顯示錯誤日誌",
+    "module_ytdl_btn_hide_log": "隱藏錯誤日誌",
+    "module_ytdl_chk_skip_unavailable": "跳過無法觀看的影片 (智慧播放清單)",
+    "module_ytdl_status_skipping": "狀態: 跳過網址 {0}/{1}...",
+    "module_ytdl_status_stopping": "狀態: 正在停止所有下載...",
+    "module_ytdl_status_stopped_user": "狀態: 下載已由使用者停止。",
+    "module_ytdl_status_processing": "狀態: 處理網址 {0}/{1}: {2}...",
+    "module_ytdl_status_skipped_idx": "狀態: 已跳過網址 {0}/{1}",
+    "module_ytdl_status_completed_errors": "狀態: 完成，共有 {0} 個錯誤。請查看日誌。",
+    "module_ytdl_status_completed_success": "狀態: 所有下載成功完成！",
+    "module_ytdl_status_fetching_meta": "狀態: 正在獲取播放清單元數據 (智慧模式)...",
+    "module_ytdl_status_downloading": "狀態: [{0}/{1}] 下載中 {2}",
+    "module_ytdl_status_finished_file": "狀態: [{0}/{1}] 下載完成 {2}",
+    "module_ytdl_err_metadata": "無法獲取播放清單元數據。",
+    "module_ytdl_err_no_valid_videos": "在指定範圍內未找到有效的影片進行下載。"
 }

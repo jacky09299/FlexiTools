@@ -13,5 +13,22 @@
     "module_ytdl_status_ready": "Status: Bereit",
     "module_ytdl_err_ytdl": "yt-dlp ist nicht verfügbar. Bitte installieren Sie yt-dlp.",
     "module_ytdl_err_no_url": "Bitte geben Sie mindestens eine YouTube URL ein.",
-    "module_ytdl_err_no_folder": "Bitte wählen Sie einen Download-Ordner."
+    "module_ytdl_err_no_folder": "Bitte wählen Sie einen Download-Ordner.",
+    "module_ytdl_lbl_error_log": "Fehlerprotokoll",
+    "module_ytdl_btn_clear": "Löschen",
+    "module_ytdl_btn_show_log": "Fehlerprotokoll anzeigen",
+    "module_ytdl_btn_hide_log": "Fehlerprotokoll ausblenden",
+    "module_ytdl_chk_skip_unavailable": "Nicht verfügbare Videos überspringen (Intelligente Playlist)",
+    "module_ytdl_status_skipping": "Status: Überspringe URL {0}/{1}...",
+    "module_ytdl_status_stopping": "Status: Stoppe alle Downloads...",
+    "module_ytdl_status_stopped_user": "Status: Download vom Benutzer gestoppt.",
+    "module_ytdl_status_processing": "Status: Verarbeite URL {0}/{1}: {2}...",
+    "module_ytdl_status_skipped_idx": "Status: URL {0}/{1} übersprungen",
+    "module_ytdl_status_completed_errors": "Status: Abgeschlossen mit {0} Fehlern. Protokoll prüfen.",
+    "module_ytdl_status_completed_success": "Status: Alle Downloads erfolgreich abgeschlossen!",
+    "module_ytdl_status_fetching_meta": "Status: Rufe Playlist-Metadaten ab (Smart-Modus)...",
+    "module_ytdl_status_downloading": "Status: [{0}/{1}] Lade herunter {2}",
+    "module_ytdl_status_finished_file": "Status: [{0}/{1}] Download abgeschlossen {2}",
+    "module_ytdl_err_metadata": "Fehler beim Abrufen der Playlist-Metadaten.",
+    "module_ytdl_err_no_valid_videos": "Keine gültigen Videos zum Herunterladen im angegebenen Bereich gefunden."
 }

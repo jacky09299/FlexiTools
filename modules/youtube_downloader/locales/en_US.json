@@ -13,5 +13,22 @@
     "module_ytdl_status_ready": "Status: Ready",
     "module_ytdl_err_ytdl": "yt-dlp is not available. Please install yt-dlp.",
     "module_ytdl_err_no_url": "Please enter at least one YouTube URL.",
-    "module_ytdl_err_no_folder": "Please select a download folder."
+    "module_ytdl_err_no_folder": "Please select a download folder.",
+    "module_ytdl_lbl_error_log": "Error Log",
+    "module_ytdl_btn_clear": "Clear",
+    "module_ytdl_btn_show_log": "Show Error Log",
+    "module_ytdl_btn_hide_log": "Hide Error Log",
+    "module_ytdl_chk_skip_unavailable": "Skip unavailable videos (Smart Playlist)",
+    "module_ytdl_status_skipping": "Status: Skipping URL {0}/{1}...",
+    "module_ytdl_status_stopping": "Status: Stopping all downloads...",
+    "module_ytdl_status_stopped_user": "Status: Download stopped by user.",
+    "module_ytdl_status_processing": "Status: Processing URL {0}/{1}: {2}...",
+    "module_ytdl_status_skipped_idx": "Status: Skipped URL {0}/{1}",
+    "module_ytdl_status_completed_errors": "Status: Completed with {0} errors. Check log.",
+    "module_ytdl_status_completed_success": "Status: All downloads completed successfully!",
+    "module_ytdl_status_fetching_meta": "Status: Fetching playlist metadata (Smart Mode)...",
+    "module_ytdl_status_downloading": "Status: [{0}/{1}] Downloading {2}",
+    "module_ytdl_status_finished_file": "Status: [{0}/{1}] Finished downloading {2}",
+    "module_ytdl_err_metadata": "Failed to fetch playlist metadata.",
+    "module_ytdl_err_no_valid_videos": "No valid videos found to download in the specified range."
 }
