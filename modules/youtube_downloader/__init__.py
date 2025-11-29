@@ -15,17 +15,27 @@ class YtDlpLogger:
         self.log_method = log_method
 
     def debug(self, msg):
-        # Filter out verbose debug messages if needed, or log them
-        if msg.startswith('[debug] '):
-            pass
-        else:
-            self.log_method(msg)
+        # Ignore debug messages (user wants failures only)
+        pass
 
     def warning(self, msg):
-        self.log_method(f"WARNING: {msg}")
+        # Ignore warnings (user wants failures only)
+        pass
 
     def error(self, msg):
-        self.log_method(f"ERROR: {msg}")
+        # Clean up error message for readability
+        # Remove "ERROR: " prefix if present
+        clean_msg = msg.replace("ERROR: ", "")
+        
+        # Remove [youtube] or [download] prefixes if present
+        # e.g. "[youtube] b-gyr8Rubmo: Video unavailable..." -> "Video unavailable..."
+        # Regex to remove [tag] ID: 
+        clean_msg = re.sub(r'^\[.*?\]\s*.*?\:\s*', '', clean_msg)
+        
+        # If regex didn't match (no ID), try removing just [tag]
+        clean_msg = re.sub(r'^\[.*?\]\s*', '', clean_msg)
+        
+        self.log_method(f"{clean_msg}")
 
 class YoutubeDownloaderModule(Module):
     def __init__(self, master, shared_state, module_name="Youtube Downloader", gui_manager=None):
