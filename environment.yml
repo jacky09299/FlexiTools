@@ -94,6 +94,6 @@ dependencies:
       - uncertainties==3.2.3
       - urllib3==2.5.0
       - wcwidth==0.2.13
-      - yt-dlp==2025.6.30
+      - yt-dlp==2025.11.12
       - zipp==3.23.0
       - pypdfium2==4.30.0
