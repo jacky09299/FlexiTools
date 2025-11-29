@@ -329,6 +329,11 @@ class YoutubeDownloaderModule(Module):
             ydl_opts = {
                 'outtmpl': os.path.join(self.download_dir, '%(title)s.%(ext)s'),
                 'progress_hooks': [self.on_progress_ytdlp],
+                # Add options to fix 403 Forbidden errors and improve stability
+                'force_ipv4': True,
+                'hls_prefer_native': True,
+                'concurrent_fragment_downloads': 16,
+                'merge_output_format': 'mp4',
             }
             
             # 根據格式設定
@@ -343,7 +348,8 @@ class YoutubeDownloaderModule(Module):
                 })
             else:
                 if quality == "best":
-                    format_selector = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+                    # Use robust format selector
+                    format_selector = "bv*[protocol=m3u8]+ba[protocol=m3u8]/best"
                 elif quality.endswith("p") and quality[:-1].isdigit():
                     format_selector = (
                         f"bestvideo[height={quality[:-1]}][ext=mp4]+bestaudio[ext=m4a]/"
