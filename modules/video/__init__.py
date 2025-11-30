@@ -1398,7 +1398,18 @@ class VideoPlayerModule(Module):
                  pass
 
         if self.is_playing and not self.is_paused:
-             self.after_id = self.frame.after(10, self.update_frame)
+             # Calculate delay for next frame
+             if val == 'eof':
+                  delay = 10
+             elif val == 0:
+                  delay = 1 # Process immediately if possible, but keep loop alive
+             else:
+                  delay = int(val * 1000)
+                  # Clamp delay to reasonable limits to maintain responsiveness
+                  if delay < 1: delay = 1
+                  if delay > 1000: delay = 1000 # Cap at 1s to ensure UI updates happen
+
+             self.after_id = self.frame.after(delay, self.update_frame)
 
     def on_resize(self, event):
         if event.width > 1 and event.height > 1:
