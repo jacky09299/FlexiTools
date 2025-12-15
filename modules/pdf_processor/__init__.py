@@ -3,6 +3,7 @@ from tkinter import ttk, filedialog, messagebox
 import os
 import io # Added for BytesIO for reportlab
 import logging # Added for consistency with other modules
+from PIL import Image # For Image to PDF
 
 # PyPDF2 for PDF manipulation
 from PyPDF2 import PdfReader, PdfWriter
@@ -59,6 +60,7 @@ class PdfProcessorModule(Module):
         self.tab_watermark = ttk.Frame(self.notebook)
         self.tab_extract_text = ttk.Frame(self.notebook)
         self.tab_to_image_pdf = ttk.Frame(self.notebook)
+        self.tab_images_to_pdf = ttk.Frame(self.notebook) # New Tab for Images -> PDF
 
 
         # Add tabs to the notebook
@@ -68,6 +70,7 @@ class PdfProcessorModule(Module):
         self.notebook.add(self.tab_watermark, text="Add Watermark")
         self.notebook.add(self.tab_extract_text, text="Extract Text")
         self.notebook.add(self.tab_to_image_pdf, text="To Image PDF")
+        self.notebook.add(self.tab_images_to_pdf, text="Images to PDF")
 
         # --- Convert to Image PDF Tab ---
         if pdfium:
@@ -353,6 +356,60 @@ class PdfProcessorModule(Module):
 
         extract_frame.columnconfigure(1, weight=1)
 
+        # --- Images to PDF Tab ---
+        for widget in self.tab_images_to_pdf.winfo_children():
+            widget.destroy()
+
+        img_to_pdf_frame = ttk.Frame(self.tab_images_to_pdf, padding="10")
+        img_to_pdf_frame.pack(expand=True, fill=tk.BOTH)
+
+        # Image Listbox and controls
+        img_list_controls_frame = ttk.Frame(img_to_pdf_frame)
+        img_list_controls_frame.pack(fill=tk.X, pady=5)
+
+        self.btn_img_add = ttk.Button(img_list_controls_frame, text="Add Images...", command=self._add_images_to_list)
+        self.btn_img_add.pack(side=tk.LEFT, padx=2)
+        self.btn_img_remove = ttk.Button(img_list_controls_frame, text="Remove Selected", command=self._remove_selected_image)
+        self.btn_img_remove.pack(side=tk.LEFT, padx=2)
+        self.btn_img_up = ttk.Button(img_list_controls_frame, text="Move Up", command=lambda: self._move_image_list_item(-1))
+        self.btn_img_up.pack(side=tk.LEFT, padx=2)
+        self.btn_img_down = ttk.Button(img_list_controls_frame, text="Move Down", command=lambda: self._move_image_list_item(1))
+        self.btn_img_down.pack(side=tk.LEFT, padx=2)
+
+        self.img_listbox = tk.Listbox(img_to_pdf_frame, selectmode=tk.SINGLE, width=70, height=10)
+        self.img_listbox.pack(pady=5, fill=tk.BOTH, expand=True)
+        img_list_scrollbar = ttk.Scrollbar(self.img_listbox, orient=tk.VERTICAL, command=self.img_listbox.yview)
+        self.img_listbox.config(yscrollcommand=img_list_scrollbar.set)
+
+        # Output Mode
+        self.img_output_mode_var = tk.StringVar(value="merge")
+        mode_frame = ttk.Frame(img_to_pdf_frame)
+        mode_frame.pack(fill=tk.X, pady=5)
+        self.rb_img_merge = ttk.Radiobutton(mode_frame, text="Merge into one PDF", variable=self.img_output_mode_var, value="merge")
+        self.rb_img_merge.pack(side=tk.LEFT, padx=10)
+        self.rb_img_separate = ttk.Radiobutton(mode_frame, text="Convert to separate PDFs", variable=self.img_output_mode_var, value="separate")
+        self.rb_img_separate.pack(side=tk.LEFT, padx=10)
+
+        # Output Selection
+        output_frame_img = ttk.Frame(img_to_pdf_frame)
+        output_frame_img.pack(fill=tk.X, pady=5)
+        self.lbl_img_out = ttk.Label(output_frame_img, text="Output:")
+        self.lbl_img_out.pack(side=tk.LEFT, padx=5)
+        self.img_output_path_var = tk.StringVar()
+        ttk.Entry(output_frame_img, textvariable=self.img_output_path_var, width=50, state="readonly").pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
+        self.btn_img_browse = ttk.Button(output_frame_img, text="Browse...", command=self._select_output_images_to_pdf)
+        self.btn_img_browse.pack(side=tk.LEFT, padx=5)
+
+        # Execute Button
+        self.btn_img_execute = ttk.Button(img_to_pdf_frame, text="Convert to PDF", command=self._execute_images_to_pdf)
+        self.btn_img_execute.pack(pady=10)
+
+        # Status Label
+        self.img_status_var = tk.StringVar()
+        ttk.Label(img_to_pdf_frame, textvariable=self.img_status_var, wraplength=400).pack(pady=5, fill=tk.X)
+
+        self.img_file_paths = []
+
         self.shared_state.log(f"Tabbed UI for {self.module_name} created.")
         self.update_language()
 
@@ -424,6 +481,18 @@ class PdfProcessorModule(Module):
         self.lbl_ext_out.config(text=self.tr("module_pdf_lbl_out_txt", "Output Text File (.txt):"))
         self.btn_ext_browse_out.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
         self.btn_ext_execute.config(text=self.tr("module_pdf_btn_extract", "Extract Text to File"))
+
+        # Images to PDF Tab
+        self.notebook.tab(self.tab_images_to_pdf, text=self.tr("module_pdf_tab_img_to_pdf", "Images to PDF"))
+        self.btn_img_add.config(text=self.tr("module_pdf_btn_add_imgs", "Add Images..."))
+        self.btn_img_remove.config(text=self.tr("module_pdf_btn_remove_sel", "Remove Selected"))
+        self.btn_img_up.config(text=self.tr("module_pdf_btn_move_up", "Move Up"))
+        self.btn_img_down.config(text=self.tr("module_pdf_btn_move_down", "Move Down"))
+        self.rb_img_merge.config(text=self.tr("module_pdf_rb_merge_imgs", "Merge into one PDF"))
+        self.rb_img_separate.config(text=self.tr("module_pdf_rb_separate_pdfs", "Convert to separate PDFs"))
+        self.lbl_img_out.config(text=self.tr("module_pdf_lbl_out_general", "Output:"))
+        self.btn_img_browse.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
+        self.btn_img_execute.config(text=self.tr("module_pdf_btn_convert_imgs", "Convert to PDF"))
 
     # Methods for PDF operations (split, merge, compress, rotate, watermark, extract) will be added later.
 
@@ -1359,6 +1428,147 @@ class PdfProcessorModule(Module):
             self.shared_state.log(f"Split Tab: Output folder selected: {folder_selected}")
         else:
             self.split_status_var.set("Output folder selection cancelled.")
+
+    # --- Images to PDF Logic ---
+
+    def _add_images_to_list(self):
+        filepaths = filedialog.askopenfilenames(
+            title="Select Images to Convert",
+            filetypes=[("Image Files", "*.jpg;*.jpeg;*.png;*.bmp;*.tiff"), ("All Files", "*.*")],
+            parent=self.tab_images_to_pdf
+        )
+        if filepaths:
+            added_count = 0
+            for fp in filepaths:
+                if fp not in self.img_file_paths:
+                    self.img_file_paths.append(fp)
+                    self.img_listbox.insert(tk.END, os.path.basename(fp))
+                    added_count += 1
+            self.img_status_var.set(f"Added {added_count} image(s). Total: {len(self.img_file_paths)}")
+            self.shared_state.log(f"Img->PDF Tab: Added {added_count} images.")
+        else:
+            self.img_status_var.set("No images selected.")
+
+    def _remove_selected_image(self):
+        selected_indices = self.img_listbox.curselection()
+        if not selected_indices:
+            messagebox.showwarning("Selection Error", "Please select an image to remove.", parent=self.tab_images_to_pdf)
+            return
+        for index in sorted(selected_indices, reverse=True):
+            self.img_listbox.delete(index)
+            removed = self.img_file_paths.pop(index)
+            self.shared_state.log(f"Img->PDF Tab: Removed {removed}")
+        self.img_status_var.set(f"Removed {len(selected_indices)} image(s).")
+
+    def _move_image_list_item(self, direction):
+        selected_indices = self.img_listbox.curselection()
+        if not selected_indices: return
+        idx = selected_indices[0]
+        if (direction == -1 and idx == 0) or (direction == 1 and idx == len(self.img_file_paths) - 1): return
+        new_idx = idx + direction
+        self.img_file_paths[idx], self.img_file_paths[new_idx] = self.img_file_paths[new_idx], self.img_file_paths[idx]
+        self.img_listbox.delete(0, tk.END)
+        for fp in self.img_file_paths:
+            self.img_listbox.insert(tk.END, os.path.basename(fp))
+        self.img_listbox.selection_set(new_idx)
+        self.img_listbox.activate(new_idx)
+
+    def _select_output_images_to_pdf(self):
+        mode = self.img_output_mode_var.get()
+        if mode == "merge":
+            initial_name = "images_merged.pdf"
+            if self.img_file_paths:
+                base = os.path.splitext(os.path.basename(self.img_file_paths[0]))[0]
+                count = len(self.img_file_paths)
+                initial_name = f"{base}_{count}_images.pdf" if count > 1 else f"{base}.pdf"
+            filepath = filedialog.asksaveasfilename(
+                title="Save Merged PDF As...",
+                defaultextension=".pdf",
+                filetypes=[("PDF Files", "*.pdf")],
+                initialfile=initial_name,
+                parent=self.tab_images_to_pdf
+            )
+            if filepath:
+                self.img_output_path_var.set(filepath)
+                self.img_status_var.set(f"Output: {os.path.basename(filepath)}")
+        else: # separate
+            folderpath = filedialog.askdirectory(title="Select Output Folder", parent=self.tab_images_to_pdf)
+            if folderpath:
+                self.img_output_path_var.set(folderpath)
+                self.img_status_var.set(f"Output Folder: {folderpath}")
+
+    def _execute_images_to_pdf(self):
+        if not self.img_file_paths:
+            messagebox.showerror("Error", "No images selected.", parent=self.tab_images_to_pdf)
+            return
+
+        out_path = self.img_output_path_var.get()
+        if not out_path:
+            messagebox.showerror("Error", "Please select an output location.", parent=self.tab_images_to_pdf)
+            return
+
+        mode = self.img_output_mode_var.get()
+        self.img_status_var.set("Converting...")
+        self.tab_images_to_pdf.update_idletasks()
+
+        try:
+            images = []
+            # Open images and convert to RGB
+            for fp in self.img_file_paths:
+                try:
+                    img = Image.open(fp)
+                    if img.mode != 'RGB':
+                        img = img.convert('RGB')
+                    images.append(img)
+                except Exception as e:
+                    self.shared_state.log(f"Img->PDF Tab: Failed to open image {fp}: {e}", "ERROR")
+                    messagebox.showwarning("Image Error", f"Skipping invalid image: {os.path.basename(fp)}", parent=self.tab_images_to_pdf)
+
+            if not images:
+                self.img_status_var.set("Error: No valid images to process.")
+                return
+
+            if mode == "merge":
+                images[0].save(out_path, save_all=True, append_images=images[1:])
+                self.img_status_var.set("Success: Merged PDF created.")
+                messagebox.showinfo("Success", f"Merged PDF saved to:\n{out_path}", parent=self.tab_images_to_pdf)
+                self.shared_state.log(f"Img->PDF Tab: Merged {len(images)} images to {out_path}")
+            else:
+                count = 0
+                for i, img in enumerate(images):
+                     try:
+                        # Find original path to get filename
+                        # This works assuming images list and img_file_paths are synced index-wise BUT some might have been skipped.
+                        # So we can't use 'i' directly mapping if failures happened.
+                        # Safer to re-open or map correctly. 
+                        # Given the snippet above: images.append(img) only on success.
+                        # Ideally should keep tuples (img, filename).
+                        pass
+                     except: pass
+                
+                # Refined separate loop:
+                count = 0
+                for fp in self.img_file_paths:
+                     try:
+                        img = Image.open(fp)
+                        if img.mode != 'RGB':
+                            img = img.convert('RGB')
+                        
+                        base_name = os.path.splitext(os.path.basename(fp))[0]
+                        save_path = os.path.join(out_path, f"{base_name}.pdf")
+                        img.save(save_path)
+                        count += 1
+                     except Exception as e:
+                         self.shared_state.log(f"Img->PDF Tab: Failed to convert {fp}: {e}", "ERROR")
+                
+                self.img_status_var.set(f"Success: Converted {count} images.")
+                messagebox.showinfo("Success", f"Converted {count} images to PDFs in:\n{out_path}", parent=self.tab_images_to_pdf)
+                self.shared_state.log(f"Img->PDF Tab: Converted {count} images to separate PDFs.")
+
+        except Exception as e:
+            self.img_status_var.set(f"Error: {e}")
+            messagebox.showerror("Error", f"Conversion failed: {e}", parent=self.tab_images_to_pdf)
+            self.shared_state.log(f"Img->PDF Tab: Conversion error: {e}", "ERROR")
 
 if __name__ == '__main__':
     # This section is for testing the module standalone if needed.
