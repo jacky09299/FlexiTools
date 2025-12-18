@@ -32,11 +32,11 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
+        "log_callback",
+        "variables",
         "observers",
         "splash_log_callback",
-        "splash_progress_callback",
-        "log_callback",
-        "variables"
+        "splash_progress_callback"
       ],
       "methods": [
         "__init__",
@@ -65,9 +65,9 @@
       "attributes": [
         "modules_dir",
         "shared_state",
+        "translations",
         "locale_dir",
-        "current_locale",
-        "translations"
+        "current_locale"
       ],
       "methods": [
         "__init__",
@@ -85,9 +85,9 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "catalog",
+        "shared_state",
         "modules_dir",
-        "shared_state"
+        "catalog"
       ],
       "methods": [
         "__init__",
@@ -138,22 +138,22 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "resize_start_y",
-        "frame",
-        "shared_state",
-        "gui_manager",
-        "close_button",
-        "resize_handle",
         "is_maximized",
+        "drag_handle_label",
+        "frame",
+        "resize_handle",
         "resize_start_height",
+        "resize_start_y",
+        "shared_state",
         "maximize_button",
-        "title_bar_frame",
-        "resize_start_width",
+        "master",
         "resize_start_x",
         "module_name",
-        "master",
+        "title_bar_frame",
+        "close_button",
         "title_label",
-        "drag_handle_label"
+        "gui_manager",
+        "resize_start_width"
       ],
       "methods": [
         "__init__",
@@ -177,11 +177,11 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "modules",
+        "last_calculated_content_width",
         "last_calculated_content_height",
+        "modules",
         "current_canvas_width",
-        "canvas_parent",
-        "last_calculated_content_width"
+        "canvas_parent"
       ],
       "methods": [
         "__init__",
@@ -207,67 +207,68 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "modules_menu",
-        "resize_start_y",
-        "controls_frame",
-        "settings",
-        "min_btn",
-        "loc_manager",
-        "loaded_modules",
-        "last_preview_target_module_name",
-        "ghost_module_frame",
-        "hidden_modules",
-        "window_size_fixed_after_init",
-        "root_maxsize_backup",
-        "maximized_module_name",
-        "title_label",
-        "help_menubutton",
-        "map_event_handled",
-        "original_dragged_module_relief",
-        "resize_mode",
-        "language_menu",
-        "drop_target_module_frame_wrapper",
-        "shared_state",
-        "drag_start_widget",
-        "is_module_resizing",
-        "language_menubutton",
-        "close_btn",
-        "canvas",
-        "window_geometry_before_module_resize",
-        "menu_frame",
-        "root",
-        "resize_start_x",
-        "content_frame",
-        "modules_menubutton",
-        "status_bar",
-        "normal_geometry",
-        "modules_dir",
-        "drag_start_x",
-        "is_maximized",
-        "drag_start_y",
-        "v_scrollbar",
-        "main_layout_manager_window_id",
-        "ghost_canvas_window_id",
-        "resize_debounce_delay",
-        "saves_dir",
-        "profile_menubutton",
-        "status_label",
-        "main_frame",
-        "max_btn",
-        "dragged_module_name",
-        "title_bar",
-        "main_layout_manager",
-        "help_menu",
-        "available_module_classes",
-        "module_instance_counters",
-        "context_menu",
         "resize_debounce_timer",
-        "canvas_container",
+        "root",
+        "drag_start_y",
+        "root_maxsize_backup",
+        "resize_start_y",
+        "loaded_modules",
+        "max_btn",
+        "language_menu",
+        "resize_mode",
+        "close_btn",
+        "main_layout_manager",
+        "maximized_module_name",
+        "resize_debounce_delay",
+        "map_event_handled",
+        "window_size_fixed_after_init",
+        "profile_menubutton",
+        "context_menu",
+        "saves_dir",
+        "ghost_module_frame",
+        "canvas",
+        "loc_manager",
+        "controls_frame",
+        "resize_start_x",
+        "available_module_classes",
+        "v_scrollbar",
+        "min_btn",
+        "main_frame",
+        "profile_menu",
         "_pre_maximize_layout",
-        "profile_menu"
+        "menu_frame",
+        "normal_geometry",
+        "drop_target_module_frame_wrapper",
+        "title_bar",
+        "original_dragged_module_relief",
+        "language_menubutton",
+        "title_label",
+        "content_frame",
+        "last_preview_target_module_name",
+        "canvas_container",
+        "is_maximized",
+        "status_label",
+        "modules_dir",
+        "status_bar",
+        "drag_start_widget",
+        "hidden_modules",
+        "drag_start_x",
+        "shared_state",
+        "main_layout_manager_window_id",
+        "modules_menu",
+        "help_menu",
+        "window_geometry_before_module_resize",
+        "modules_menubutton",
+        "ghost_canvas_window_id",
+        "module_instance_counters",
+        "is_module_resizing",
+        "settings",
+        "dragged_module_name",
+        "help_menubutton"
       ],
       "methods": [
         "__init__",
+        "tr",
         "update_status_bar_log",
         "_start_download_in_thread",
         "_download_installer_and_launch_update",
@@ -329,10 +330,10 @@
         "maximize_window_custom",
         "restore_window_custom",
         "close_window",
+        "setup_custom_window",
         "show_on_taskbar",
         "minimize_window",
-        "restore_window",
-        "_finish_restore"
+        "restore_window"
       ],
       "bases": []
     },
@@ -355,12 +356,36 @@
   "relationships": [
     {
       "source": "ModularGUI",
+      "target": "LocalizationManager",
+      "type": "composition",
+      "label": "composed-of"
+    },
+    {
+      "source": "ModularGUI",
       "target": "SharedState",
       "type": "aggregation",
       "label": "has-a (param)"
     },
     {
-      "source": "StoreManager",
+      "source": "ModularGUI",
+      "target": "CustomLayoutManager",
+      "type": "composition",
+      "label": "composed-of"
+    },
+    {
+      "source": "ModularGUI",
+      "target": "StoreManager",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "CustomLayoutManager",
+      "target": "AnimatedCanvas",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "Module",
       "target": "SharedState",
       "type": "aggregation",
       "label": "has-a (arg)"
@@ -372,34 +397,10 @@
       "label": "has-a (arg)"
     },
     {
-      "source": "Module",
+      "source": "StoreManager",
       "target": "SharedState",
       "type": "aggregation",
       "label": "has-a (arg)"
-    },
-    {
-      "source": "ModularGUI",
-      "target": "LocalizationManager",
-      "type": "composition",
-      "label": "composed-of"
-    },
-    {
-      "source": "ModularGUI",
-      "target": "CustomLayoutManager",
-      "type": "composition",
-      "label": "composed-of"
-    },
-    {
-      "source": "CustomLayoutManager",
-      "target": "AnimatedCanvas",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "ModularGUI",
-      "target": "StoreManager",
-      "type": "dependency",
-      "label": "uses"
     }
   ]
 }
