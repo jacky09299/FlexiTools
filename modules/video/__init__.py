@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import cv2
 from PIL import Image, ImageTk
-import pygame
+from ffpyplayer.player import MediaPlayer
 from moviepy.editor import VideoFileClip
 import os
 import threading
@@ -24,6 +24,8 @@ from io import BytesIO
 from PIL import Image as PILImage
 import logging
 import subprocess
+import math
+import numpy as np
 
 # PyAcoustics for audio effects
 try:
@@ -66,7 +68,6 @@ class JumpToWindow(tk.Toplevel):
     def confirm_selection(self):
         selection = self.listbox.curselection()
         if not selection:
-            # Localization for "No Selection" warning? Using default for now or could be added
             messagebox.showwarning("Warning", "Please select a video.", parent=self)
             return
         selected_index = selection[0]
@@ -214,19 +215,16 @@ def apply_equalizer(wav_path, out_path, gains):
         else:
             data = data.reshape(-1, 1)
 
-        # Use float64 for processing to avoid casting errors and precision loss.
         signal = data.astype(np.float64)
         eq_signal = np.zeros_like(signal, dtype=np.float64)
 
-        # If all gains are 0 dB (gain is approx 1), the signal is unchanged.
         if all(abs(g) < 0.1 for g in gains):
             eq_signal = signal
         else:
-            # Implement a basic graphic EQ by summing filtered bands
             for i, (low, high) in enumerate(EQ_BANDS):
                 gain = db_to_gain(gains[i])
                 if abs(gain - 1.0) < 1e-4:
-                    pass
+                    continue
 
                 nyquist = framerate / 2.0
                 if low >= nyquist: continue
@@ -239,24 +237,21 @@ def apply_equalizer(wav_path, out_path, gains):
                     filtered_ch = scipy.signal.lfilter(b, a, signal[:, ch])
                     eq_signal[:, ch] += filtered_ch * gain
         
-        # If the result is all zeros (e.g., all gains were -inf), use the original signal
         if np.max(np.abs(eq_signal)) < 1e-6:
              eq_signal = signal
 
-        # Normalize to prevent clipping
         max_val = np.max(np.abs(eq_signal))
         if max_val > 0:
             scale = 32767.0 / max_val
             eq_signal = eq_signal * scale
         
-        # Clip and convert back to int16
         final_signal = np.clip(eq_signal, -32768, 32767).astype(np.int16)
         
         with wave.open(out_path, 'wb') as wf_out:
             wf_out.setparams(params)
             wf_out.writeframes(final_signal.tobytes())
 
-# --- Microphone Simulation Helpers (from pra_convert.py) ---
+# --- Microphone Simulation Helpers ---
 def create_large_grid_mics(origin, rows, cols, spacing, height):
     positions = []
     for i in range(rows):
@@ -285,7 +280,6 @@ def get_mic_positions(device_type):
         height = 1.5
         return create_large_grid_mics(origin, rows, cols, spacing, height)
     else:
-        # This case should ideally not be hit if UI is synced with this function
         raise ValueError(f"Unknown device type for mic simulation: {device_type}")
 
 # --- [NEW] Effects Settings Window ---
@@ -298,7 +292,6 @@ class EffectsSettingsWindow(tk.Toplevel):
         self.parent_player = parent_player
         self.result = None
 
-        # Load current settings from parent
         self.settings = self.parent_player.audio_effects_settings.copy()
 
         main_frame = ttk.Frame(self, padding="10")
@@ -315,7 +308,6 @@ class EffectsSettingsWindow(tk.Toplevel):
         notebook.add(processing_tab, text=parent_player.tr("module_videoplayer_tab_proc", "Processing"))
         notebook.add(eq_tab, text=parent_player.tr("module_videoplayer_tab_eq", "Equalizer"))
 
-        # --- Mic & Environment Tab ---
         mic_frame = ttk.LabelFrame(mic_env_tab, text="Simulate Microphone", padding="5")
         mic_frame.pack(fill=tk.X, pady=5)
         self.mic_var = tk.StringVar(value=self.settings.get("mic_sim", "無"))
@@ -334,7 +326,6 @@ class EffectsSettingsWindow(tk.Toplevel):
         pos_options = ["無", "前方", "後方", "上方", "下方", "左方", "右方", "360度環繞"]
         ttk.Combobox(pos_frame, textvariable=self.pos_var, values=pos_options, state="readonly").pack(fill=tk.X, expand=True)
 
-        # --- Processing Tab ---
         proc_frame = ttk.LabelFrame(processing_tab, text="Options", padding="5")
         proc_frame.pack(fill=tk.X, pady=5)
         self.denoise_var = tk.BooleanVar(value=self.settings.get("denoise", False))
@@ -342,7 +333,6 @@ class EffectsSettingsWindow(tk.Toplevel):
         ttk.Checkbutton(proc_frame, text="Denoise", variable=self.denoise_var).pack(anchor=tk.W)
         ttk.Checkbutton(proc_frame, text="AEC (Echo Cancel)", variable=self.aec_var).pack(anchor=tk.W)
 
-        # --- Equalizer Tab ---
         eq_options_frame = ttk.LabelFrame(eq_tab, text="EQ Preset", padding="5")
         eq_options_frame.pack(fill=tk.X, pady=5)
         self.eq_mode_var = tk.StringVar(value=self.settings.get("eq_mode", "無"))
@@ -404,6 +394,133 @@ class EffectsSettingsWindow(tk.Toplevel):
         self.result = None
         self.destroy()
 
+class AudioVisualizer:
+    def __init__(self, canvas, wave_path, num_bars=64):
+        self.canvas = canvas
+        self.wave_path = wave_path
+        self.num_bars = num_bars
+        self.wf = None
+        self.bar_ids = []
+        self.width = 0
+        self.height = 0
+
+        try:
+            self.wf = wave.open(self.wave_path, 'rb')
+            self.params = self.wf.getparams()
+            self.framerate = self.params.framerate
+            self.n_channels = self.params.nchannels
+            self.sampwidth = self.params.sampwidth
+            self.n_frames = self.params.nframes
+        except Exception as e:
+            print(f"Visualizer init failed: {e}")
+            self.wf = None
+
+    def setup_ui(self, width, height):
+        self.width = width
+        self.height = height
+        self.bar_ids = []
+        self.canvas.delete("visualizer_bar") # Tag based deletion
+
+        # Calculate dimensions
+        # Keep some margin
+        margin_x = 50
+        draw_width = width - 2 * margin_x
+        bar_width = draw_width / self.num_bars
+        gap = bar_width * 0.2
+        actual_bar_width = bar_width - gap
+
+        for i in range(self.num_bars):
+            x0 = margin_x + i * bar_width + gap/2
+            x1 = x0 + actual_bar_width
+
+            # Center of screen is height/2.
+            cy = height / 2
+
+            # Create rectangle (initially flat)
+            rect = self.canvas.create_rectangle(x0, cy, x1, cy, fill="#4A90E2", outline="", tags="visualizer_bar")
+            self.bar_ids.append(rect)
+
+    def draw(self, current_time):
+        if not self.wf: return
+
+        # Calculate frame position
+        frame_pos = int(current_time * self.framerate)
+        if frame_pos < 0: frame_pos = 0
+        if frame_pos >= self.n_frames: return
+
+        # Seek and read
+        try:
+            self.wf.setpos(frame_pos)
+            chunk_size = 1024 # Samples for FFT
+            data = self.wf.readframes(chunk_size)
+        except Exception:
+            return
+
+        if len(data) == 0: return
+
+        # Convert to numpy
+        dtype = np.int16 if self.sampwidth == 2 else np.uint8
+        audio_data = np.frombuffer(data, dtype=dtype)
+
+        # Normalize to float -1..1
+        if self.sampwidth == 2:
+            audio_data = audio_data.astype(np.float64) / 32768.0
+        else:
+            audio_data = (audio_data.astype(np.float64) - 128) / 128.0
+
+        if self.n_channels > 1:
+            audio_data = audio_data.reshape(-1, self.n_channels)
+            audio_data = np.mean(audio_data, axis=1)
+
+        if len(audio_data) < chunk_size:
+            audio_data = np.pad(audio_data, (0, chunk_size - len(audio_data)))
+
+        # FFT
+        window = np.hanning(len(audio_data))
+        fft_data = np.fft.rfft(audio_data * window)
+        fft_mag = np.abs(fft_data)
+
+        # Simple binning
+        bin_size = len(fft_mag) // self.num_bars
+        if bin_size < 1: bin_size = 1
+
+        for i in range(self.num_bars):
+            start = i * bin_size
+            end = start + bin_size
+            mag = np.mean(fft_mag[start:end])
+
+            # Log scale magnitude mapping
+            if mag > 0:
+                h = math.log10(mag + 1) * 60 # Scaling factor
+            else:
+                h = 0
+
+            h = min(h, self.height / 2 - 20) # Cap height
+
+            if i < len(self.bar_ids):
+                bar_id = self.bar_ids[i]
+
+                # Center grow
+                cy = self.height / 2
+                half_h = h * 2 # Scale up visual
+
+                # Dynamic color
+                color = "#4A90E2"
+                if h > 80: color = "#D0021B"
+                elif h > 50: color = "#F5A623"
+
+                self.canvas.coords(bar_id,
+                                   self.canvas.coords(bar_id)[0],
+                                   cy - half_h,
+                                   self.canvas.coords(bar_id)[2],
+                                   cy + half_h)
+                self.canvas.itemconfig(bar_id, fill=color)
+
+    def close(self):
+        if self.wf:
+            self.wf.close()
+            self.wf = None
+
 class VideoPlayerModule(Module):
     def __init__(self, master, shared_state, module_name="VideoPlayer", gui_manager=None):
         super().__init__(master, shared_state, module_name, gui_manager)
@@ -414,14 +531,15 @@ class VideoPlayerModule(Module):
         self.play_mode_var = tk.StringVar(value="ctime")
         self.current_folder_path = None
         self.temp_cache_dir = None
-        self.temp_audio_path = None
         self.canvas_size_lock = threading.Lock()
         initial_canvas_w = self.frame.winfo_width() if self.frame.winfo_exists() and self.frame.winfo_width() > 1 else self.window_width
         initial_canvas_h = self.frame.winfo_height() - 200 if self.frame.winfo_exists() and self.frame.winfo_height() > 200 else self.window_height - 200
         self.last_known_canvas_size = (max(1, initial_canvas_w), max(1, initial_canvas_h))
 
         self.video_path = ""
-        self.audio_path = ""
+        self.player = None
+        self.visualizer = None
+        self.current_processed_wav = None
         self.is_playing = False
         self.is_paused = False
         self.after_id = None
@@ -429,31 +547,17 @@ class VideoPlayerModule(Module):
         self.current_playlist_index = -1
         self.unplayed_indices = []
         self.history_indices = []
+        self.last_playback_time = 0
 
         self.max_workers = multiprocessing.cpu_count()
-        self.buffer_size = 120
-        self.frame_buffer = {}
-        self.processing_queue = queue.Queue()
-        self.processing_thread = None
-        self.frame_reader_thread = None
-        self.stop_processing = threading.Event()
+        self.frame_processing_pool = ThreadPoolExecutor(max_workers=self.max_workers)
 
         self.total_frames = 0
-        self.fps = 25
-        self.current_frame_idx = -1
-        self.frames_processed_count = 0
         self.video_duration = 0
-        self.video_width = 0
-        self.video_height = 0
 
         self.seeking = False
-        self.seek_request_frame = -1
         self.seek_lock = threading.Lock()
 
-        self.start_time = None
-        self.pause_time = None
-
-        # Initialize widget references
         self.file_selection_frame = None
         self.btn_select_file = None
         self.btn_select_folder = None
@@ -471,7 +575,6 @@ class VideoPlayerModule(Module):
         self.lbl_volume = None
         self.progress_label = None
 
-        # --- [NEW] Audio Effects Settings ---
         self.audio_effects_settings = {
             "mic_sim": "無",
             "environment": "無",
@@ -481,20 +584,9 @@ class VideoPlayerModule(Module):
             "eq_mode": "無",
         }
 
-        try:
-            pygame.mixer.init()
-            self.shared_state.log("Pygame mixer initialized.", level=logging.INFO)
-        except pygame.error as e:
-            self.shared_state.log(f"Failed to initialize pygame.mixer: {e}", level=logging.ERROR)
-
         self.volume_var = tk.DoubleVar(value=100)
         self.create_ui()
         self.update_language()
-        if pygame.mixer.get_init():
-             self.set_volume(self.volume_var.get())
-        else:
-            if hasattr(self, 'volume_scale') and self.volume_scale:
-                self.volume_scale.config(state=tk.DISABLED)
 
     def create_ui(self):
         self.canvas = tk.Canvas(self.frame, bg="black")
@@ -524,7 +616,6 @@ class VideoPlayerModule(Module):
         self.btn_jump_to = tk.Button(self.mode_selection_frame, text="Jump to...", state=tk.DISABLED, command=self.open_jump_to_window)
         self.btn_jump_to.pack(pady=5, padx=10, side=tk.LEFT)
 
-        # --- [NEW] Audio Effects Button ---
         self.effects_frame = tk.LabelFrame(selection_area, text="Audio")
         self.effects_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
         self.btn_effects = tk.Button(self.effects_frame, text="Audio Effects...", command=self.open_effects_window)
@@ -603,30 +694,21 @@ class VideoPlayerModule(Module):
         
         window = EffectsSettingsWindow(self)
         if window.result is not None:
-            # Check if settings actually changed
             if window.result != self.audio_effects_settings:
                 self.audio_effects_settings = window.result
                 self.shared_state.log(f"Audio effects updated: {self.audio_effects_settings}", level=logging.INFO)
-                # If a video is playing, restart it to apply new effects
                 if self.is_playing or self.is_paused:
                     messagebox.showinfo("Apply Effects", "Audio effects changed, restarting video to apply.", parent=self.frame.winfo_toplevel())
                     self.stop_video()
                     self.play_current_video_in_playlist()
-            else:
-                self.shared_state.log("Audio effects unchanged.", level=logging.DEBUG)
 
     def apply_audio_effects(self, input_wav, output_wav):
-        """
-        Applies the chain of audio effects based on self.audio_effects_settings.
-        New Order: mic_sim -> aec -> denoise -> eq -> environment -> position
-        """
         if not PYROOM_AVAILABLE:
             shutil.copy(input_wav, output_wav)
             return output_wav
 
         self.shared_state.log(f"Applying audio effects: {self.audio_effects_settings}", level=logging.INFO)
         
-        # Read the input file
         wf = wave.open(input_wav, 'rb')
         params = wf.getparams()
         n_channels, sampwidth, framerate, n_frames = params[:4]
@@ -645,37 +727,26 @@ class VideoPlayerModule(Module):
         
         current_signal = signal
         
-        # 1. Microphone Simulation
         mic_sim_map = {
-            "手機": "phone",
-            "筆電": "laptop",
-            "錄音筆": "recorder",
-            "會議麥克風": "conference",
-            "大型平面陣列": "large_array"
+            "手機": "phone", "筆電": "laptop", "錄音筆": "recorder", "會議麥克風": "conference", "大型平面陣列": "large_array"
         }
         mic_sim_key = self.audio_effects_settings.get("mic_sim", "無")
         mic_sim_type = mic_sim_map.get(mic_sim_key)
 
         if mic_sim_type:
-            self.shared_state.log(f"Simulating mic: {mic_sim_key}", level=logging.DEBUG)
             try:
-                # --- RESAMPLING FOR SIMULATION ---
                 SIM_RATE = 16000
-                
-                # Ensure input is mono float for resampling
                 if current_signal.ndim > 1:
                     mono_signal = np.mean(current_signal, axis=1).astype(np.float64)
                 else:
                     mono_signal = current_signal.flatten().astype(np.float64)
 
-                # Resample to simulation rate if necessary
                 if framerate != SIM_RATE:
                     num_samples_sim = int(len(mono_signal) * SIM_RATE / framerate)
                     signal_for_sim = scipy.signal.resample(mono_signal, num_samples_sim)
                 else:
                     signal_for_sim = mono_signal
 
-                # --- PYROOMACOUSTICS SIMULATION at 16kHz ---
                 room = pra.ShoeBox([6, 5, 3], fs=SIM_RATE, absorption=0.4, max_order=10)
                 room.add_source([3, 2, 1.5], signal=signal_for_sim)
                 mic_positions = get_mic_positions(mic_sim_type)
@@ -686,14 +757,11 @@ class VideoPlayerModule(Module):
                 if mic_sim_type == "large_array":
                     sim_output *= 10
 
-                # --- RESAMPLE BACK TO ORIGINAL RATE ---
                 if framerate != SIM_RATE:
-                    # Ensure the output length matches the original mono signal length
                     resampled_back = scipy.signal.resample(sim_output, len(mono_signal))
                 else:
                     resampled_back = sim_output
 
-                # Restore channel count
                 if current_signal.ndim > 1:
                      current_signal = np.column_stack([resampled_back] * current_signal.shape[1])
                 else:
@@ -702,14 +770,10 @@ class VideoPlayerModule(Module):
             except Exception as e:
                 self.shared_state.log(f"Mic simulation failed: {e}", level=logging.ERROR)
 
-        # 2. AEC (Echo Cancellation) - Placeholder
         if self.audio_effects_settings.get("aec", False):
-            self.shared_state.log("AEC not implemented yet", level=logging.WARNING)
             pass
 
-        # 3. Denoise
         if self.audio_effects_settings.get("denoise", False):
-            self.shared_state.log("Applying denoise...", level=logging.DEBUG)
             try:
                 if current_signal.ndim > 1:
                     processed_channels = []
@@ -723,10 +787,8 @@ class VideoPlayerModule(Module):
             except Exception as e:
                 self.shared_state.log(f"Denoise failed: {e}", level=logging.ERROR)
 
-        # 4. Equalizer
         eq_mode = self.audio_effects_settings.get("eq_mode", "無")
         if eq_mode and eq_mode != "無":
-            self.shared_state.log(f"Applying EQ: {eq_mode}", level=logging.INFO)
             gains = get_equalizer_gains(eq_mode)
             eq_signal = np.zeros_like(current_signal, dtype=np.float64)
 
@@ -744,7 +806,6 @@ class VideoPlayerModule(Module):
                     
                     b, a = scipy.signal.butter(2, [low/nyquist, high/nyquist], btype='band')
                     
-                    # Apply filter to each channel
                     if current_signal.ndim > 1:
                         for ch in range(current_signal.shape[1]):
                             filtered_ch = scipy.signal.lfilter(b, a, current_signal[:, ch])
@@ -759,12 +820,10 @@ class VideoPlayerModule(Module):
                  eq_signal = current_signal
             current_signal = eq_signal
 
-        # 5. Environment & 6. Position
         environment = self.audio_effects_settings.get("environment", "無")
         position = self.audio_effects_settings.get("position", "無")
 
         if environment != "無" or position != "無":
-            self.shared_state.log(f"Simulating env: {environment}, pos: {position}", level=logging.DEBUG)
             try:
                 env_presets = {
                     "小房間": ([4, 5, 3], 0.2), "浴室": ([2, 3, 2.5], 0.05),
@@ -777,20 +836,17 @@ class VideoPlayerModule(Module):
                 room_dim, absorption = env_presets.get(environment, (None, None))
 
                 if environment == "戶外":
-                    # For outdoor, we can't simulate reverb, but we can still do positioning
-                    # We'll create a stereo signal by delaying one channel slightly for non-center positions
                     if position not in ["無", "前方", "360度環繞"]:
-                        self.shared_state.log("Outdoor simplified positioning...", level=logging.DEBUG)
                         mono_signal = np.mean(current_signal, axis=1) if current_signal.ndim > 1 else current_signal.flatten()
                         delay_samples = 0
-                        if position == "左方": delay_samples = int(0.0005 * framerate) # 0.5ms delay for right channel
-                        elif position == "右方": delay_samples = -int(0.0005 * framerate) # 0.5ms delay for left channel
+                        if position == "左方": delay_samples = int(0.0005 * framerate)
+                        elif position == "右方": delay_samples = -int(0.0005 * framerate)
                         
-                        if delay_samples > 0: # Delay right channel
+                        if delay_samples > 0:
                             left = mono_signal
                             right = np.roll(mono_signal, delay_samples)
                             right[:delay_samples] = 0
-                        elif delay_samples < 0: # Delay left channel
+                        elif delay_samples < 0:
                             right = mono_signal
                             left = np.roll(mono_signal, -delay_samples)
                             left[:-delay_samples] = 0
@@ -801,16 +857,14 @@ class VideoPlayerModule(Module):
                 elif room_dim:
                     signal_for_room = current_signal
                     if current_signal.ndim > 1:
-                        self.shared_state.log("Converting to mono for env sim.", level=logging.DEBUG)
                         signal_for_room = np.mean(signal_for_room, axis=1)
 
                     room = pra.ShoeBox(room_dim, fs=framerate, materials=pra.Material(absorption), max_order=3)
                     
-                    # Create a stereo microphone array
                     mic_center = np.array(room_dim) / 2.0
                     mic_locs = np.c_[
-                        mic_center + np.array([-0.1, 0, 0]),  # Left mic
-                        mic_center + np.array([0.1, 0, 0]),   # Right mic
+                        mic_center + np.array([-0.1, 0, 0]),
+                        mic_center + np.array([0.1, 0, 0]),
                     ]
                     room.add_microphone_array(mic_locs)
 
@@ -823,7 +877,6 @@ class VideoPlayerModule(Module):
                     source_pos = pos_presets.get(position, mic_center + np.array([0, -2, 0]))
 
                     if position == "360度環繞":
-                        self.shared_state.log("360 surround - simplified", level=logging.WARNING)
                         t = np.arange(len(signal_for_room)) / framerate
                         radius = 2.0
                         x = mic_center[0] + radius * np.cos(2 * np.pi * 0.2 * t)
@@ -837,7 +890,6 @@ class VideoPlayerModule(Module):
 
                     room.simulate()
                     
-                    # Get the two channels from the stereo microphone array
                     sim_len = len(signal_for_room)
                     left_channel = room.mic_array.signals[0, :sim_len]
                     right_channel = room.mic_array.signals[1, :sim_len]
@@ -846,11 +898,9 @@ class VideoPlayerModule(Module):
             except Exception as e:
                 self.shared_state.log(f"Env sim failed: {e}", level=logging.ERROR)
 
-        # Final normalization and conversion
-        # Ensure output is stereo if we processed it as such
         final_params = list(params)
         if current_signal.ndim > 1 and current_signal.shape[1] == 2:
-            final_params[0] = 2 # Set n_channels to 2
+            final_params[0] = 2
         
         current_signal_float = np.array(current_signal, dtype=np.float64)
         max_abs_val = np.max(np.abs(current_signal_float))
@@ -865,37 +915,30 @@ class VideoPlayerModule(Module):
             wf_out.setparams(tuple(final_params))
             wf_out.writeframes(processed_signal_int.tobytes())
             
-        self.shared_state.log("Audio effects applied.", level=logging.INFO)
         return output_wav
 
     def on_destroy(self):
         self.shared_state.log(f"VideoPlayerModule {self.module_name} on_destroy called.", level=logging.INFO)
         self.stop_video()
-        if pygame.mixer.get_init():
-            pygame.mixer.quit()
-            self.shared_state.log("Pygame mixer quit by VideoPlayerModule.", level=logging.INFO)
+        if self.frame_processing_pool:
+            self.frame_processing_pool.shutdown(wait=False)
         self.cleanup_temp_cache()
         self.playlist = []
         self.current_playlist_index = -1
-        if self.after_id:
-            if self.frame and self.frame.winfo_exists():
-                try:
-                    self.frame.after_cancel(self.after_id)
-                except tk.TclError:
-                    pass
-            self.after_id = None
         super().on_destroy()
         self.shared_state.log(f"VideoPlayerModule {self.module_name} destroyed.", level=logging.INFO)
 
     def cleanup_temp_cache(self):
+        if self.visualizer:
+            self.visualizer.close()
+            self.visualizer = None
+
         if self.temp_cache_dir and os.path.exists(self.temp_cache_dir):
             try:
                 shutil.rmtree(self.temp_cache_dir, ignore_errors=True)
             except Exception as e:
                 self.shared_state.log(f"Error cleaning up temp cache: {e}", level=logging.ERROR)
         self.temp_cache_dir = None
-        self.temp_audio_path = None
-        self.temp_video_path = None
 
     def start_playlist(self, files_list):
         self.stop_video()
@@ -910,47 +953,6 @@ class VideoPlayerModule(Module):
         else:
             self.current_playlist_index = 0 if self.playlist else -1
         self.play_current_video_in_playlist()
-
-    def extract_audio(self, video_path_to_extract):
-        self.cleanup_temp_cache()
-        try:
-            video_dir = os.path.dirname(video_path_to_extract)
-            self.temp_cache_dir = tempfile.mkdtemp(prefix='.vidplayer_cache_', dir=video_dir)
-            
-            temp_wav_path = os.path.join(self.temp_cache_dir, "temp.wav")
-            with VideoFileClip(video_path_to_extract) as video:
-                if video.audio is None:
-                    raise Exception("Video contains no audio track.")
-                video.audio.write_audiofile(temp_wav_path, codec='pcm_s16le', logger=None)
-
-            # Apply audio effects chain if any are active
-            effects_active = any(self.audio_effects_settings.get(k, "無" if isinstance(self.audio_effects_settings.get(k), str) else False) not in [False, "無"] for k in self.audio_effects_settings)
-            
-            path_for_ffmpeg = temp_wav_path
-            if effects_active:
-                self.shared_state.log("Applying audio effects...", level=logging.INFO)
-                effects_out_path = os.path.join(self.temp_cache_dir, "temp_effects.wav")
-                self.apply_audio_effects(temp_wav_path, effects_out_path)
-                path_for_ffmpeg = effects_out_path
-            else:
-                self.shared_state.log("No effects active, skipping processing.", level=logging.DEBUG)
-            
-            # --- Convert final WAV to MP3 for playback ---
-            self.temp_audio_path = os.path.join(self.temp_cache_dir, "audio.mp3")
-            cmd = f'ffmpeg -y -loglevel error -i "{path_for_ffmpeg}" -vn -ar 44100 -ac 2 -b:a 192k "{self.temp_audio_path}"'
-            
-            subprocess.run(cmd, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
-
-
-            if not os.path.exists(self.temp_audio_path) or os.path.getsize(self.temp_audio_path) == 0:
-                raise Exception(f"FFmpeg failed to create audio file: {self.temp_audio_path}")
-
-            self.shared_state.log(f"Audio extracted: {self.temp_audio_path}", level=logging.INFO)
-            return self.temp_audio_path
-        except Exception as e:
-            self.shared_state.log(f"Audio extraction error: {e}", level=logging.ERROR)
-            self.cleanup_temp_cache()
-            raise
 
     def open_jump_to_window(self):
         if not self.playlist: return
@@ -1017,7 +1019,7 @@ class VideoPlayerModule(Module):
         json_basenames = []
         json_exists = os.path.exists(json_path)
         if json_exists:
-            try: 
+            try:
                 with open(json_path, 'r', encoding='utf-8') as f: json_basenames = json.load(f)
             except (json.JSONDecodeError, IOError): json_exists = False
         if not json_exists:
@@ -1058,7 +1060,7 @@ class VideoPlayerModule(Module):
         folder_path = filedialog.askdirectory(title=self.tr("module_videoplayer_btn_folder", "Select Video Folder"), parent=self.frame.winfo_toplevel())
         if not folder_path: return
         self.current_folder_path = folder_path
-        valid_extensions = ('.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.wmv')
+        valid_extensions = ('.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.wmv', '.mp3', '.wav', '.aac', '.flac', '.ogg')
         try:
             video_files = [os.path.join(folder_path, item) for item in os.listdir(folder_path) if item.lower().endswith(valid_extensions) and os.path.isfile(os.path.join(folder_path, item))]
         except OSError: return
@@ -1073,7 +1075,7 @@ class VideoPlayerModule(Module):
         self.start_playlist(video_files)
 
     def select_file(self):
-        filepath = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov *.mkv *.webm *.flv *.wmv"), ("All files", "*.*")], parent=self.frame.winfo_toplevel())
+        filepath = filedialog.askopenfilename(filetypes=[("Media files", "*.mp4 *.avi *.mov *.mkv *.webm *.flv *.wmv *.mp3 *.wav *.aac *.flac *.ogg"), ("All files", "*.*")], parent=self.frame.winfo_toplevel())
         if not filepath: return
         self.current_folder_path = None
         if hasattr(self, 'btn_adjust_order'): self.btn_adjust_order.config(state=tk.DISABLED)
@@ -1107,9 +1109,10 @@ class VideoPlayerModule(Module):
         if hasattr(self, 'btn_select_folder'): self.btn_select_folder.config(state=tk.DISABLED)
         if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(state=tk.DISABLED)
         self.update_nav_buttons_state()
-        if hasattr(self, 'progress_label'): self.progress_label.config(text="Extracting audio...")
-        if self.frame and self.frame.winfo_exists():
-            threading.Thread(target=self.prepare_video, args=(filepath,), daemon=True).start()
+        if hasattr(self, 'progress_label'): self.progress_label.config(text="Preparing...")
+
+        # Start preparation in a thread
+        threading.Thread(target=self.prepare_video, args=(filepath,), daemon=True).start()
 
     def play_next_video(self):
         if not self.playlist: return
@@ -1154,191 +1157,119 @@ class VideoPlayerModule(Module):
         if hasattr(self, 'btn_next'): self.btn_next.config(state=tk.NORMAL if can_go_next else tk.DISABLED)
         if hasattr(self, 'btn_jump_to'): self.btn_jump_to.config(state=tk.NORMAL if self.playlist else tk.DISABLED)
 
-    def update_frame(self):
-        if not self.is_playing or self.is_paused:
-            if self.after_id:
-                if self.frame and self.frame.winfo_exists(): self.frame.after_cancel(self.after_id)
-                self.after_id = None
-            return
-        now = time.time()
-        elapsed = now - self.start_time if self.start_time else 0
-        target_frame_idx = int(elapsed * self.fps)
-        if self.total_frames > 0 and target_frame_idx >= self.total_frames:
-            if self.playlist and (len(self.playlist) > 1 or (self.play_mode_var.get() == 'random' and self.unplayed_indices)):
-                self.play_next_video()
-            else:
-                self.stop_video()
-            return
-        if target_frame_idx != self.current_frame_idx:
-            if target_frame_idx in self.frame_buffer:
-                self.display_frame(target_frame_idx)
-                cleanup_threshold = target_frame_idx - int(self.buffer_size * 0.75)
-                frames_to_remove = [idx for idx in self.frame_buffer.keys() if idx < cleanup_threshold]
-                for idx in frames_to_remove:
-                    del self.frame_buffer[idx]
-                self.current_frame_idx = target_frame_idx
-                self.update_timeline()
-        if self.frame and self.frame.winfo_exists():
-             self.after_id = self.frame.after(1, self.update_frame)
+    def prepare_video(self, filepath):
+        self.cleanup_temp_cache()
+        self.video_path = filepath
 
-    def set_volume(self, value):
-        if pygame.mixer.get_init():
-            pygame.mixer.music.set_volume(float(value) / 100)
+        is_audio_file = any(filepath.lower().endswith(ext) for ext in ('.mp3', '.wav', '.aac', '.flac', '.ogg'))
+
+        # Check if we need to apply effects
+        effects_active = any(self.audio_effects_settings.get(k, "無" if isinstance(self.audio_effects_settings.get(k), str) else False) not in [False, "無"] for k in self.audio_effects_settings)
+
+        final_playback_path = filepath
+        self.current_processed_wav = None
+
+        if effects_active or is_audio_file:
+             try:
+                if hasattr(self, 'progress_label') and self.frame.winfo_exists():
+                     self.frame.after(0, lambda: self.progress_label.config(text="Processing..." if is_audio_file else "Applying Effects..."))
+
+                video_dir = os.path.dirname(filepath)
+                self.temp_cache_dir = tempfile.mkdtemp(prefix='.vidplayer_cache_', dir=video_dir)
+
+                # 1. Extract/Convert to standardized Audio WAV (44.1k, 16bit)
+                temp_wav_path = os.path.join(self.temp_cache_dir, "temp.wav")
+
+                # Use ffmpeg to handle any input format
+                cmd_extract = f'ffmpeg -y -loglevel error -i "{filepath}" -vn -acodec pcm_s16le -ar 44100 -ac 2 "{temp_wav_path}"'
+                subprocess.run(cmd_extract, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
+                if not os.path.exists(temp_wav_path):
+                     raise Exception("Audio extraction failed")
+
+                # 2. Process Audio (Effects)
+                effects_out_path = os.path.join(self.temp_cache_dir, "temp_effects.wav")
+                if effects_active:
+                    self.apply_audio_effects(temp_wav_path, effects_out_path)
+                else:
+                    shutil.copy(temp_wav_path, effects_out_path)
+
+                self.current_processed_wav = effects_out_path
+
+                if is_audio_file:
+                    final_playback_path = effects_out_path
+                else:
+                    # 3. Remux for Video
+                    output_video = os.path.join(self.temp_cache_dir, "output.mp4")
+                    cmd = f'ffmpeg -y -loglevel error -i "{filepath}" -i "{effects_out_path}" -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 "{output_video}"'
+                    subprocess.run(cmd, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
+
+                    if os.path.exists(output_video) and os.path.getsize(output_video) > 0:
+                        final_playback_path = output_video
+             except Exception as e:
+                 self.shared_state.log(f"Effects processing failed: {e}", level=logging.ERROR)
+                 # Fallback to original file
+                 final_playback_path = filepath
+
+        # Init ffpyplayer
+        if self.frame and self.frame.winfo_exists():
+            self.frame.after(0, lambda: self.init_player(final_playback_path, is_audio_mode=is_audio_file))
+
+    def init_player(self, path, is_audio_mode=False):
+        if not self.frame.winfo_exists(): return
+        self.stop_video(clear_playlist=False)
+        self.video_path = path
+
+        try:
+            # Request RGB24 output for compatibility with PIL/Tkinter
+            self.player = MediaPlayer(path, ff_opts={'paused': True, 'loop': 0, 'out_fmt': 'rgb24'})
+
+            time.sleep(0.1)
+            meta = self.player.get_metadata()
+            self.video_duration = meta.get('duration', 0)
+            self.last_playback_time = 0
+
+            # Setup Visualizer if we have a processed wav (or we are in audio mode)
+            if is_audio_mode and self.current_processed_wav and os.path.exists(self.current_processed_wav):
+                self.visualizer = AudioVisualizer(self.canvas, self.current_processed_wav)
+                if self.canvas.winfo_exists():
+                    self.visualizer.setup_ui(self.canvas.winfo_width(), self.canvas.winfo_height())
+
+            self.enable_button_states()
+
+            self.player.set_volume(self.volume_var.get() / 100.0)
+            self.player.toggle_pause()
+            self.is_playing = True
+            self.is_paused = False
+
+            self.time_total_label.config(text=self.format_time(self.video_duration))
+            self.timeline_scale.config(to=100)
+
+            if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_pause", "Pause"))
+            if hasattr(self, 'progress_label'): self.progress_label.config(text=self.tr("module_videoplayer_lbl_playing", "Playing..."))
+
+            self.update_frame()
+
+        except Exception as e:
+            self.shared_state.log(f"Failed to init ffpyplayer: {e}", level=logging.ERROR)
+            messagebox.showerror("Error", f"Failed to play video:\n{e}")
 
     def calculate_proportional_size(self, canvas_w, canvas_h, video_w, video_h):
         if video_w == 0 or video_h == 0: return (max(1, canvas_w), max(1, canvas_h))
-        canvas_ratio, video_ratio = canvas_w / canvas_h, video_w / video_h
-        if canvas_ratio > video_ratio: new_h, new_w = canvas_h, int(canvas_h * video_ratio)
-        else: new_w, new_h = canvas_w, int(canvas_w / video_ratio)
-        return (max(1, new_w), max(1, new_h))
-
-    def process_frame_batch(self, raw_frames_batch):
-        results = []
-        with self.canvas_size_lock:
-            target_width, target_height = self.last_known_canvas_size
-        new_size = self.calculate_proportional_size(target_width, target_height, self.video_width, self.video_height)
-        for frame_index, frame_bgr in raw_frames_batch:
-            if new_size[0] > 1 and new_size[1] > 1:
-                pil_image = Image.fromarray(cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB))
-                pil_image = pil_image.resize(new_size, Image.Resampling.LANCZOS)
-                results.append((frame_index, pil_image))
-        return results
-
-    def display_frame(self, frame_idx):
-        if frame_idx in self.frame_buffer:
-            if not (self.canvas and self.canvas.winfo_exists()): return
-            current_canvas_width, current_canvas_height = self.canvas.winfo_width(), self.canvas.winfo_height()
-            if current_canvas_width <= 1 or current_canvas_height <= 1 : return
-            try:
-                self.photo = ImageTk.PhotoImage(image=self.frame_buffer[frame_idx])
-                self.canvas.delete("all")
-                self.canvas.create_image(current_canvas_width / 2, current_canvas_height / 2, anchor=tk.CENTER, image=self.photo)
-            except Exception: pass
-
-    def prepare_video(self, filepath):
-        self.stop_processing.clear()
-        self.frame_buffer.clear()
-        self.frames_processed_count = 0
-        self.current_frame_idx = -1
-        self.video_path = None
-        self.audio_path = None
-        
-        has_audio = False
-        has_video = False
-
-        # 1. Prepare Audio
-        try:
-            self.audio_path = self.extract_audio(filepath)
-            has_audio = True
-        except Exception as e:
-            self.shared_state.log(f"Audio preparation failed for {os.path.basename(filepath)}: {e}", level=logging.WARNING)
-
-        # 2. Prepare Video
-        try:
-            cap = cv2.VideoCapture(filepath)
-            if not cap.isOpened(): raise Exception(f"Cannot open video file: {filepath}")
-            
-            orig_fps = cap.get(cv2.CAP_PROP_FPS) or 25
-            self.fps = orig_fps
-            self.total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            self.video_duration = self.total_frames / self.fps if self.fps > 0 else 0
-            self.video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            self.video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            cap.release()
-            
-            self.temp_video_path = None
-            video_path_for_play = filepath
-            
-            if orig_fps > 25:
-                if not self.temp_cache_dir:
-                    self.temp_cache_dir = tempfile.mkdtemp(prefix='.vidplayer_cache_', dir=os.path.dirname(filepath))
-                self.temp_video_path = os.path.join(self.temp_cache_dir, "temp_fps25.mp4")
-                cmd = f'ffmpeg -y -loglevel error -i "{filepath}" -r 25 -vsync 2 -c:v libx264 -preset ultrafast -crf 18 -c:a copy "{self.temp_video_path}"'
-                subprocess.run(cmd, shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
-
-                if not os.path.exists(self.temp_video_path) or os.path.getsize(self.temp_video_path) == 0:
-                    raise Exception("FFmpeg failed to create FPS=25 temp video.")
-                video_path_for_play = self.temp_video_path
-                cap2 = cv2.VideoCapture(video_path_for_play)
-                self.fps, self.total_frames = cap2.get(cv2.CAP_PROP_FPS) or 25, int(cap2.get(cv2.CAP_PROP_FRAME_COUNT))
-                self.video_duration = self.total_frames / self.fps if self.fps > 0 else 0
-                self.video_width, self.video_height = int(cap2.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap2.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                cap2.release()
-
-            self.video_path = video_path_for_play
-            if self.video_width == 0 or self.video_height == 0: raise Exception("Failed to read video dimensions.")
-            has_video = True
-        except Exception as e:
-            self.shared_state.log(f"Video preparation failed for {os.path.basename(filepath)}: {e}", level=logging.WARNING)
-
-        # 3. Decide what to do
-        if has_video:
-            if self.frame and self.frame.winfo_exists():
-                self.frame.after(0, lambda: self.time_total_label.config(text=self.format_time(self.video_duration)))
-                self.frame.after(0, lambda: self.timeline_scale.config(to=100))
-                self.processing_thread = threading.Thread(target=self.background_processor, daemon=True)
-                self.frame_reader_thread = threading.Thread(target=self.read_frames_to_queue, daemon=True)
-                self.processing_thread.start()
-                self.frame_reader_thread.start()
-                self.frame.after(0, lambda: self.progress_label.config(text="Buffering..."))
-                
-                def check_buffer_and_play():
-                    if self.stop_processing.is_set(): return
-                    if 0 in self.frame_buffer:
-                        if pygame.mixer.get_init() and self.audio_path:
-                            try:
-                                pygame.mixer.music.load(self.audio_path)
-                            except pygame.error as e:
-                                self.shared_state.log(f"Could not load audio: {e}", level=logging.ERROR)
-                                self.audio_path = None
-                        else:
-                            self.audio_path = None
-                        
-                        self.frame.after(0, self.start_playback)
-                        self.frame.after(0, self.enable_button_states)
-                    elif self.frame and self.frame.winfo_exists():
-                        self.frame.after(100, check_buffer_and_play)
-                
-                if self.frame and self.frame.winfo_exists(): self.frame.after(100, check_buffer_and_play)
-        
-        elif has_audio and not has_video:
-            self.shared_state.log(f"Video failed, playing audio only for {os.path.basename(filepath)}", level=logging.INFO)
-            if pygame.mixer.get_init() and self.audio_path:
-                try:
-                    pygame.mixer.music.load(self.audio_path)
-                    pygame.mixer.music.play()
-                    self.is_playing = True
-                    self.enable_button_states()
-                    if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_pause", "Pause"))
-                    if hasattr(self, 'progress_label'): self.progress_label.config(text="Playing (Audio Only)")
-                    
-                    def check_audio_end():
-                        if self.is_playing and pygame.mixer.get_init() and not pygame.mixer.music.get_busy() and not self.is_paused:
-                            self.play_next_video()
-                        elif self.is_playing and self.frame and self.frame.winfo_exists():
-                            self.after_id = self.frame.after(500, check_audio_end)
-                    
-                    if self.frame and self.frame.winfo_exists():
-                        self.after_id = self.frame.after(500, check_audio_end)
-
-                except pygame.error as e:
-                    self.shared_state.log(f"Audio-only playback failed: {e}", level=logging.ERROR)
-                    self.play_next_video()
-            else:
-                self.play_next_video()
-
+        canvas_ratio = canvas_w / canvas_h
+        video_ratio = video_w / video_h
+        if canvas_ratio > video_ratio:
+             new_h = canvas_h
+             new_w = int(canvas_h * video_ratio)
         else:
-            self.shared_state.log(f"Both audio and video failed for {os.path.basename(filepath)}. Skipping.", level=logging.ERROR)
-            self.stop_video()
-            if self.frame and self.frame.winfo_exists():
-                self.frame.after(0, self.enable_button_states)
-                if self.playlist:
-                    self.frame.after(100, self.play_next_video)
+             new_w = canvas_w
+             new_h = int(canvas_w / video_ratio)
+        return (max(1, new_w), max(1, new_h))
 
     def enable_button_states(self):
         if hasattr(self, 'btn_select_file'): self.btn_select_file.config(state=tk.NORMAL)
         if hasattr(self, 'btn_select_folder'): self.btn_select_folder.config(state=tk.NORMAL)
-        play_pause_state = tk.NORMAL if self.video_path else tk.DISABLED
+        play_pause_state = tk.NORMAL if self.player else tk.DISABLED
         if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(state=play_pause_state)
         self.update_nav_buttons_state()
         if hasattr(self, 'btn_adjust_order'):
@@ -1352,212 +1283,192 @@ class VideoPlayerModule(Module):
                     self.progress_label.config(text=f"{self.tr('module_videoplayer_lbl_ready', 'Ready')} ({self.current_playlist_index + 1}/{len(self.playlist)})")
                 else: self.progress_label.config(text=f"{self.tr('module_videoplayer_lbl_ready', 'Ready')}. {self.tr('module_videoplayer_msg_select', 'Select file/folder.')}")
 
-    def stop_video(self):
-        self.is_playing = self.is_paused = False
-        self.stop_processing.set()
+    def stop_video(self, clear_playlist=False):
+        self.is_playing = False
+        self.is_paused = False
         if self.after_id:
             if self.frame and self.frame.winfo_exists(): self.frame.after_cancel(self.after_id)
             self.after_id = None
-        if pygame.mixer.get_init():
-            pygame.mixer.music.stop()
-            if self.temp_audio_path and os.path.exists(self.temp_audio_path):
-                try: pygame.mixer.music.unload()
-                except pygame.error: pass
-        if self.frame_reader_thread and self.frame_reader_thread.is_alive(): self.frame_reader_thread.join(timeout=0.5)
-        if self.processing_thread and self.processing_thread.is_alive(): self.processing_thread.join(timeout=0.5)
+
+        if self.player:
+            self.player.close_player()
+            self.player = None
+
         if self.canvas and self.canvas.winfo_exists(): self.canvas.delete("all")
-        self.frame_buffer.clear()
         if hasattr(self, 'timeline_var'): self.timeline_var.set(0)
         if hasattr(self, 'time_current_label'): self.time_current_label.config(text="00:00")
-        while not self.processing_queue.empty():
-            try: self.processing_queue.get_nowait()
-            except queue.Empty: break
-        self.frame_reader_thread = self.processing_thread = None
+        self.last_playback_time = 0
+
+        if clear_playlist:
+             self.playlist = []
+             self.current_playlist_index = -1
+
+    def _process_image_job(self, img_data, w, h, target_w, target_h):
+        try:
+            pil_image = Image.frombytes("RGB", (w, h), img_data)
+            new_size = self.calculate_proportional_size(target_w, target_h, w, h)
+            if new_size[0] > 1 and new_size[1] > 1:
+                return pil_image.resize(new_size, Image.Resampling.LANCZOS)
+        except Exception:
+            pass
+        return None
+
+    def handle_eof(self):
+        if self.playlist and (len(self.playlist) > 1 or (self.play_mode_var.get() == 'random' and self.unplayed_indices)):
+            self.play_next_video()
+        else:
+            self.stop_video()
+
+    def update_frame(self):
+        if not self.player: return
+
+        frame, val = self.player.get_frame()
+
+        if val == 'eof':
+            self.handle_eof()
+            return
+
+        current_pts = self.player.get_pts()
+
+        # Robust loop detection: If time resets to near zero while playing and not seeking
+        if self.is_playing and not self.is_paused and not self.seeking and current_pts is not None and self.video_duration > 0:
+             if current_pts < 1.0 and self.last_playback_time > self.video_duration - 2.0:
+                  # Detected internal loop or reset
+                  self.handle_eof()
+                  return
+             self.last_playback_time = current_pts
+
+        if frame is None:
+            # Audio-only playback or no video frame yet
+            # If we are playing, check timestamp and update visualizer
+            if self.is_playing and not self.is_paused:
+                if current_pts is not None:
+                     if self.visualizer:
+                         self.visualizer.draw(current_pts)
+
+                     if self.video_duration > 0 and not self.seeking:
+                          progress_percent = (current_pts / float(self.video_duration)) * 100.0
+                          if hasattr(self, 'timeline_var'): self.timeline_var.set(progress_percent)
+                          if hasattr(self, 'time_current_label'):
+                            self.time_current_label.config(text=self.format_time(current_pts))
+        else:
+            img, t = frame
+            w, h = img.get_size()
+
+            # Using ThreadPool to offload resizing
+            with self.canvas_size_lock:
+                target_w, target_h = self.last_known_canvas_size
+
+            # We must get data here in main thread safely from ffpyplayer object
+            try:
+                data = img.to_bytearray()[0]
+
+                # Submit job
+                future = self.frame_processing_pool.submit(self._process_image_job, data, w, h, target_w, target_h)
+
+                # We want to display THIS frame now to stay in sync.
+                # Waiting for resizing might slightly delay it, but ensures GUI responsiveness.
+                # Ideally we pipeline this, but for simple sync:
+                try:
+                    pil_image = future.result(timeout=0.05) # Small timeout
+                    if pil_image:
+                        self.photo = ImageTk.PhotoImage(image=pil_image)
+                        if self.canvas and self.canvas.winfo_exists():
+                            # Re-check canvas dimensions to avoid artifacts
+                            # self.canvas.delete("all") # Flickering?
+                            # create_image with same ID is better or config
+                            # But canvas.create_image is fast.
+                            # Better: delete only if needed?
+                            # Standard tkinter video player approach:
+                            # If video, we might want to delete only "video_frame" tag.
+
+                            self.canvas.delete("video_frame")
+                            self.canvas.create_image(self.canvas.winfo_width() / 2, self.canvas.winfo_height() / 2, anchor=tk.CENTER, image=self.photo, tags="video_frame")
+                except Exception:
+                    pass # Skip frame if processing too slow?
+
+                # Update timeline
+                if self.video_duration > 0 and not self.seeking:
+                      progress_percent = (t / float(self.video_duration)) * 100.0
+                      if hasattr(self, 'timeline_var'): self.timeline_var.set(progress_percent)
+                      if hasattr(self, 'time_current_label'):
+                        self.time_current_label.config(text=self.format_time(t))
+
+            except Exception:
+                 pass
+
+        if self.is_playing and not self.is_paused:
+             # Calculate delay for next frame
+             if val == 'eof':
+                  delay = 10
+             elif val == 0:
+                  delay = 1 # Process immediately if possible, but keep loop alive
+             else:
+                  delay = int(val * 1000)
+                  # Clamp delay to reasonable limits to maintain responsiveness
+                  if delay < 1: delay = 1
+                  if delay > 1000: delay = 1000 # Cap at 1s to ensure UI updates happen
+
+             self.after_id = self.frame.after(delay, self.update_frame)
 
     def on_resize(self, event):
         if event.width > 1 and event.height > 1:
             new_size = (event.width, event.height)
             with self.canvas_size_lock:
-                if new_size != self.last_known_canvas_size:
-                    self.last_known_canvas_size = new_size
-                    self.frame_buffer.clear()
-            if self.is_playing and self.current_frame_idx != -1:
-                 self.display_frame(self.current_frame_idx)
+                self.last_known_canvas_size = new_size
+
+            # Re-setup visualizer if active
+            if self.visualizer:
+                self.visualizer.setup_ui(event.width, event.height)
 
     def on_timeline_press(self, event):
-        if self.total_frames > 0 and self.video_path:
+        if self.video_duration > 0 and self.player:
             self.seeking = True
-            if self.is_playing and not self.is_paused and pygame.mixer.get_init(): pygame.mixer.music.pause()
 
     def on_timeline_release(self, event):
-        if self.seeking and self.total_frames > 0 and self.video_path:
+        if self.seeking and self.video_duration > 0 and self.player:
             self.seeking = False
-            target_frame = int((self.timeline_var.get() / 100.0) * self.total_frames)
-            target_frame = max(0, min(target_frame, self.total_frames - 1 if self.total_frames > 0 else 0))
-            threading.Thread(target=self.seek_to_frame, args=(target_frame,), daemon=True).start()
+            target_time = (self.timeline_var.get() / 100.0) * self.video_duration
+            self.player.seek(target_time, relative=False)
 
     def on_timeline_change(self, value_str):
-        if self.total_frames <= 0 or not self.video_path: return
-        target_frame = int((float(value_str) / 100.0) * self.total_frames)
+        if self.video_duration <= 0 or not self.player: return
+        target_time = (float(value_str) / 100.0) * self.video_duration
         if hasattr(self, 'time_current_label'):
-            self.time_current_label.config(text=self.format_time(target_frame / self.fps if self.fps > 0 else 0))
+            self.time_current_label.config(text=self.format_time(target_time))
 
     def format_time(self, seconds):
         m, s = divmod(int(seconds), 60)
         return f"{m:02d}:{s:02d}"
 
-    def update_timeline(self):
-        if not self.seeking and self.total_frames > 0 and self.current_frame_idx >= 0:
-            progress_percent = (self.current_frame_idx / float(self.total_frames)) * 100.0
-            if hasattr(self, 'timeline_var'): self.timeline_var.set(progress_percent)
-            if hasattr(self, 'time_current_label'):
-                self.time_current_label.config(text=self.format_time(self.current_frame_idx / self.fps if self.fps > 0 else 0))
-
-    def background_processor(self):
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            futures = []
-            while not self.stop_processing.is_set():
-                try:
-                    if self.processing_queue.empty() and not futures:
-                        time.sleep(0.01)
-                        continue
-                    while not self.processing_queue.empty() and len(futures) < self.max_workers * 2 :
-                        futures.append(executor.submit(self.process_frame_batch, [self.processing_queue.get_nowait()]))
-                        self.processing_queue.task_done()
-                    done_futures = [f for f in futures if f.done()]
-                    for future in done_futures:
-                        futures.remove(future)
-                        try:
-                            for frame_index, pil_image in future.result():
-                                if self.stop_processing.is_set(): break
-                                self.frame_buffer[frame_index] = pil_image
-                                self.frames_processed_count += 1
-                        except Exception: pass
-                    if self.stop_processing.is_set(): break
-                    time.sleep(0.005)
-                except queue.Empty: time.sleep(0.01)
-                except Exception:
-                    if not self.stop_processing.is_set(): time.sleep(0.1)
-
-    def seek_to_frame(self, target_frame):
-        if not self.video_path: return
-        target_frame = max(0, min(target_frame, self.total_frames - 1 if self.total_frames > 0 else 0))
-        was_playing_before_seek = self.is_playing and not self.is_paused
-        self.is_paused = True
-        if self.frame and self.frame.winfo_exists() and hasattr(self, 'progress_label'):
-            self.frame.after(0, lambda: self.progress_label.config(text=f"Seeking..."))
-        with self.seek_lock:
-            self.seek_request_frame = target_frame
-            self.frame_buffer.clear()
-            while not self.processing_queue.empty():
-                try: self.processing_queue.get_nowait()
-                except queue.Empty: break
-        start_wait_time = time.time()
-        frame_to_display_after_seek = -1
-        while time.time() - start_wait_time < 10:
-            if self.stop_processing.is_set():
-                if was_playing_before_seek: self.resume_playback()
-                else: self.is_paused = False
-                return
-            for i in range(target_frame, min(target_frame + int(self.fps/2), self.total_frames)):
-                if i in self.frame_buffer:
-                    frame_to_display_after_seek = i
-                    break
-            if frame_to_display_after_seek != -1: break
-            time.sleep(0.02)
-        if frame_to_display_after_seek == -1:
-            if was_playing_before_seek: self.resume_playback()
-            else: self.is_paused = False
-            return
-        self.current_frame_idx = frame_to_display_after_seek
-        seek_time_sec = frame_to_display_after_seek / self.fps if self.fps > 0 else 0
-        if self.frame and self.frame.winfo_exists():
-            self.frame.after(0, self.display_frame, frame_to_display_after_seek)
-            self.frame.after(0, self.update_timeline)
-        self.start_time = time.time() - seek_time_sec
-        if pygame.mixer.get_init() and self.audio_path:
-            try:
-                pygame.mixer.music.play(start=seek_time_sec)
-                if not was_playing_before_seek: pygame.mixer.music.pause()
-            except pygame.error: pass
-        if was_playing_before_seek:
-            self.is_paused = False
-            if self.frame and self.frame.winfo_exists():
-                 if hasattr(self, 'progress_label'): self.frame.after(0, lambda: self.progress_label.config(text=self.tr("module_videoplayer_lbl_playing", "Playing...")))
-                 self.frame.after(0, self.update_frame)
-        else:
-            self.is_paused = False
-            self.pause_playback()
-            if hasattr(self, 'progress_label') and self.frame.winfo_exists():
-                self.frame.after(0, lambda: self.progress_label.config(text=self.tr("module_videoplayer_lbl_paused", "Paused")))
+    def set_volume(self, value):
+        if self.player:
+            self.player.set_volume(float(value) / 100.0)
 
     def toggle_play_pause(self):
-        if not self.video_path: return
-        if self.is_playing:
-            if self.is_paused: self.resume_playback()
-            else: self.pause_playback()
-        else: self.start_playback()
+        if not self.player: return
+        self.player.toggle_pause()
+        if self.is_paused:
+            self.is_paused = False
+            self.is_playing = True
+            if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_pause", "Pause"))
+            if hasattr(self, 'progress_label'): self.progress_label.config(text=self.tr("module_videoplayer_lbl_playing", "Playing..."))
+            self.update_frame()
+        else:
+            self.is_paused = True
+            if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_play", "Play"))
+            if hasattr(self, 'progress_label'): self.progress_label.config(text=self.tr("module_videoplayer_lbl_paused", "Paused"))
 
     def pause_playback(self):
-        if not self.is_playing or self.is_paused: return
-        self.is_paused = True
-        self.pause_time = time.time()
-        if pygame.mixer.get_init(): pygame.mixer.music.pause()
-        if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_play", "Play"))
-        if hasattr(self, 'progress_label'): self.progress_label.config(text=self.tr("module_videoplayer_lbl_paused", "Paused"))
-
-    def resume_playback(self):
-        if not self.is_playing or not self.is_paused: return
-        if self.pause_time and self.start_time: self.start_time += (time.time() - self.pause_time)
-        self.is_paused = False
-        self.pause_time = None
-        if pygame.mixer.get_init(): pygame.mixer.music.unpause()
-        if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_pause", "Pause"))
-        if hasattr(self, 'progress_label'): self.progress_label.config(text=self.tr("module_videoplayer_lbl_playing", "Playing..."))
-        if self.frame and self.frame.winfo_exists(): self.update_frame()
+        if self.player and not self.is_paused:
+             self.toggle_play_pause()
 
     def start_playback(self):
-        if not self.video_path or self.is_playing: return
-        self.is_playing = True
-        self.is_paused = False
-        self.current_frame_idx = max(0, self.current_frame_idx)
-        start_sec = self.current_frame_idx / self.fps if self.fps > 0 else 0
-        self.start_time = time.time() - start_sec
-        if pygame.mixer.get_init() and self.audio_path:
-            try:
-                pygame.mixer.music.play(start=start_sec)
-            except pygame.error: pass
-        if hasattr(self, 'btn_play_pause'): self.btn_play_pause.config(text=self.tr("module_videoplayer_btn_pause", "Pause"))
-        if hasattr(self, 'progress_label'): self.progress_label.config(text=self.tr("module_videoplayer_lbl_playing", "Playing..."))
-        if self.frame and self.frame.winfo_exists(): self.update_frame()
+        if self.player and self.is_paused:
+             self.toggle_play_pause()
 
-    def read_frames_to_queue(self):
-        if not self.video_path: return
-        try:
-            video_capture = cv2.VideoCapture(self.video_path)
-            if not video_capture.isOpened(): return
-        except Exception: return
-        current_read_frame_idx = 0
-        while not self.stop_processing.is_set():
-            with self.seek_lock:
-                if self.seek_request_frame != -1:
-                    target_seek_frame = self.seek_request_frame
-                    video_capture.set(cv2.CAP_PROP_POS_FRAMES, target_seek_frame)
-                    current_read_frame_idx = target_seek_frame
-                    self.seek_request_frame = -1
-            if self.processing_queue.qsize() < self.buffer_size * 2:
-                ret, frame = video_capture.read()
-                if not ret: break
-                try:
-                    self.processing_queue.put((current_read_frame_idx, frame.copy()), timeout=0.1)
-                    current_read_frame_idx += 1
-                except queue.Full:
-                    if self.stop_processing.is_set(): break
-                    time.sleep(0.01)
-            else:
-                if self.stop_processing.is_set(): break
-                time.sleep(0.01)
-        video_capture.release()
+    def stop_processing_and_threads(self):
+        pass
 
 if __name__ == '__main__':
     class MockSharedState:

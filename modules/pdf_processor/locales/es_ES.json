@@ -6,6 +6,7 @@
     "module_pdf_tab_compress": "Comprimir PDF",
     "module_pdf_tab_watermark": "Añadir marca de agua",
     "module_pdf_tab_extract": "Extraer texto",
+    "module_pdf_tab_to_image_pdf": "A PDF de imagen",
     "module_pdf_lbl_input_pdf": "PDF entrada:",
     "module_pdf_btn_browse": "Explorar...",
     "module_pdf_lbl_ranges": "Rangos de página (ej. 1-5, 8):",
@@ -31,5 +32,8 @@
     "module_pdf_lbl_out_pdf": "Salida PDF:",
     "module_pdf_btn_watermark": "Añadir marca de agua",
     "module_pdf_lbl_out_txt": "Salida archivo texto (.txt):",
-    "module_pdf_btn_extract": "Extraer texto a archivo"
+    "module_pdf_btn_extract": "Extraer texto a archivo",
+    "module_pdf_lbl_out_image_pdf": "Salida PDF de imagen:",
+    "module_pdf_lbl_dpi": "Calidad de imagen (DPI):",
+    "module_pdf_btn_convert_to_image": "Convertir a PDF de imagen"
 }

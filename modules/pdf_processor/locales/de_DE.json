@@ -6,6 +6,7 @@
     "module_pdf_tab_compress": "PDF komprimieren",
     "module_pdf_tab_watermark": "Wasserzeichen hinzufügen",
     "module_pdf_tab_extract": "Text extrahieren",
+    "module_pdf_tab_to_image_pdf": "Zu Bild-PDF",
     "module_pdf_lbl_input_pdf": "Eingabe-PDF:",
     "module_pdf_btn_browse": "Durchsuchen...",
     "module_pdf_lbl_ranges": "Seitenbereiche (z.B. 1-5, 8):",
@@ -31,5 +32,8 @@
     "module_pdf_lbl_out_pdf": "Ausgabe-PDF:",
     "module_pdf_btn_watermark": "Wasserzeichen hinzufügen",
     "module_pdf_lbl_out_txt": "Ausgabetextdatei (.txt):",
-    "module_pdf_btn_extract": "Text in Datei extrahieren"
+    "module_pdf_btn_extract": "Text in Datei extrahieren",
+    "module_pdf_lbl_out_image_pdf": "Ausgabe Bild-PDF:",
+    "module_pdf_lbl_dpi": "Bildqualität (DPI):",
+    "module_pdf_btn_convert_to_image": "In Bild-PDF umwandeln"
 }

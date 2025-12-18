@@ -6,6 +6,7 @@
     "module_pdf_tab_compress": "Compress PDF",
     "module_pdf_tab_watermark": "Add Watermark",
     "module_pdf_tab_extract": "Extract Text",
+    "module_pdf_tab_to_image_pdf": "To Image PDF",
     "module_pdf_lbl_input_pdf": "Input PDF:",
     "module_pdf_btn_browse": "Browse...",
     "module_pdf_lbl_ranges": "Page Ranges (e.g., 1-5, 8):",
@@ -31,5 +32,8 @@
     "module_pdf_lbl_out_pdf": "Output PDF:",
     "module_pdf_btn_watermark": "Add Watermark",
     "module_pdf_lbl_out_txt": "Output Text File (.txt):",
-    "module_pdf_btn_extract": "Extract Text to File"
+    "module_pdf_btn_extract": "Extract Text to File",
+    "module_pdf_lbl_out_image_pdf": "Output Image PDF:",
+    "module_pdf_lbl_dpi": "Image Quality (DPI):",
+    "module_pdf_btn_convert_to_image": "Convert to Image PDF"
 }

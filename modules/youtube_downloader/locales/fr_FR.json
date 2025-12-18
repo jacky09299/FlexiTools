@@ -13,5 +13,22 @@
     "module_ytdl_status_ready": "Statut: Prêt",
     "module_ytdl_err_ytdl": "yt-dlp n'est pas disponible. Veuillez installer yt-dlp.",
     "module_ytdl_err_no_url": "Veuillez entrer au moins une URL YouTube.",
-    "module_ytdl_err_no_folder": "Veuillez sélectionner un dossier de téléchargement."
+    "module_ytdl_err_no_folder": "Veuillez sélectionner un dossier de téléchargement.",
+    "module_ytdl_lbl_error_log": "Journal des erreurs",
+    "module_ytdl_btn_clear": "Effacer",
+    "module_ytdl_btn_show_log": "Afficher le journal des erreurs",
+    "module_ytdl_btn_hide_log": "Masquer le journal des erreurs",
+    "module_ytdl_chk_skip_unavailable": "Sauter les vidéos indisponibles (Playlist intelligente)",
+    "module_ytdl_status_skipping": "Statut: Saut de l'URL {0}/{1}...",
+    "module_ytdl_status_stopping": "Statut: Arrêt de tous les téléchargements...",
+    "module_ytdl_status_stopped_user": "Statut: Téléchargement arrêté par l'utilisateur.",
+    "module_ytdl_status_processing": "Statut: Traitement de l'URL {0}/{1}: {2}...",
+    "module_ytdl_status_skipped_idx": "Statut: URL {0}/{1} sautée",
+    "module_ytdl_status_completed_errors": "Statut: Terminé avec {0} erreurs. Vérifiez le journal.",
+    "module_ytdl_status_completed_success": "Statut: Tous les téléchargements sont terminés avec succès !",
+    "module_ytdl_status_fetching_meta": "Statut: Récupération des métadonnées de la playlist (Mode intelligent)...",
+    "module_ytdl_status_downloading": "Statut: [{0}/{1}] Téléchargement de {2}",
+    "module_ytdl_status_finished_file": "Statut: [{0}/{1}] Téléchargement terminé {2}",
+    "module_ytdl_err_metadata": "Échec de la récupération des métadonnées de la playlist.",
+    "module_ytdl_err_no_valid_videos": "Aucune vidéo valide trouvée à télécharger dans la plage spécifiée."
 }

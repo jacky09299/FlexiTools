@@ -6,6 +6,7 @@
     "module_pdf_tab_compress": "壓縮 PDF",
     "module_pdf_tab_watermark": "加入浮水印",
     "module_pdf_tab_extract": "提取文字",
+    "module_pdf_tab_to_image_pdf": "轉換為圖片PDF",
     "module_pdf_lbl_input_pdf": "輸入 PDF:",
     "module_pdf_btn_browse": "瀏覽...",
     "module_pdf_lbl_ranges": "頁面範圍 (例如 1-5, 8):",
@@ -31,5 +32,8 @@
     "module_pdf_lbl_out_pdf": "輸出 PDF:",
     "module_pdf_btn_watermark": "加入浮水印",
     "module_pdf_lbl_out_txt": "輸出文字檔 (.txt):",
-    "module_pdf_btn_extract": "提取文字到檔案"
+    "module_pdf_btn_extract": "提取文字到檔案",
+    "module_pdf_lbl_out_image_pdf": "輸出圖片 PDF:",
+    "module_pdf_lbl_dpi": "圖片品質 (DPI):",
+    "module_pdf_btn_convert_to_image": "轉換為圖片 PDF"
 }

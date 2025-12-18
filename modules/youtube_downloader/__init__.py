@@ -5,9 +5,37 @@ import os
 import threading
 import sys
 import re
+import datetime
 
 # Assuming main.py (and thus the Module class definition) is in the parent directory
 from main import Module
+
+class YtDlpLogger:
+    def __init__(self, log_method):
+        self.log_method = log_method
+
+    def debug(self, msg):
+        # Ignore debug messages (user wants failures only)
+        pass
+
+    def warning(self, msg):
+        # Ignore warnings (user wants failures only)
+        pass
+
+    def error(self, msg):
+        # Clean up error message for readability
+        # Remove "ERROR: " prefix if present
+        clean_msg = msg.replace("ERROR: ", "")
+        
+        # Remove [youtube] or [download] prefixes if present
+        # e.g. "[youtube] b-gyr8Rubmo: Video unavailable..." -> "Video unavailable..."
+        # Regex to remove [tag] ID: 
+        clean_msg = re.sub(r'^\[.*?\]\s*.*?\:\s*', '', clean_msg)
+        
+        # If regex didn't match (no ID), try removing just [tag]
+        clean_msg = re.sub(r'^\[.*?\]\s*', '', clean_msg)
+        
+        self.log_method(f"{clean_msg}")
 
 class YoutubeDownloaderModule(Module):
     def __init__(self, master, shared_state, module_name="Youtube Downloader", gui_manager=None):
@@ -23,6 +51,7 @@ class YoutubeDownloaderModule(Module):
         self.current_ydl = None
         self.current_url_index = 0  # 追蹤當前下載的 URL 索引
         self.total_urls = 0  # 總 URL 數量
+        self.log_visible = False # 錯誤日誌是否可見
 
         # Initialize widget references
         self.folder_label = None
@@ -35,6 +64,12 @@ class YoutubeDownloaderModule(Module):
         self.download_button = None
         self.skip_button = None
         self.stop_button = None
+        self.log_toggle_btn = None
+        self.log_text = None
+        self.sidebar_frame = None
+        self.main_container = None
+        self.content_frame = None
+        self.skip_unavailable_var = None # Checkbox variable
 
         self.create_ui()
         self.update_language()
@@ -43,11 +78,33 @@ class YoutubeDownloaderModule(Module):
     def create_ui(self):
         self.frame.config(borderwidth=2, relief=tk.GROOVE)
 
-        content_frame = ttk.Frame(self.frame)
-        content_frame.pack(padx=10, pady=10, expand=True, fill=tk.BOTH)
+        # Main container for layout (Horizontal split)
+        self.main_container = ttk.Frame(self.frame)
+        self.main_container.pack(expand=True, fill=tk.BOTH)
 
+        # Left side - Main Content
+        self.content_frame = ttk.Frame(self.main_container)
+        self.content_frame.pack(side=tk.LEFT, padx=10, pady=10, expand=True, fill=tk.BOTH)
+
+        # Right side - Error Log Sidebar (initially hidden)
+        self.sidebar_frame = ttk.Frame(self.main_container, width=300, relief=tk.SUNKEN, borderwidth=1)
+        # Not packed initially
+
+        # --- Sidebar Content ---
+        sidebar_header = ttk.Frame(self.sidebar_frame)
+        sidebar_header.pack(fill=tk.X, padx=5, pady=5)
+        self.log_lbl = ttk.Label(sidebar_header, text="Error Log", font=("TkDefaultFont", 10, "bold"))
+        self.log_lbl.pack(side=tk.LEFT)
+        self.clear_btn = ttk.Button(sidebar_header, text="Clear", command=self.clear_log, width=6)
+        self.clear_btn.pack(side=tk.RIGHT)
+
+        self.log_text = tk.Text(self.sidebar_frame, width=40, state="disabled", font=("TkFixedFont", 9))
+        self.log_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # --- Main Content UI ---
+        
         # 資料夾選擇 - 移到最上面
-        folder_frame = ttk.Frame(content_frame)
+        folder_frame = ttk.Frame(self.content_frame)
         folder_frame.pack(fill=tk.X, pady=(0, 10))
         self.folder_label = ttk.Label(folder_frame, text="Download Folder:")
         self.folder_label.pack(side=tk.LEFT, padx=(0, 5))
@@ -58,7 +115,7 @@ class YoutubeDownloaderModule(Module):
         self.folder_btn.pack(side=tk.LEFT, padx=(5, 0))
 
         # URL輸入框 - 支援多行及任何類型的URL，包含播放清單項目選擇
-        url_frame = ttk.Frame(content_frame)
+        url_frame = ttk.Frame(self.content_frame)
         url_frame.pack(fill=tk.BOTH, pady=5, expand=True)
         
         self.url_label = ttk.Label(url_frame, text="YouTube URLs (one per line):")
@@ -87,7 +144,7 @@ class YoutubeDownloaderModule(Module):
         self.load_txt_btn.pack(anchor=tk.E, pady=(2, 0))
 
         # Format Selection
-        format_frame = ttk.Frame(content_frame)
+        format_frame = ttk.Frame(self.content_frame)
         format_frame.pack(fill=tk.X, pady=5)
         
         self.format_label = ttk.Label(format_frame, text="Format:")
@@ -107,8 +164,15 @@ class YoutubeDownloaderModule(Module):
                                    values=["best", "2160p", "1440p", "1080p", "720p", "480p", "360p", "240p", "144p"], state="readonly", width=15)
         quality_combo.pack(side=tk.LEFT)
 
+        # Options Checkbox
+        options_frame = ttk.Frame(self.content_frame)
+        options_frame.pack(fill=tk.X, pady=5)
+        self.skip_unavailable_var = tk.BooleanVar(value=True)
+        self.skip_unavailable_chk = ttk.Checkbutton(options_frame, text="Skip unavailable videos (Smart Playlist)", variable=self.skip_unavailable_var)
+        self.skip_unavailable_chk.pack(side=tk.LEFT)
+
         # 下載控制按鈕
-        button_frame = ttk.Frame(content_frame)
+        button_frame = ttk.Frame(self.content_frame)
         button_frame.pack(fill=tk.X, pady=5)
         
         self.download_button = ttk.Button(button_frame, text="Download All", command=self.start_download_thread)
@@ -118,14 +182,18 @@ class YoutubeDownloaderModule(Module):
         self.skip_button.pack(side=tk.LEFT, padx=(0, 5))
         
         self.stop_button = ttk.Button(button_frame, text="Stop All", command=self.stop_all_downloads, state="disabled")
-        self.stop_button.pack(side=tk.LEFT)
+        self.stop_button.pack(side=tk.LEFT, padx=(0, 5))
+
+        # Toggle Log Button
+        self.log_toggle_btn = ttk.Button(button_frame, text="Show Error Log", command=self.toggle_error_log)
+        self.log_toggle_btn.pack(side=tk.RIGHT)
 
         # Progress Bar
-        self.progress_bar = ttk.Progressbar(content_frame, mode='determinate')
+        self.progress_bar = ttk.Progressbar(self.content_frame, mode='determinate')
         self.progress_bar.pack(fill=tk.X, pady=5)
 
         # Status Label
-        self.status_label = ttk.Label(content_frame, text="Status: Ready", anchor=tk.W)
+        self.status_label = ttk.Label(self.content_frame, text="Status: Ready", anchor=tk.W)
         self.status_label.pack(fill=tk.X, pady=5)
 
         self.shared_state.log(f"UI for {self.module_name} created.", level=logging.INFO)
@@ -144,9 +212,48 @@ class YoutubeDownloaderModule(Module):
         self.download_button.config(text=self.tr("module_ytdl_btn_download", "Download All"))
         self.skip_button.config(text=self.tr("module_ytdl_btn_skip", "Skip Current URL"))
         self.stop_button.config(text=self.tr("module_ytdl_btn_stop", "Stop All"))
+        self.skip_unavailable_chk.config(text=self.tr("module_ytdl_chk_skip_unavailable", "Skip unavailable videos (Smart Playlist)"))
+        
+        self.log_lbl.config(text=self.tr("module_ytdl_lbl_error_log", "Error Log"))
+        self.clear_btn.config(text=self.tr("module_ytdl_btn_clear", "Clear"))
+
+        log_btn_text = self.tr("module_ytdl_btn_hide_log", "Hide Error Log") if self.log_visible else self.tr("module_ytdl_btn_show_log", "Show Error Log")
+        self.log_toggle_btn.config(text=log_btn_text)
 
         if self.status_label.cget("text") in ["Status: Ready", "狀態: 就緒"]:
              self.status_label.config(text=self.tr("module_ytdl_status_ready", "Status: Ready"))
+
+    def toggle_error_log(self):
+        if self.log_visible:
+            self.sidebar_frame.pack_forget()
+            self.log_toggle_btn.config(text=self.tr("module_ytdl_btn_show_log", "Show Error Log"))
+            self.log_visible = False
+        else:
+            self.sidebar_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=(5, 0))
+            self.log_toggle_btn.config(text=self.tr("module_ytdl_btn_hide_log", "Hide Error Log"))
+            self.log_visible = True
+
+    def clear_log(self):
+        self.log_text.config(state="normal")
+        self.log_text.delete("1.0", tk.END)
+        self.log_text.config(state="disabled")
+
+    def log_error(self, message):
+        """Append error message to the log sidebar"""
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+        full_msg = f"[{timestamp}] {message}\n"
+        
+        def _append():
+            self.log_text.config(state="normal")
+            self.log_text.insert(tk.END, full_msg)
+            self.log_text.see(tk.END)
+            self.log_text.config(state="disabled")
+            
+            # Auto-show sidebar if hidden
+            if not self.log_visible:
+                self.toggle_error_log()
+        
+        self.master.after(0, _append)
 
     def select_download_folder(self):
         folder = filedialog.askdirectory(parent=self.frame)
@@ -219,7 +326,7 @@ class YoutubeDownloaderModule(Module):
                 self.current_ydl._stop_download = True
             except:
                 pass
-        self.update_status(f"Status: Skipping URL {self.current_url_index}/{self.total_urls}...")
+        self.update_status(self.tr("module_ytdl_status_skipping", "Status: Skipping URL {0}/{1}...").format(self.current_url_index, self.total_urls))
 
     def stop_all_downloads(self):
         """停止所有下載"""
@@ -230,7 +337,7 @@ class YoutubeDownloaderModule(Module):
                 self.current_ydl._stop_download = True
             except:
                 pass
-        self.update_status("Status: Stopping all downloads...")
+        self.update_status(self.tr("module_ytdl_status_stopping", "Status: Stopping all downloads..."))
         
         # 重置按鈕狀態
         self.download_button.config(state="normal")
@@ -265,7 +372,7 @@ class YoutubeDownloaderModule(Module):
             for idx, line in enumerate(lines, 1):
                 # 檢查是否需要停止所有下載
                 if self.stop_download:
-                    self.update_status("Status: Download stopped by user.")
+                    self.update_status(self.tr("module_ytdl_status_stopped_user", "Status: Download stopped by user."))
                     break
                     
                 # 更新當前 URL 索引
@@ -275,7 +382,7 @@ class YoutubeDownloaderModule(Module):
                 if not url:
                     continue
                     
-                self.update_status(f"Status: Processing URL {idx}/{self.total_urls}: {url[:50]}...")
+                self.update_status(self.tr("module_ytdl_status_processing", "Status: Processing URL {0}/{1}: {2}...").format(idx, self.total_urls, url[:50]))
                 self.progress_bar['value'] = 0
                 
                 # 重置跳過標記（每個新 URL 開始時重置）
@@ -286,25 +393,29 @@ class YoutubeDownloaderModule(Module):
                     
                     # 如果這個 URL 被跳過，繼續下一個
                     if self.skip_current:
-                        self.update_status(f"Status: Skipped URL {idx}/{self.total_urls}")
+                        self.update_status(self.tr("module_ytdl_status_skipped_idx", "Status: Skipped URL {0}/{1}").format(idx, self.total_urls))
                         continue
                         
                     if not success:
+                        self.log_error(f"Failed: {line}")
                         errors.append(f"Failed to download: {line}")
                         
                 except Exception as e:
                     if not self.stop_download and not self.skip_current:
+                        self.log_error(f"Error: {line} - {str(e)}")
                         errors.append(f"Error downloading {line}: {str(e)}")
                         self.shared_state.log(f"Error downloading {line}: {e}", level=logging.ERROR)
 
             # 所有下載完成後處理
             if not self.stop_download:
                 if errors:
-                    error_message = "The following errors occurred during download:\n\n" + "\n".join(errors)
-                    messagebox.showerror("Download Errors", error_message, parent=self.frame)
-                    self.update_status(f"Status: Download completed with {len(errors)} errors.")
+                    # Don't show popup if log is used, or show a small notification?
+                    # User requested log, so maybe just update status
+                    self.update_status(self.tr("module_ytdl_status_completed_errors", "Status: Completed with {0} errors. Check log.").format(len(errors)))
+                    if not self.log_visible:
+                         self.master.after(0, self.toggle_error_log)
                 else:
-                    self.update_status("Status: All downloads completed successfully!")
+                    self.update_status(self.tr("module_ytdl_status_completed_success", "Status: All downloads completed successfully!"))
         
         finally:
             # 重置按鈕狀態
@@ -329,6 +440,13 @@ class YoutubeDownloaderModule(Module):
             ydl_opts = {
                 'outtmpl': os.path.join(self.download_dir, '%(title)s.%(ext)s'),
                 'progress_hooks': [self.on_progress_ytdlp],
+                # Add options to fix 403 Forbidden errors and improve stability
+                'force_ipv4': True,
+                'hls_prefer_native': True,
+                'concurrent_fragment_downloads': 16,
+                'merge_output_format': 'mp4',
+                'ignoreerrors': True,  # Continue downloading even if one video fails
+                'logger': YtDlpLogger(self.log_error), # Use custom logger
             }
             
             # 根據格式設定
@@ -343,7 +461,8 @@ class YoutubeDownloaderModule(Module):
                 })
             else:
                 if quality == "best":
-                    format_selector = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+                    # Use robust format selector
+                    format_selector = "bv*[protocol=m3u8]+ba[protocol=m3u8]/best"
                 elif quality.endswith("p") and quality[:-1].isdigit():
                     format_selector = (
                         f"bestvideo[height={quality[:-1]}][ext=mp4]+bestaudio[ext=m4a]/"
@@ -358,13 +477,76 @@ class YoutubeDownloaderModule(Module):
             # 檢查是否為播放清單URL
             is_playlist_url = self.is_playlist_url(url)
             
-            if is_playlist_url and playlist_range:
-                # 播放清單且有指定範圍
-                ydl_opts['playlist_items'] = playlist_range
+            if is_playlist_url:
+                if self.skip_unavailable_var.get():
+                    # Smart Mode: Filter unavailable videos first
+                    self.update_status(self.tr("module_ytdl_status_fetching_meta", "Status: Fetching playlist metadata (Smart Mode)..."))
+                    
+                    # 1. Fetch metadata
+                    meta_opts = ydl_opts.copy()
+                    meta_opts['extract_flat'] = True
+                    with yt_dlp.YoutubeDL(meta_opts) as ydl:
+                         info = ydl.extract_info(url, download=False)
+                    
+                    if not info or 'entries' not in info:
+                        self.log_error("Failed to fetch playlist metadata.")
+                        return False
+
+                    all_entries = info['entries']
+                    
+                    # 2. Filter available entries and map logical index to original index
+                    # Logical Index (1-based) -> Original Entry (1-based Index)
+                    valid_entries_map = [] 
+                    for i, entry in enumerate(all_entries):
+                        # Simple check: if title indicates private/deleted or if entry is None
+                        # Note: extract_flat=True might return minimal info. 
+                        # yt-dlp usually marks unavailable videos with specific titles or nulls.
+                        if entry:
+                            title = entry.get('title', '')
+                            if title not in ["[Private video]", "[Deleted video]", "[Unavailable video]"]:
+                                valid_entries_map.append(i + 1) # Store 1-based original index
+                    
+                    # 3. Determine items to download
+                    items_to_download = [] # List of original indices (1-based)
+                    
+                    if playlist_range:
+                        # Parse range string "1-5,7-9"
+                        ranges = playlist_range.split(',')
+                        for r in ranges:
+                            r = r.strip()
+                            if '-' in r:
+                                start, end = map(int, r.split('-'))
+                                # Map logical range to original indices
+                                # Logical indices are 1-based
+                                for logical_idx in range(start, end + 1):
+                                    if 1 <= logical_idx <= len(valid_entries_map):
+                                        original_idx = valid_entries_map[logical_idx - 1]
+                                        items_to_download.append(original_idx)
+                            else:
+                                logical_idx = int(r)
+                                if 1 <= logical_idx <= len(valid_entries_map):
+                                    original_idx = valid_entries_map[logical_idx - 1]
+                                    items_to_download.append(original_idx)
+                    else:
+                        # Download all valid entries
+                        items_to_download = valid_entries_map
+                    
+                    # 4. Download specific items
+                    if not items_to_download:
+                        self.log_error(self.tr("module_ytdl_err_no_valid_videos", "No valid videos found to download in the specified range."))
+                        return False
+                        
+                    # Convert list of indices to string for playlist_items
+                    # e.g., [1, 2, 4, 5] -> "1,2,4,5"
+                    ydl_opts['playlist_items'] = ",".join(map(str, items_to_download))
+                    
+                elif playlist_range:
+                    # Standard Mode with range
+                    ydl_opts['playlist_items'] = playlist_range
+            
             elif not is_playlist_url:
                 # 確保只下載單一影片（不是播放清單）
                 ydl_opts['noplaylist'] = True
-            # 如果是播放清單URL但沒有指定範圍，則下載整個播放清單
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 self.current_ydl = ydl
@@ -397,12 +579,14 @@ class YoutubeDownloaderModule(Module):
             # 如果是用戶主動跳過或停止，不記錄為錯誤
             if self.stop_download or self.skip_current or "skipped by user" in str(e):
                 return False
+            self.log_error(f"Download Error ({url}): {e}")
             self.shared_state.log(f"yt-dlp download error from {url}: {e}", level=logging.ERROR)
             return False
         except Exception as e:
             # 如果是用戶主動停止，不記錄為錯誤
             if self.stop_download or self.skip_current:
                 return False
+            self.log_error(f"Error ({url}): {e}")
             self.shared_state.log(f"yt-dlp error downloading from {url}: {e}", level=logging.ERROR)
             return False
         finally:
@@ -424,8 +608,8 @@ class YoutubeDownloaderModule(Module):
             filename = d.get('filename')
             if filename:
                 basename = os.path.basename(filename)
-                self.master.after(0, lambda: self.status_label.config(
-                    text=f"Status: [{self.current_url_index}/{self.total_urls}] Downloading {basename}"))
+                status_msg = self.tr("module_ytdl_status_downloading", "Status: [{0}/{1}] Downloading {2}").format(self.current_url_index, self.total_urls, basename)
+                self.master.after(0, lambda: self.status_label.config(text=status_msg))
             if 'total_bytes' in d:
                 percentage = (d['downloaded_bytes'] / d['total_bytes']) * 100
                 self.master.after(0, lambda: self.progress_bar.config(value=percentage))
@@ -439,8 +623,8 @@ class YoutubeDownloaderModule(Module):
             filename = d.get('filename')
             if filename:
                 basename = os.path.basename(filename)
-                self.master.after(0, lambda: self.status_label.config(
-                    text=f"Status: [{self.current_url_index}/{self.total_urls}] Finished downloading {basename}"))
+                status_msg = self.tr("module_ytdl_status_finished_file", "Status: [{0}/{1}] Finished downloading {2}").format(self.current_url_index, self.total_urls, basename)
+                self.master.after(0, lambda: self.status_label.config(text=status_msg))
 
     def update_status(self, message):
         """更新狀態"""

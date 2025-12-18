@@ -63,6 +63,7 @@ if __name__ == "__main__":
     time.sleep(2)
 
     root = tk.Tk()
+    root.withdraw() # Hide initially
     
     shared_state_instance = SharedState() # Create SharedState instance EARLIER
 
@@ -106,6 +107,7 @@ if __name__ == "__main__":
         splash.destroy()
         shared_state_instance.clear_splash_log_callback()
         shared_state_instance.clear_splash_progress_callback() # Clear progress callback
+        root.deiconify() # Show main window after splash is gone
 
     # The ModularGUI class handles making the main window visible.
     root.mainloop()

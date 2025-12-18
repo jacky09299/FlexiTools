@@ -6,6 +6,7 @@
     "module_pdf_tab_compress": "Compresser PDF",
     "module_pdf_tab_watermark": "Ajouter filigrane",
     "module_pdf_tab_extract": "Extraire texte",
+    "module_pdf_tab_to_image_pdf": "Vers PDF image",
     "module_pdf_lbl_input_pdf": "PDF d'entrée:",
     "module_pdf_btn_browse": "Parcourir...",
     "module_pdf_lbl_ranges": "Plages de pages (ex. 1-5, 8):",
@@ -31,5 +32,8 @@
     "module_pdf_lbl_out_pdf": "Sortie PDF:",
     "module_pdf_btn_watermark": "Ajouter filigrane",
     "module_pdf_lbl_out_txt": "Fichier texte de sortie (.txt):",
-    "module_pdf_btn_extract": "Extraire le texte vers un fichier"
+    "module_pdf_btn_extract": "Extraire le texte vers un fichier",
+    "module_pdf_lbl_out_image_pdf": "Sortie PDF image:",
+    "module_pdf_lbl_dpi": "Qualité d'image (DPI):",
+    "module_pdf_btn_convert_to_image": "Convertir en PDF image"
 }
