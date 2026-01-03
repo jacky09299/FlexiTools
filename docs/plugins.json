@@ -165,7 +165,7 @@
       "title": "Pdf Processor",
       "description": "The pdf_processor module.",
       "author": "李紘宇",
-      "latest_version": "1.3.0.0",
+      "latest_version": "1.3.0",
       "versions": [
         {
           "version": "1.0.0",
@@ -180,8 +180,8 @@
           "url": "https://jacky09299.github.io/FlexiTools/plugins/pdf_processor/pdf_processor_1.2.0.zip"
         },
         {
-          "version": "1.3.0.0",
-          "url": "https://jacky09299.github.io/FlexiTools/plugins/pdf_processor/pdf_processor_1.3.0.0.zip"
+          "version": "1.3.0",
+          "url": "https://jacky09299.github.io/FlexiTools/plugins/pdf_processor/pdf_processor_1.3.0.zip"
         }
       ]
     },
