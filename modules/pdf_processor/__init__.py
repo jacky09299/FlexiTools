@@ -43,6 +43,7 @@ class PdfProcessorModule(Module):
 
         # Initialize UI
         self.create_ui()
+        self.to_img_file_paths = [] # Initialize list for To Image PDF
 
     def create_ui(self):
         content_frame = ttk.Frame(self.frame)
@@ -77,20 +78,31 @@ class PdfProcessorModule(Module):
             to_image_frame = ttk.Frame(self.tab_to_image_pdf, padding="10")
             to_image_frame.pack(expand=True, fill=tk.BOTH)
 
-            # Input PDF
-            self.lbl_to_img_input = ttk.Label(to_image_frame, text="Input PDF:")
-            self.lbl_to_img_input.grid(row=0, column=0, padx=5, pady=5, sticky="w")
-            self.to_img_input_pdf_path_var = tk.StringVar()
-            ttk.Entry(to_image_frame, textvariable=self.to_img_input_pdf_path_var, width=50, state="readonly").grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-            self.btn_to_img_browse_in = ttk.Button(to_image_frame, text="Browse...", command=self._select_input_pdf_to_image)
-            self.btn_to_img_browse_in.grid(row=0, column=2, padx=5, pady=5)
+            # Input PDF List
+            list_frame = ttk.Frame(to_image_frame)
+            list_frame.grid(row=0, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+            
+            self.lbl_to_img_input = ttk.Label(list_frame, text="Input PDFs:")
+            self.lbl_to_img_input.pack(side=tk.TOP, anchor="w")
+            
+            btn_frame = ttk.Frame(list_frame)
+            btn_frame.pack(side=tk.TOP, fill=tk.X, pady=2)
+            
+            self.btn_to_img_add = ttk.Button(btn_frame, text="Add PDFs...", command=self._add_pdfs_to_image_list)
+            self.btn_to_img_add.pack(side=tk.LEFT, padx=2)
+            
+            self.btn_to_img_remove = ttk.Button(btn_frame, text="Remove Selected", command=self._remove_selected_to_image_pdf)
+            self.btn_to_img_remove.pack(side=tk.LEFT, padx=2)
+            
+            self.to_img_listbox = tk.Listbox(list_frame, selectmode=tk.EXTENDED, width=70, height=8)
+            self.to_img_listbox.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-            # Output PDF
-            self.lbl_to_img_output = ttk.Label(to_image_frame, text="Output Image PDF:")
+            # Output Folder
+            self.lbl_to_img_output = ttk.Label(to_image_frame, text="Output Folder:")
             self.lbl_to_img_output.grid(row=1, column=0, padx=5, pady=5, sticky="w")
-            self.to_img_output_pdf_path_var = tk.StringVar()
-            ttk.Entry(to_image_frame, textvariable=self.to_img_output_pdf_path_var, width=50, state="readonly").grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-            self.btn_to_img_browse_out = ttk.Button(to_image_frame, text="Browse...", command=self._select_output_pdf_to_image)
+            self.to_img_output_folder_var = tk.StringVar()
+            ttk.Entry(to_image_frame, textvariable=self.to_img_output_folder_var, width=50, state="readonly").grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+            self.btn_to_img_browse_out = ttk.Button(to_image_frame, text="Choose Folder...", command=self._select_output_folder_to_image)
             self.btn_to_img_browse_out.grid(row=1, column=2, padx=5, pady=5)
 
             # DPI Setting
@@ -428,10 +440,11 @@ class PdfProcessorModule(Module):
 
         # To Image PDF Tab
         if pdfium:
-            self.lbl_to_img_input.config(text=self.tr("module_pdf_lbl_input_pdf", "Input PDF:"))
-            self.btn_to_img_browse_in.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
-            self.lbl_to_img_output.config(text=self.tr("module_pdf_lbl_out_image_pdf", "Output Image PDF:"))
-            self.btn_to_img_browse_out.config(text=self.tr("module_pdf_btn_browse", "Browse..."))
+            self.lbl_to_img_input.config(text=self.tr("module_pdf_lbl_input_pdfs", "Input PDFs:"))
+            self.btn_to_img_add.config(text=self.tr("module_pdf_btn_add_pdfs", "Add PDFs..."))
+            self.btn_to_img_remove.config(text=self.tr("module_pdf_btn_remove_sel", "Remove Selected"))
+            self.lbl_to_img_output.config(text=self.tr("module_pdf_lbl_out_folder", "Output Folder:"))
+            self.btn_to_img_browse_out.config(text=self.tr("module_pdf_btn_choose_folder", "Choose Folder..."))
             self.lbl_to_img_dpi.config(text=self.tr("module_pdf_lbl_dpi", "Image Quality (DPI):"))
             self.btn_to_img_execute.config(text=self.tr("module_pdf_btn_convert_to_image", "Convert to Image PDF"))
 
@@ -1291,57 +1304,65 @@ class PdfProcessorModule(Module):
         super().on_destroy()
         self.shared_state.log(f"{self.module_name} instance destroyed.")
 
-    def _select_input_pdf_to_image(self):
-        filepath = filedialog.askopenfilename(
-            title="Select Input PDF to Convert",
+    def _add_pdfs_to_image_list(self):
+        filepaths = filedialog.askopenfilenames(
+            title="Select Input PDFs to Convert",
             defaultextension=".pdf",
             filetypes=[("PDF Files", "*.pdf"), ("All Files", "*.*")],
             parent=self.tab_to_image_pdf
         )
-        if filepath:
-            self.to_img_input_pdf_path_var.set(filepath)
-            self.to_img_status_var.set(f"Selected: {os.path.basename(filepath)}")
-            self.shared_state.log(f"To Image PDF Tab: Input PDF selected: {filepath}")
+        if filepaths:
+            added = 0
+            for fp in filepaths:
+                if fp not in self.to_img_file_paths:
+                    self.to_img_file_paths.append(fp)
+                    self.to_img_listbox.insert(tk.END, os.path.basename(fp))
+                    added += 1
+            self.to_img_status_var.set(f"Added {added} file(s). Total: {len(self.to_img_file_paths)}")
+            self.shared_state.log(f"To Image PDF Tab: Added {added} PDF(s).")
         else:
             self.to_img_status_var.set("Input PDF selection cancelled.")
 
-    def _select_output_pdf_to_image(self):
-        input_path = self.to_img_input_pdf_path_var.get()
-        initial_name = "image_version.pdf"
-        if input_path:
-            base, ext = os.path.splitext(os.path.basename(input_path))
-            initial_name = f"{base}_image{ext}"
+    def _remove_selected_to_image_pdf(self):
+        selection = self.to_img_listbox.curselection()
+        if not selection:
+             messagebox.showwarning("Selection Error", "Please select a file to remove.", parent=self.tab_to_image_pdf)
+             return
+        
+        for index in sorted(selection, reverse=True):
+            self.to_img_listbox.delete(index)
+            removed = self.to_img_file_paths.pop(index)
+            self.shared_state.log(f"To Image PDF Tab: Removed {removed}")
+        self.to_img_status_var.set(f"Removed {len(selection)} file(s).")
 
-        filepath = filedialog.asksaveasfilename(
-            title="Save Image PDF As...",
-            defaultextension=".pdf",
-            filetypes=[("PDF Files", "*.pdf"), ("All Files", "*.*")],
-            initialfile=initial_name,
+    def _select_output_folder_to_image(self):
+        folder = filedialog.askdirectory(
+            title="Select Output Folder",
             parent=self.tab_to_image_pdf
         )
-        if filepath:
-            self.to_img_output_pdf_path_var.set(filepath)
-            self.to_img_status_var.set(f"Output will be saved as: {os.path.basename(filepath)}")
-            self.shared_state.log(f"To Image PDF Tab: Output path set to: {filepath}")
+        if folder:
+            self.to_img_output_folder_var.set(folder)
+            self.to_img_status_var.set(f"Output folder set: {folder}")
+            self.shared_state.log(f"To Image PDF Tab: Output folder set to: {folder}")
         else:
-            self.to_img_status_var.set("Output PDF save location not set.")
+            self.to_img_status_var.set("Output folder selection cancelled.")
 
     def _execute_convert_to_image_pdf(self):
         self.shared_state.log("To Image PDF Tab: Attempting to execute conversion.")
         self.to_img_status_var.set("Processing...")
         self.tab_to_image_pdf.update_idletasks()
 
-        input_pdf_path = self.to_img_input_pdf_path_var.get()
-        output_pdf_path = self.to_img_output_pdf_path_var.get()
+        input_files = self.to_img_file_paths
+        output_folder = self.to_img_output_folder_var.get()
 
-        if not input_pdf_path or not os.path.exists(input_pdf_path):
-            self.to_img_status_var.set("Error: Input PDF not selected or not found.")
-            messagebox.showerror("Error", "Please select a valid input PDF file.", parent=self.tab_to_image_pdf)
+        if not input_files:
+            self.to_img_status_var.set("Error: No input PDFs selected.")
+            messagebox.showerror("Error", "Please add at least one input PDF file.", parent=self.tab_to_image_pdf)
             return
 
-        if not output_pdf_path:
-            self.to_img_status_var.set("Error: Output PDF file path not specified.")
-            messagebox.showerror("Error", "Please specify an output file path.", parent=self.tab_to_image_pdf)
+        if not output_folder or not os.path.exists(output_folder):
+            self.to_img_status_var.set("Error: Output folder not selected or invalid.")
+            messagebox.showerror("Error", "Please select a valid output folder.", parent=self.tab_to_image_pdf)
             return
 
         try:
@@ -1353,68 +1374,77 @@ class PdfProcessorModule(Module):
             messagebox.showerror("Error", "Invalid DPI value. Please enter a positive integer.", parent=self.tab_to_image_pdf)
             return
 
-        output_dir = os.path.dirname(output_pdf_path)
-        if output_dir and not os.path.exists(output_dir):
+        processed_count = 0
+        errors = []
+
+        total_files = len(input_files)
+        
+        # Import ImageReader inside the method or at top level if likely used
+        from reportlab.lib.utils import ImageReader 
+
+        for idx, input_pdf_path in enumerate(input_files):
             try:
-                os.makedirs(output_dir, exist_ok=True)
-            except OSError as e:
-                self.to_img_status_var.set(f"Error creating output directory: {e}")
-                messagebox.showerror("Directory Error", f"Could not create output directory: {output_dir}\n{e}", parent=self.tab_to_image_pdf)
-                return
-
-        # Prepare ReportLab Canvas for Output
-        try:
-            # Open input PDF with pypdfium2
-            pdf = pdfium.PdfDocument(input_pdf_path)
-
-            # Create a temporary canvas
-            c = reportlab_canvas.Canvas(output_pdf_path)
-
-            num_pages = len(pdf)
-            for i in range(num_pages):
-                self.to_img_status_var.set(f"Processing page {i + 1}/{num_pages}...")
+                self.to_img_status_var.set(f"Processing file {idx + 1}/{total_files}: {os.path.basename(input_pdf_path)}...")
                 self.tab_to_image_pdf.update_idletasks()
+                
+                base_name = os.path.splitext(os.path.basename(input_pdf_path))[0]
+                output_filename = f"{base_name}_image.pdf"
+                output_pdf_path = os.path.join(output_folder, output_filename)
 
-                # Get page from pypdfium2
-                page = pdf[i]
+                # Open input PDF with pypdfium2
+                pdf = pdfium.PdfDocument(input_pdf_path)
 
-                # Render page to PIL image
-                # Scale calculation: DPI / 72 (since PDF base unit is 1/72 inch)
-                scale = dpi / 72.0
-                bitmap = page.render(scale=scale)
-                pil_image = bitmap.to_pil()
+                # Create a temporary canvas
+                c = reportlab_canvas.Canvas(output_pdf_path)
 
-                # Get dimensions
-                width, height = page.get_size() # In PDF points
+                num_pages = len(pdf)
+                for i in range(num_pages):
+                    # self.to_img_status_var.set(f"Processing file {idx + 1}/{total_files} (Page {i+1}/{num_pages})...")
+                    # self.tab_to_image_pdf.update_idletasks()
 
-                # Set page size for ReportLab
-                c.setPageSize((width, height))
+                    # Get page from pypdfium2
+                    page = pdf[i]
 
-                # ReportLab draws images. We need to pass the PIL image.
-                from reportlab.lib.utils import ImageReader
+                    # Render page to PIL image
+                    # Scale calculation: DPI / 72 (since PDF base unit is 1/72 inch)
+                    scale = dpi / 72.0
+                    bitmap = page.render(scale=scale)
+                    pil_image = bitmap.to_pil()
 
-                img_reader = ImageReader(pil_image)
+                    # Get dimensions
+                    width, height = page.get_size() # In PDF points
 
-                # Draw the image covering the entire page
-                c.drawImage(img_reader, 0, 0, width=width, height=height)
+                    # Set page size for ReportLab
+                    c.setPageSize((width, height))
 
-                c.showPage()
+                    img_reader = ImageReader(pil_image)
 
-                # Cleanup bitmap to free memory
-                bitmap.close()
+                    # Draw the image covering the entire page
+                    c.drawImage(img_reader, 0, 0, width=width, height=height)
 
-            c.save()
+                    c.showPage()
 
-            final_message = f"Successfully converted to image PDF: '{os.path.basename(output_pdf_path)}'."
-            self.to_img_status_var.set(final_message)
+                    # Cleanup bitmap to free memory
+                    bitmap.close()
+
+                c.save()
+                processed_count += 1
+                self.shared_state.log(f"To Image PDF Tab: Converted {input_pdf_path}")
+
+            except Exception as e:
+                error_msg = f"Error converting {os.path.basename(input_pdf_path)}: {e}"
+                errors.append(error_msg)
+                self.shared_state.log(f"To Image PDF Tab: {error_msg}", "ERROR")
+
+        
+        final_message = f"Completed. Processed {processed_count}/{total_files} files."
+        if errors:
+            final_message += f"\n{len(errors)} errors occurred (check logs)."
+            messagebox.showwarning("Conversion w/ Errors", final_message + "\nFirst Error: " + errors[0], parent=self.tab_to_image_pdf)
+        else:
             messagebox.showinfo("Conversion Successful", final_message, parent=self.tab_to_image_pdf)
-            self.shared_state.log(f"To Image PDF Tab: {final_message}")
-
-        except Exception as e:
-            error_msg = f"An error occurred during conversion: {e}"
-            self.to_img_status_var.set(error_msg)
-            messagebox.showerror("Conversion Error", error_msg, parent=self.tab_to_image_pdf)
-            self.shared_state.log(f"To Image PDF Tab: {error_msg}", "ERROR")
+        
+        self.to_img_status_var.set(final_message)
 
 
     def _select_split_output_folder(self):
