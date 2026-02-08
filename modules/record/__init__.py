@@ -20,7 +20,7 @@ try:
 except ImportError:
     AUDIO_AVAILABLE = False
 
-__version__ = "1.2.0"
+__version__ = "1.0.0"
 
 # --- Windows API Constants ---
 WDA_NONE = 0x00000000
@@ -309,104 +309,104 @@ class RecordModule(Module):
         # Path Selection
         path_frame = tk.Frame(main_frame)
         path_frame.pack(pady=5, fill='x')
-        self.path_label = tk.Label(path_frame, text=f"位置: {self.get_short_path(self.save_dir)}", fg="gray")
+        self.path_label = tk.Label(path_frame, text=f"{self.tr('location')} {self.get_short_path(self.save_dir)}", fg="gray")
         self.path_label.pack(side="left")
-        ttk.Button(path_frame, text="瀏覽...", command=self.choose_directory).pack(side="right")
+        ttk.Button(path_frame, text=self.tr("browse"), command=self.choose_directory).pack(side="right")
 
         # General Options
-        opt_frame = tk.LabelFrame(main_frame, text=" 一般設定 ", padx=10, pady=5)
+        opt_frame = tk.LabelFrame(main_frame, text=self.tr("general_settings"), padx=10, pady=5)
         opt_frame.pack(pady=5, fill='x')
-        tk.Checkbutton(opt_frame, text="截圖時詢問檔名", variable=self.is_manual_save).grid(row=0, column=0, sticky="w")
-        tk.Checkbutton(opt_frame, text="錄影時對鏡頭隱形 (視窗透明)", variable=self.is_exclude_window).grid(row=1, column=0, sticky="w")
-        tk.Checkbutton(opt_frame, text="直接使用上次範圍 (不用重拉)", variable=self.is_use_last_region).grid(row=2, column=0, sticky="w")
+        tk.Checkbutton(opt_frame, text=self.tr("ask_filename"), variable=self.is_manual_save).grid(row=0, column=0, sticky="w")
+        tk.Checkbutton(opt_frame, text=self.tr("hide_window"), variable=self.is_exclude_window).grid(row=1, column=0, sticky="w")
+        tk.Checkbutton(opt_frame, text=self.tr("use_last_region"), variable=self.is_use_last_region).grid(row=2, column=0, sticky="w")
 
         # Audio Settings
-        audio_frame = tk.LabelFrame(main_frame, text=" 音訊設定 ", padx=10, pady=5)
+        audio_frame = tk.LabelFrame(main_frame, text=self.tr("audio_settings"), padx=10, pady=5)
         audio_frame.pack(pady=5, fill='x')
 
         if AUDIO_AVAILABLE:
             top_audio = tk.Frame(audio_frame)
             top_audio.pack(fill="x")
-            tk.Checkbutton(top_audio, text="啟用錄音功能", variable=self.record_audio, command=self.toggle_audio_ui).pack(side="left")
-            tk.Button(top_audio, text="音訊疑難排解", command=self.show_audio_help, fg="blue", font=("Arial", 9, "underline"), bd=0, cursor="hand2").pack(side="right")
+            tk.Checkbutton(top_audio, text=self.tr("enable_audio"), variable=self.record_audio, command=self.toggle_audio_ui).pack(side="left")
+            tk.Button(top_audio, text=self.tr("audio_troubleshoot"), command=self.show_audio_help, fg="blue", font=("Arial", 9, "underline"), bd=0, cursor="hand2").pack(side="right")
             
             dev_frame = tk.Frame(audio_frame)
             dev_frame.pack(fill="x", pady=5)
-            tk.Label(dev_frame, text="輸入裝置:").pack(side="left")
+            tk.Label(dev_frame, text=self.tr("input_device")).pack(side="left")
             self.device_combo = ttk.Combobox(dev_frame, state="readonly", width=25)
             self.device_combo.pack(side="left", padx=5, fill='x', expand=True)
             self.device_combo.bind("<<ComboboxSelected>>", self.on_device_selected)
             
             vol_frame = tk.Frame(audio_frame)
             vol_frame.pack(fill="x", pady=5)
-            tk.Label(vol_frame, text="音量測試:").pack(side="left")
+            tk.Label(vol_frame, text=self.tr("volume_test")).pack(side="left")
             self.vol_bar = ttk.Progressbar(vol_frame, orient="horizontal", length=150, mode="determinate")
             self.vol_bar.pack(side="left", padx=5, fill='x', expand=True)
             
-            self.audio_hint = tk.Label(audio_frame, text="請選擇 [MME] Stereo Mix 進行錄製", fg="gray", font=("Arial", 8))
+            self.audio_hint = tk.Label(audio_frame, text=self.tr("audio_hint"), fg="gray", font=("Arial", 8))
             self.audio_hint.pack(anchor="w")
             
             self.refresh_audio_devices()
         else:
-            tk.Label(audio_frame, text="未安裝 PyAudio，無法使用錄音功能", fg="red").pack()
+            tk.Label(audio_frame, text=self.tr("no_pyAudio"), fg="red").pack()
 
         # Fixed Size Mode
-        fixed_frame = tk.LabelFrame(main_frame, text=" 固定尺寸模式 ", padx=10, pady=5)
+        fixed_frame = tk.LabelFrame(main_frame, text=self.tr("fixed_size_mode"), padx=10, pady=5)
         fixed_frame.pack(fill="x", pady=5)
         top_box = tk.Frame(fixed_frame)
         top_box.pack(fill="x")
-        tk.Checkbutton(top_box, text="啟用固定大小", variable=self.is_fixed_size, command=self.toggle_fixed_mode).pack(side="left")
-        self.size_label = tk.Label(top_box, text="無紀錄", fg="red")
+        tk.Checkbutton(top_box, text=self.tr("enable_fixed_size"), variable=self.is_fixed_size, command=self.toggle_fixed_mode).pack(side="left")
+        self.size_label = tk.Label(top_box, text=self.tr("no_record"), fg="red")
         self.size_label.pack(side="right")
         
         anchor_frame = tk.Frame(fixed_frame)
         anchor_frame.pack()
-        for pos, txt in [("tl","左上"), ("tr","右上"), ("bl","左下"), ("br","右下")]:
+        for pos, txt in [("tl", self.tr("top_left")), ("tr", self.tr("top_right")), ("bl", self.tr("bottom_left")), ("br", self.tr("bottom_right"))]:
             tk.Radiobutton(anchor_frame, text=txt, variable=self.anchor_pos, value=pos).pack(side="left")
 
         # Automation
-        auto_frame = tk.LabelFrame(main_frame, text=" 自動翻頁截圖 (5秒後開始) ", padx=10, pady=5)
+        auto_frame = tk.LabelFrame(main_frame, text=self.tr("auto_capture"), padx=10, pady=5)
         auto_frame.pack(fill="x", pady=5)
         
         af_opts = tk.Frame(auto_frame)
         af_opts.pack(fill="x")
-        tk.Label(af_opts, text="頁數:").pack(side="left")
+        tk.Label(af_opts, text=self.tr("pages")).pack(side="left")
         tk.Entry(af_opts, textvariable=self.auto_count, width=5).pack(side="left", padx=5)
-        tk.Label(af_opts, text="間隔(秒):").pack(side="left")
+        tk.Label(af_opts, text=self.tr("interval")).pack(side="left")
         tk.Entry(af_opts, textvariable=self.auto_interval, width=5).pack(side="left", padx=5)
         
         af_acts = tk.Frame(auto_frame)
         af_acts.pack(fill="x", pady=5)
-        self.btn_pick_pos = ttk.Button(af_acts, text="設定翻頁點", command=lambda: self.prepare_snip("pick_point"))
+        self.btn_pick_pos = ttk.Button(af_acts, text=self.tr("set_page_point"), command=lambda: self.prepare_snip("pick_point"))
         self.btn_pick_pos.pack(side="left")
-        self.lbl_click_pos = tk.Label(af_acts, text="未設定", fg="gray")
+        self.lbl_click_pos = tk.Label(af_acts, text=self.tr("not_set"), fg="gray")
         self.lbl_click_pos.pack(side="left", padx=5)
         
         aux_frame = tk.Frame(auto_frame, pady=2)
         aux_frame.pack(fill="x")
         
-        ttk.Button(aux_frame, text="設定額外點 (+)", command=lambda: self.prepare_snip("pick_aux_point")).pack(side="left")
-        ttk.Button(aux_frame, text="清除", command=self.clear_aux_points).pack(side="left", padx=5)
-        self.lbl_aux_count = tk.Label(aux_frame, text="0 點", fg="blue")
+        ttk.Button(aux_frame, text=self.tr("set_aux_point"), command=lambda: self.prepare_snip("pick_aux_point")).pack(side="left")
+        ttk.Button(aux_frame, text=self.tr("clear"), command=self.clear_aux_points).pack(side="left", padx=5)
+        self.lbl_aux_count = tk.Label(aux_frame, text=self.tr("points_count", count=0), fg="blue")
         self.lbl_aux_count.pack(side="left")
         
         timing_frame = tk.Frame(auto_frame)
         timing_frame.pack(fill="x")
-        tk.Radiobutton(timing_frame, text="截圖前", variable=self.aux_click_timing, value="pre_capture", fg="red").pack(side="left")
-        tk.Radiobutton(timing_frame, text="翻頁前", variable=self.aux_click_timing, value="before").pack(side="left")
-        tk.Radiobutton(timing_frame, text="翻頁後", variable=self.aux_click_timing, value="after").pack(side="left")
+        tk.Radiobutton(timing_frame, text=self.tr("pre_capture"), variable=self.aux_click_timing, value="pre_capture", fg="red").pack(side="left")
+        tk.Radiobutton(timing_frame, text=self.tr("before_page"), variable=self.aux_click_timing, value="before").pack(side="left")
+        tk.Radiobutton(timing_frame, text=self.tr("after_page"), variable=self.aux_click_timing, value="after").pack(side="left")
 
-        ttk.Button(af_acts, text="開始自動", command=self.start_automation).pack(side="right")
+        ttk.Button(af_acts, text=self.tr("start_auto"), command=self.start_automation).pack(side="right")
 
         # Action Buttons
         btn_area = tk.Frame(main_frame)
         btn_area.pack(pady=10, fill="x", padx=10)
-        self.btn_capture = tk.Button(btn_area, text="截圖", command=lambda: self.prepare_snip("screenshot"), bg="#0078D7", fg="white", font=("微軟正黑體", 12, "bold"), height=2, width=10)
+        self.btn_capture = tk.Button(btn_area, text=self.tr("capture"), command=lambda: self.prepare_snip("screenshot"), bg="#0078D7", fg="white", font=("微軟正黑體", 12, "bold"), height=2, width=10)
         self.btn_capture.pack(side="left", padx=5, expand=True, fill='x')
-        self.btn_record = tk.Button(btn_area, text="開始錄影", command=lambda: self.toggle_record_action(), bg="#D70000", fg="white", font=("微軟正黑體", 12, "bold"), height=2, width=10)
+        self.btn_record = tk.Button(btn_area, text=self.tr("start_record"), command=lambda: self.toggle_record_action(), bg="#D70000", fg="white", font=("微軟正黑體", 12, "bold"), height=2, width=10)
         self.btn_record.pack(side="right", padx=5, expand=True, fill='x')
 
-        self.status_label = tk.Label(main_frame, text="就緒", fg="gray")
+        self.status_label = tk.Label(main_frame, text=self.tr("ready"), fg="gray")
         self.status_label.pack(side="bottom", pady=5)
 
     def update_language(self):
@@ -415,7 +415,7 @@ class RecordModule(Module):
         # For now, we keep defaults from create_ui
 
     def show_audio_help(self):
-        messagebox.showinfo("音訊疑難排解", "請確保 ffmpeg.exe 與本程式在同一資料夾。\n若音量條沒動，請檢查 Windows 隱私權設定。")
+        messagebox.showinfo(self.tr("audio_troubleshoot"), self.tr("audio_troubleshoot_msg"))
 
     def toggle_audio_ui(self):
         if self.record_audio.get():
@@ -440,7 +440,7 @@ class RecordModule(Module):
             self.device_combo.current(default_idx)
             self.on_device_selected(None)
         else:
-            self.device_combo['values'] = ["找不到輸入裝置"]
+            self.device_combo['values'] = [self.tr("audio_error")]
             self.device_combo.current(0)
 
     def on_device_selected(self, event):
@@ -453,11 +453,11 @@ class RecordModule(Module):
     def update_vol_bar(self, level):
         try:
             if level == -1:
-                self.audio_hint.config(text="錯誤：無法開啟裝置", fg="red")
+                self.audio_hint.config(text=self.tr("audio_error"), fg="red")
                 self.vol_bar['value'] = 0
             else:
                 self.vol_bar['value'] = level
-                if level > 0: self.audio_hint.config(text="偵測到訊號！", fg="green")
+                if level > 0: self.audio_hint.config(text=self.tr("audio_signal"), fg="green")
         except: pass
 
     def get_selected_device_index(self):
@@ -477,7 +477,7 @@ class RecordModule(Module):
     def toggle_fixed_mode(self):
         if self.is_fixed_size.get():
             if self.last_width == 0 or self.last_height == 0:
-                messagebox.showwarning("提示", "尚無尺寸紀錄！\n請先手動拖曳一次。")
+                messagebox.showwarning(self.tr("hint"), self.tr("no_size_record"))
                 self.is_fixed_size.set(False)
 
     def get_short_path(self, path):
@@ -487,7 +487,7 @@ class RecordModule(Module):
         d = filedialog.askdirectory()
         if d:
             self.save_dir = d
-            self.path_label.config(text=f"位置: {self.get_short_path(self.save_dir)}")
+            self.path_label.config(text=f"{self.tr('location')} {self.get_short_path(self.save_dir)}")
 
     def toggle_record_action(self):
         if self.is_recording: self.stop_recording()
@@ -509,10 +509,10 @@ class RecordModule(Module):
                     return
             else:
                 self.is_use_last_region.set(False)
-                messagebox.showwarning("提示", "尚無相關範圍紀錄！\n請先手動選取一次。")
+                messagebox.showwarning(self.tr("hint"), self.tr("no_region_record"))
 
         if self.is_fixed_size.get() and (self.last_width == 0) and mode not in ["pick_point", "pick_aux_point"]:
-             messagebox.showwarning("提示", "請先手動拖曳一次以紀錄尺寸。")
+             messagebox.showwarning(self.tr("hint"), self.tr("manual_drag_first"))
              self.is_fixed_size.set(False)
              return
         
@@ -561,11 +561,11 @@ class RecordModule(Module):
     def on_click_point_selected(self, x, y):
         if self.current_mode == "pick_point":
             self.auto_click_pos = (int(x), int(y))
-            self.lbl_click_pos.config(text=f"位置: {self.auto_click_pos}", fg="blue")
+            self.lbl_click_pos.config(text=f"{self.tr('location')} {self.auto_click_pos}", fg="blue")
         elif self.current_mode == "pick_aux_point":
             self.aux_points.append((int(x), int(y)))
             count = len(self.aux_points)
-            self.lbl_aux_count.config(text=f"已設定: {count} 點")
+            self.lbl_aux_count.config(text=self.tr("points_count", count=count))
             print(f"Added Aux Point: {x}, {y}")
             
         self.cancel_snip()
@@ -573,7 +573,7 @@ class RecordModule(Module):
 
     def clear_aux_points(self):
         self.aux_points = []
-        self.lbl_aux_count.config(text="0 點")
+        self.lbl_aux_count.config(text=self.tr("points_count", count=0))
 
     def calculate_fixed_rect_and_capture(self):
         x, y, w, h = self.start_x, self.start_y, self.last_width, self.last_height
@@ -619,14 +619,14 @@ class RecordModule(Module):
                 if fp: img.save(fp)
             else:
                 img.save(os.path.join(self.save_dir, fn))
-                self.status_label.config(text=f"已儲存: {fn}")
-        except Exception as e: messagebox.showerror("錯誤", str(e))
+                self.status_label.config(text=self.tr("saved", fn=fn))
+        except Exception as e: messagebox.showerror(self.tr("error"), str(e))
 
     def start_recording(self, bbox):
         self.is_recording = True
         if self.is_exclude_window.get(): self.set_window_affinity(True)
         self.frame.winfo_toplevel().deiconify()
-        self.btn_record.config(text="停止錄影", bg="black")
+        self.btn_record.config(text=self.tr("stop_record"), bg="black")
         self.btn_capture.config(state="disabled")
         self.device_combo.config(state="disabled")
         
@@ -636,11 +636,11 @@ class RecordModule(Module):
         self.final_filename = f"record_{ts}.mp4"
         
         if self.record_audio.get() and self.selected_audio_idx is not None and self.audio_recorder:
-            self.status_label.config(text="錄影中 (● REC Audio)...", fg="red")
+            self.status_label.config(text=self.tr("recording_audio"), fg="red")
             audio_path = os.path.join(self.save_dir, self.audio_filename)
             self.audio_recorder.start_recording(self.selected_audio_idx, audio_path)
         else:
-            self.status_label.config(text="錄影中 (無聲音)...", fg="red")
+            self.status_label.config(text=self.tr("recording_silent"), fg="red")
 
         self.record_thread = threading.Thread(target=self.record_process, args=(bbox,))
         self.record_thread.daemon = True
@@ -648,7 +648,7 @@ class RecordModule(Module):
 
     def stop_recording(self):
         self.is_recording = False
-        self.status_label.config(text="正在處理影片 (背景合併中)...", fg="blue")
+        self.status_label.config(text=self.tr("processing_video"), fg="blue")
         self.set_window_affinity(False)
 
     def record_process(self, bbox):
@@ -708,10 +708,10 @@ class RecordModule(Module):
                     if os.path.exists(audio_path): os.remove(audio_path)
                 except: pass
             except subprocess.TimeoutExpired:
-                error_msg = "合併超時 (Timeout)"
+                error_msg = self.tr("merge_timeout")
                 final_name = f"{self.video_filename} (未合併)"
             except FileNotFoundError:
-                error_msg = "找不到 ffmpeg.exe，請確認已下載並放入資料夾。"
+                error_msg = self.tr("ffmpeg_not_found")
                 final_name = f"{self.video_filename} + {self.audio_filename}"
             except Exception as e:
                 error_msg = f"合併錯誤: {e}"
@@ -721,25 +721,25 @@ class RecordModule(Module):
         self.frame.after(0, lambda: self.finish_merge_ui(final_name, error_msg))
 
     def finish_merge_ui(self, filename, error_msg):
-        self.btn_record.config(text="開始錄影", bg="#D70000")
+        self.btn_record.config(text=self.tr("start_record"), bg="#D70000")
         self.btn_capture.config(state="normal")
         self.device_combo.config(state="readonly")
         
         if error_msg:
-            self.status_label.config(text=f"錄影完成 (但合併失敗): {filename}", fg="orange")
-            messagebox.showwarning("合併問題", f"{error_msg}\n\n影像與聲音檔已分別保留。")
+            self.status_label.config(text=self.tr("record_complete_merge_fail", filename=filename), fg="orange")
+            messagebox.showwarning(self.tr("merge_issue"), self.tr("merge_fail_msg", error_msg=error_msg))
         else:
-            self.status_label.config(text=f"錄影完成: {filename}", fg="green")
-            messagebox.showinfo("完成", f"檔案已儲存至:\n{filename}")
+            self.status_label.config(text=self.tr("record_complete", filename=filename), fg="green")
+            messagebox.showinfo(self.tr("complete"), self.tr("file_saved", filename=filename))
             
         if self.record_audio.get(): self.on_device_selected(None)
 
     def start_automation(self):
         if not self.last_bbox:
-            messagebox.showwarning("錯誤", "請先手動截圖一次以設定範圍 (或啟用固定範圍)。")
+            messagebox.showwarning(self.tr("error"), self.tr("set_region_first"))
             return
         if not self.auto_click_pos:
-            messagebox.showwarning("錯誤", "請先設定翻頁點位置。")
+            messagebox.showwarning(self.tr("error"), self.tr("set_page_point_first"))
             return
         
         self.frame.winfo_toplevel().withdraw()
@@ -752,10 +752,10 @@ class RecordModule(Module):
         self.stop_win.attributes("-topmost", True)
         self.stop_win.protocol("WM_DELETE_WINDOW", self.stop_automation_action)
         
-        tk.Label(self.stop_win, text="自動截圖進行中...", fg="blue").pack(pady=5)
-        self.lbl_auto_status = tk.Label(self.stop_win, text="準備中 (5s)...")
+        tk.Label(self.stop_win, text=self.tr("auto_capture_progress"), fg="blue").pack(pady=5)
+        self.lbl_auto_status = tk.Label(self.stop_win, text=self.tr("preparing"))
         self.lbl_auto_status.pack()
-        tk.Button(self.stop_win, text="停止 (Stop)", bg="red", fg="white", command=self.stop_automation_action).pack(pady=5)
+        tk.Button(self.stop_win, text=self.tr("stop"), bg="red", fg="white", command=self.stop_automation_action).pack(pady=5)
         
         threading.Thread(target=self.automation_process, daemon=True).start()
 
@@ -774,7 +774,7 @@ class RecordModule(Module):
         # 5 second countdown
         for k in range(5, 0, -1):
             if not self.is_automating: return
-            self.update_stop_win_label(f"倒數 {k} 秒開始...")
+            self.update_stop_win_label(self.tr("countdown", k=k))
             time.sleep(1.0)
         
         timing = self.aux_click_timing.get()
@@ -782,7 +782,7 @@ class RecordModule(Module):
         for i in range(count):
             if not self.is_automating: break
             
-            self.update_stop_win_label(f"正在執行第 {i+1}/{count} 張...")
+            self.update_stop_win_label(self.tr("executing_page", i=i+1, count=count))
             
             if timing == "pre_capture":
                 self.perform_aux_clicks()
@@ -839,7 +839,7 @@ class RecordModule(Module):
             self.stop_win.destroy()
             self.stop_win = None
         self.frame.winfo_toplevel().deiconify()
-        messagebox.showinfo("完成", "自動截圖作業已完成。")
+        messagebox.showinfo(self.tr("complete"), self.tr("auto_capture_complete"))
 
     def on_destroy(self):
         """Cleanup resources when the module is closed."""
