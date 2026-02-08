@@ -5,11 +5,11 @@
       "title": "Py Gui Runner",
       "description": "The py_gui_runner module.",
       "author": "李紘宇",
-      "latest_version": "0.0.0",
+      "latest_version": "1.0.0",
       "versions": [
         {
-          "version": "0.0.0",
-          "url": "https://jacky09299.github.io/FlexiTools/plugins/py_gui_runner/py_gui_runner_0.0.0.zip"
+          "version": "1.0.0",
+          "url": "https://jacky09299.github.io/FlexiTools/plugins/py_gui_runner/py_gui_runner_1.0.0.zip"
         }
       ]
     },
@@ -18,11 +18,11 @@
       "title": "Record",
       "description": "The record module.",
       "author": "李紘宇",
-      "latest_version": "1.0.0",
+      "latest_version": "0.0.0",
       "versions": [
         {
-          "version": "1.0.0",
-          "url": "https://jacky09299.github.io/FlexiTools/plugins/record/record_1.0.0.zip"
+          "version": "0.0.0",
+          "url": "https://jacky09299.github.io/FlexiTools/plugins/record/record_0.0.0.zip"
         }
       ]
     },
