@@ -609,7 +609,7 @@ class TranslatorModule(Module):
         
         self.result_text.insert(tk.END, result_info)
         self.result_text.see(tk.END)  # 捲動到最新內容
-        
+        """
         # 將翻譯結果複製到剪貼簿
         if target_lang != "error":
             # 暫時停止監控以避免無窮迴圈
@@ -617,6 +617,7 @@ class TranslatorModule(Module):
             pyperclip.copy(processed_translated_text)
             time.sleep(0.1)
             self.last_text = processed_translated_text  # 避免翻譯結果被再次翻譯
+        """
 
     def update_font_label(self, value):
         self.font_size_label.config(text=f"{float(value):.0f}pt")
