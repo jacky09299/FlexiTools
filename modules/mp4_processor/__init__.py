@@ -144,6 +144,11 @@ class MP4Processor(Module):
         removed_file = self.merge_file_list.pop(idx)
         self._log_status(f"Removed '{os.path.basename(removed_file)}' from merge list.")
 
+    def _merge_remove_all(self):
+        self.merge_listbox.delete(0, tk.END)
+        self.merge_file_list.clear()
+        self._log_status("Removed all files from merge list.")
+
     def _merge_move_up(self):
         selected_indices = self.merge_listbox.curselection()
         if not selected_indices:
@@ -439,6 +444,90 @@ class MP4Processor(Module):
         finally:
             if main_video_clip: main_video_clip.close()
 
+    def _try_fast_concat(self, file_list, output_path, is_audio_only):
+        try:
+            import imageio_ffmpeg
+            import subprocess
+            import tempfile
+            ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+            
+            if not file_list:
+                return False
+                
+            first_ext = os.path.splitext(file_list[0])[1].lower()
+            for f in file_list:
+                if os.path.splitext(f)[1].lower() != first_ext:
+                    self._log_status_safe("Fast concat check failed: Files have different extensions.")
+                    return False
+            
+            if not is_audio_only:
+                target_size = None
+                target_fps = None
+                for f in file_list:
+                    try:
+                        with VideoFileClip(f) as clip:
+                            if not clip.size or not clip.fps:
+                                self._log_status_safe(f"Fast concat check failed: Could not determine size/fps for {os.path.basename(f)}")
+                                return False
+                            if target_size is None:
+                                target_size = clip.size
+                                target_fps = clip.fps
+                            else:
+                                if target_size != clip.size:
+                                    self._log_status_safe(f"Fast concat check failed: Size mismatch. {target_size} vs {clip.size}")
+                                    return False
+                                if abs(target_fps - clip.fps) > 1.0:
+                                    self._log_status_safe(f"Fast concat check failed: FPS mismatch. {target_fps} vs {clip.fps}")
+                                    return False
+                    except Exception as e:
+                        self._log_status_safe(f"Fast concat check failed: Could not read {f}. Error: {e}")
+                        return False
+
+            self._log_status_safe("Attempting fast ffmpeg concat (stream copy)...")
+            
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+                list_file_path = f.name
+                for media_file in file_list:
+                    safe_path = os.path.abspath(media_file).replace('\\', '/')
+                    safe_path = safe_path.replace("'", "'\\''")
+                    f.write(f"file '{safe_path}'\n")
+            
+            cmd = [
+                ffmpeg_exe,
+                '-y',
+                '-f', 'concat',
+                '-safe', '0',
+                '-i', list_file_path,
+                '-c', 'copy',
+                output_path
+            ]
+            
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            
+            try:
+                os.remove(list_file_path)
+            except Exception:
+                pass
+            
+            if result.returncode == 0:
+                self._log_status_safe("Fast concat successful!")
+                return True
+            else:
+                self._log_status_safe(f"Fast concat failed. Exit code {result.returncode}.")
+                if os.path.exists(output_path):
+                    try:
+                        os.remove(output_path)
+                    except Exception:
+                        pass
+                return False
+                
+        except ImportError:
+            self._log_status_safe("imageio_ffmpeg not found. Skipped fast concat.")
+            return False
+        except Exception as e:
+            self._log_status_safe(f"Fast concat exception: {e}")
+            return False
+
     def _process_merge_media(self, file_list, output_path):
         self._log_status_safe("Starting 'Merge Media' process...")
         is_audio_only = all(f.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a', '.flac')) for f in file_list)
@@ -451,6 +540,14 @@ class MP4Processor(Module):
             return self._merge_video_files(file_list, output_path)
 
     def _merge_audio_files(self, file_list, output_path):
+        if not output_path.lower().endswith(('.mp3', '.wav', '.ogg')):
+            output_path += ".mp3"
+            self._log_status_safe(f"Output filename adjusted for audio: {output_path}")
+
+        if self._try_fast_concat(file_list, output_path, is_audio_only=True):
+            return True
+
+        self._log_status_safe("Falling back to slow audio merge method...")
         clips = []
         final_clip = None
         try:
@@ -467,10 +564,6 @@ class MP4Processor(Module):
                 return False
 
             final_clip = concatenate_audioclips(clips)
-
-            if not output_path.lower().endswith(('.mp3', '.wav', '.ogg')):
-                output_path += ".mp3"
-                self._log_status_safe(f"Output filename adjusted for audio: {output_path}")
 
             self._log_status_safe("Concatenation complete. Writing to audio file...")
             final_clip.write_audiofile(output_path, logger=None)
@@ -493,6 +586,10 @@ class MP4Processor(Module):
                 except Exception: pass
 
     def _merge_video_files(self, file_list, output_path):
+        if self._try_fast_concat(file_list, output_path, is_audio_only=False):
+            return True
+
+        self._log_status_safe("Falling back to slow video merge method...")
         self._log_status_safe(f"Output video file will be: {output_path}")
         clips = []
         final_clip = None
@@ -765,6 +862,8 @@ class MP4Processor(Module):
         self.btn_add_files.pack(side=tk.LEFT, padx=2)
         self.btn_remove_sel = ttk.Button(button_frame, text="Remove Selected", command=self._merge_remove_selected)
         self.btn_remove_sel.pack(side=tk.LEFT, padx=2)
+        self.btn_remove_all = ttk.Button(button_frame, text="Remove All", command=self._merge_remove_all)
+        self.btn_remove_all.pack(side=tk.LEFT, padx=2)
         self.btn_up = ttk.Button(button_frame, text="Move Up", command=self._merge_move_up)
         self.btn_up.pack(side=tk.LEFT, padx=2)
         self.btn_down = ttk.Button(button_frame, text="Move Down", command=self._merge_move_down)
@@ -837,6 +936,7 @@ class MP4Processor(Module):
         self.list_frame.config(text=self.tr("module_mp4_grp_merge_files", "Files to Merge (in order)"))
         self.btn_add_files.config(text=self.tr("module_mp4_btn_add_files", "Add Files..."))
         self.btn_remove_sel.config(text=self.tr("module_mp4_btn_remove_sel", "Remove Selected"))
+        self.btn_remove_all.config(text=self.tr("module_mp4_btn_remove_all", "Remove All"))
         self.btn_up.config(text=self.tr("module_mp4_btn_up", "Move Up"))
         self.btn_down.config(text=self.tr("module_mp4_btn_down", "Move Down"))
         self.lbl_out_filename.config(text=self.tr("module_mp4_lbl_out_filename", "Output Filename:"))
