@@ -45,6 +45,7 @@ class PlotGUIModule(Module):
         self.x_col = None
         self.curve_cols = []
         self.curve_colors = {}
+        self.curve_markers = {}
 
         self.var_x_qty = tk.StringVar()
         self.var_x_unit = tk.StringVar()
@@ -175,8 +176,12 @@ class PlotGUIModule(Module):
         self.listbox = tk.Listbox(frame_right_top, selectmode=tk.MULTIPLE, exportselection=False, height=4)
         self.listbox.pack(fill=tk.X, padx=2, expand=True)
 
-        self.btn_set_color = ttk.Button(frame_right_top, text="Set Curve Color", command=self.set_curve_color)
-        self.btn_set_color.pack(anchor='e', padx=2, pady=2)
+        frame_list_opts = ttk.Frame(frame_right_top)
+        frame_list_opts.pack(fill=tk.X, padx=2, pady=2)
+        self.btn_set_color = ttk.Button(frame_list_opts, text="Set Color ▾", command=self.show_color_menu)
+        self.btn_set_color.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 1))
+        self.btn_set_marker = ttk.Button(frame_list_opts, text="Set Marker ▾", command=self.show_marker_menu)
+        self.btn_set_marker.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(1, 0))
 
         # --- Y axis controls ---
         self.frame_y = ttk.LabelFrame(self.frame_left, text="Y Axis")
@@ -306,7 +311,9 @@ class PlotGUIModule(Module):
         self.lbl_title.config(text=self.tr("module_plotgui_lbl_title", "Custom Title:"))
         self.lbl_curves.config(text=self.tr("module_plotgui_lbl_curves", "Select curves to plot:"))
         if hasattr(self, 'btn_set_color'):
-            self.btn_set_color.config(text=self.tr("module_plotgui_btn_set_color", "Set Curve Color"))
+            self.btn_set_color.config(text=self.tr("module_plotgui_btn_set_color", "Set Color ▾"))
+        if hasattr(self, 'btn_set_marker'):
+            self.btn_set_marker.config(text=self.tr("module_plotgui_btn_set_marker", "Set Marker ▾"))
 
         self.frame_y.config(text=self.tr("module_plotgui_grp_y", "Y Axis"))
         self.lbl_y_qty.config(text=self.tr("module_plotgui_lbl_qty", "Quantity:"))
@@ -357,6 +364,7 @@ class PlotGUIModule(Module):
         self.x_col = cols[0]
         self.curve_cols = cols[1:]
         self.curve_colors.clear()
+        self.curve_markers.clear()
         self.listbox.delete(0, tk.END)
         for i, col in enumerate(self.curve_cols):
             self.listbox.insert(tk.END, col)
@@ -402,7 +410,19 @@ class PlotGUIModule(Module):
         else:
             self.var_y_unit.set('')
 
-    def set_curve_color(self):
+    def apply_color(self, color):
+        sel = self.listbox.curselection()
+        if not sel:
+            messagebox.showwarning("No Selection", self.tr("module_plotgui_msg_no_sel_color", "Please select at least one curve from the list to set its color."))
+            return
+        for idx in sel:
+            col = self.curve_cols[idx]
+            if color is None:
+                self.curve_colors.pop(col, None)
+            else:
+                self.curve_colors[col] = color
+
+    def apply_custom_color(self):
         sel = self.listbox.curselection()
         if not sel:
             messagebox.showwarning("No Selection", self.tr("module_plotgui_msg_no_sel_color", "Please select at least one curve from the list to set its color."))
@@ -410,9 +430,51 @@ class PlotGUIModule(Module):
         
         color_code = colorchooser.askcolor(title=self.tr("module_plotgui_title_color", "Choose Curve Color"))[1]
         if color_code:
-            for idx in sel:
-                col = self.curve_cols[idx]
-                self.curve_colors[col] = color_code
+            self.apply_color(color_code)
+
+    def apply_marker(self, marker_style):
+        sel = self.listbox.curselection()
+        if not sel:
+            messagebox.showwarning("No Selection", self.tr("module_plotgui_msg_no_sel_marker", "Please select at least one curve from the list to set its marker."))
+            return
+        for idx in sel:
+            col = self.curve_cols[idx]
+            if marker_style is None:
+                self.curve_markers.pop(col, None)
+            else:
+                self.curve_markers[col] = marker_style
+
+    def show_color_menu(self):
+        menu = tk.Menu(self.frame, tearoff=0)
+        menu.add_command(label=self.tr("plotgui_color_auto", "Auto (Reset)"), command=lambda: self.apply_color(None))
+        menu.add_separator()
+        menu.add_command(label=self.tr("plotgui_color_red", "Red"), command=lambda: self.apply_color("red"))
+        menu.add_command(label=self.tr("plotgui_color_blue", "Blue"), command=lambda: self.apply_color("blue"))
+        menu.add_command(label=self.tr("plotgui_color_green", "Green"), command=lambda: self.apply_color("green"))
+        menu.add_command(label=self.tr("plotgui_color_purple", "Purple"), command=lambda: self.apply_color("purple"))
+        menu.add_command(label=self.tr("plotgui_color_orange", "Orange"), command=lambda: self.apply_color("orange"))
+        menu.add_command(label=self.tr("plotgui_color_black", "Black"), command=lambda: self.apply_color("black"))
+        menu.add_separator()
+        menu.add_command(label=self.tr("plotgui_color_custom", "Custom..."), command=self.apply_custom_color)
+        
+        x = self.btn_set_color.winfo_rootx()
+        y = self.btn_set_color.winfo_rooty() + self.btn_set_color.winfo_height()
+        menu.tk_popup(x, y)
+
+    def show_marker_menu(self):
+        menu = tk.Menu(self.frame, tearoff=0)
+        menu.add_command(label=self.tr("plotgui_marker_auto", "Auto (Global)"), command=lambda: self.apply_marker(None))
+        menu.add_separator()
+        menu.add_command(label="o (Point)", command=lambda: self.apply_marker("o"))
+        menu.add_command(label="x (Cross)", command=lambda: self.apply_marker("x"))
+        menu.add_command(label="^ (Triangle)", command=lambda: self.apply_marker("^"))
+        menu.add_command(label="s (Square)", command=lambda: self.apply_marker("s"))
+        menu.add_command(label="* (Star)", command=lambda: self.apply_marker("*"))
+        menu.add_command(label="None", command=lambda: self.apply_marker("None"))
+        
+        x = self.btn_set_marker.winfo_rootx()
+        y = self.btn_set_marker.winfo_rooty() + self.btn_set_marker.winfo_height()
+        menu.tk_popup(x, y)
 
     def plot_data(self):
         if self.df is None:
@@ -431,7 +493,7 @@ class PlotGUIModule(Module):
         # --- Plotting logic ---
         linestyle = '-' if self.var_draw_lines.get() else 'None'
         actual_marker = self.var_marker_style.get().split(' ')[0]
-        marker = actual_marker if self.var_draw_points.get() else 'None'
+        global_marker = actual_marker if self.var_draw_points.get() else 'None'
         markersize = self.var_marker_size.get()
         linewidth = self.var_line_width.get()
 
@@ -439,6 +501,7 @@ class PlotGUIModule(Module):
             col = self.curve_cols[idx]
             y_data = self.df[col]
             color = self.curve_colors.get(col, None)
+            marker = self.curve_markers.get(col, global_marker)
             
             kwargs = {
                 'label': col,
