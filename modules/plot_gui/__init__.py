@@ -548,11 +548,10 @@ class PlotGUIModule(Module):
                  final_x_unit_text = selected_x_unit
 
 
-        final_x_label_math = str(final_x_label_text).replace(' ', r'\ ')
         if final_x_unit_text:
-            self.ax.set_xlabel(f"${final_x_label_math}$ $\\mathrm{{({final_x_unit_text})}}$")
+            self.ax.set_xlabel(f"{final_x_label_text} ({final_x_unit_text})")
         else:
-            self.ax.set_xlabel(f"${final_x_label_math}$")
+            self.ax.set_xlabel(f"{final_x_label_text}")
 
 
         # --- Y axis label logic ---
@@ -589,19 +588,17 @@ class PlotGUIModule(Module):
                 final_y_unit_text = selected_y_unit
 
 
-        final_y_label_math = str(final_y_label_text).replace(' ', r'\ ')
         if final_y_unit_text:
-            self.ax.set_ylabel(f"${final_y_label_math}$ $\\mathrm{{({final_y_unit_text})}}$")
+            self.ax.set_ylabel(f"{final_y_label_text} ({final_y_unit_text})")
         else:
-            self.ax.set_ylabel(f"${final_y_label_math}$")
+            self.ax.set_ylabel(f"{final_y_label_text}")
 
         # --- Title Logic ---
         custom_title = self.var_custom_title.get().strip()
         if custom_title:
-            custom_title_math = custom_title.replace(' ', r'\ ')
-            self.ax.set_title(f"${custom_title_math}$")
+            self.ax.set_title(f"{custom_title}")
         else:
-            self.ax.set_title(f"${final_y_label_math}$ vs ${final_x_label_math}$")
+            self.ax.set_title(f"{final_y_label_text} vs {final_x_label_text}")
 
         if self.var_show_legend.get():
             self.ax.legend()
