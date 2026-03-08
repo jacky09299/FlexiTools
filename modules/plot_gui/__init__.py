@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, ttk, colorchooser
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -44,6 +44,7 @@ class PlotGUIModule(Module):
         self.df = None
         self.x_col = None
         self.curve_cols = []
+        self.curve_colors = {}
 
         self.var_x_qty = tk.StringVar()
         self.var_x_unit = tk.StringVar()
@@ -62,6 +63,7 @@ class PlotGUIModule(Module):
         self.var_marker_size = tk.DoubleVar(value=5.0)
         self.var_draw_points = tk.BooleanVar(value=True)
         self.var_draw_lines = tk.BooleanVar(value=False)
+        self.var_marker_style = tk.StringVar(value='o (Point)')
         self.var_show_grid = tk.BooleanVar(value=False)
         self.var_x_scale_mode = tk.StringVar(value='Linear')
         self.var_y_scale_mode = tk.StringVar(value='Linear')
@@ -173,6 +175,9 @@ class PlotGUIModule(Module):
         self.listbox = tk.Listbox(frame_right_top, selectmode=tk.MULTIPLE, exportselection=False, height=4)
         self.listbox.pack(fill=tk.X, padx=2, expand=True)
 
+        self.btn_set_color = ttk.Button(frame_right_top, text="Set Curve Color", command=self.set_curve_color)
+        self.btn_set_color.pack(anchor='e', padx=2, pady=2)
+
         # --- Y axis controls ---
         self.frame_y = ttk.LabelFrame(self.frame_left, text="Y Axis")
         self.frame_y.pack(anchor='center', pady=0, expand=True)
@@ -216,15 +221,21 @@ class PlotGUIModule(Module):
         self.lbl_marker = ttk.Label(self.frame_style, text="Marker Size:")
         self.lbl_marker.grid(row=0, column=0, sticky='w')
         ttk.Entry(self.frame_style, textvariable=self.var_marker_size, width=8).grid(row=0, column=1, sticky='e')
+        
+        self.lbl_marker_style = ttk.Label(self.frame_style, text="Marker Style:")
+        self.lbl_marker_style.grid(row=1, column=0, sticky='w')
+        self.om_marker = ttk.Combobox(self.frame_style, textvariable=self.var_marker_style, values=['o (Point)', 'x (Cross)', '^ (Triangle)', 's (Square)', '* (Star)'], width=10, state='readonly')
+        self.om_marker.grid(row=1, column=1, sticky='e')
+
         self.chk_points = ttk.Checkbutton(self.frame_style, text="Draw Points", variable=self.var_draw_points)
-        self.chk_points.grid(row=1, column=0, columnspan=2, sticky='w')
+        self.chk_points.grid(row=2, column=0, columnspan=2, sticky='w')
         self.chk_lines = ttk.Checkbutton(self.frame_style, text="Draw Lines", variable=self.var_draw_lines)
-        self.chk_lines.grid(row=2, column=0, columnspan=2, sticky='w')
+        self.chk_lines.grid(row=3, column=0, columnspan=2, sticky='w')
         self.lbl_linewidth = ttk.Label(self.frame_style, text="Line Width:")
-        self.lbl_linewidth.grid(row=3, column=0, sticky='w')
-        ttk.Entry(self.frame_style, textvariable=self.var_line_width, width=8).grid(row=3, column=1, sticky='e')
+        self.lbl_linewidth.grid(row=4, column=0, sticky='w')
+        ttk.Entry(self.frame_style, textvariable=self.var_line_width, width=8).grid(row=4, column=1, sticky='e')
         self.chk_legend = ttk.Checkbutton(self.frame_style, text="Show Legend", variable=self.var_show_legend)
-        self.chk_legend.grid(row=4, column=0, columnspan=2, sticky='w')
+        self.chk_legend.grid(row=5, column=0, columnspan=2, sticky='w')
 
         # --- Grid and Scale options ---
         self.frame_grid = ttk.LabelFrame(self.frame_left, text="Grid & Scale")
@@ -294,6 +305,8 @@ class PlotGUIModule(Module):
         self.btn_save.config(text=self.tr("module_plotgui_btn_save", "Save Plot"))
         self.lbl_title.config(text=self.tr("module_plotgui_lbl_title", "Custom Title:"))
         self.lbl_curves.config(text=self.tr("module_plotgui_lbl_curves", "Select curves to plot:"))
+        if hasattr(self, 'btn_set_color'):
+            self.btn_set_color.config(text=self.tr("module_plotgui_btn_set_color", "Set Curve Color"))
 
         self.frame_y.config(text=self.tr("module_plotgui_grp_y", "Y Axis"))
         self.lbl_y_qty.config(text=self.tr("module_plotgui_lbl_qty", "Quantity:"))
@@ -309,6 +322,8 @@ class PlotGUIModule(Module):
 
         self.frame_style.config(text=self.tr("module_plotgui_grp_style", "Plot Style"))
         self.lbl_marker.config(text=self.tr("module_plotgui_lbl_marker", "Marker Size:"))
+        if hasattr(self, 'lbl_marker_style'):
+            self.lbl_marker_style.config(text=self.tr("module_plotgui_lbl_marker_style", "Marker Style:"))
         self.chk_points.config(text=self.tr("module_plotgui_chk_points", "Draw Points"))
         self.chk_lines.config(text=self.tr("module_plotgui_chk_lines", "Draw Lines"))
         self.lbl_linewidth.config(text=self.tr("module_plotgui_lbl_linewidth", "Line Width:"))
@@ -341,6 +356,7 @@ class PlotGUIModule(Module):
         cols = list(self.df.columns)
         self.x_col = cols[0]
         self.curve_cols = cols[1:]
+        self.curve_colors.clear()
         self.listbox.delete(0, tk.END)
         for i, col in enumerate(self.curve_cols):
             self.listbox.insert(tk.END, col)
@@ -386,6 +402,18 @@ class PlotGUIModule(Module):
         else:
             self.var_y_unit.set('')
 
+    def set_curve_color(self):
+        sel = self.listbox.curselection()
+        if not sel:
+            messagebox.showwarning("No Selection", self.tr("module_plotgui_msg_no_sel_color", "Please select at least one curve from the list to set its color."))
+            return
+        
+        color_code = colorchooser.askcolor(title=self.tr("module_plotgui_title_color", "Choose Curve Color"))[1]
+        if color_code:
+            for idx in sel:
+                col = self.curve_cols[idx]
+                self.curve_colors[col] = color_code
+
     def plot_data(self):
         if self.df is None:
             messagebox.showwarning("No Data", self.tr("module_plotgui_msg_no_data", "Please load an Excel file first."))
@@ -402,19 +430,27 @@ class PlotGUIModule(Module):
 
         # --- Plotting logic ---
         linestyle = '-' if self.var_draw_lines.get() else 'None'
-        marker = 'o' if self.var_draw_points.get() else 'None'
+        actual_marker = self.var_marker_style.get().split(' ')[0]
+        marker = actual_marker if self.var_draw_points.get() else 'None'
         markersize = self.var_marker_size.get()
         linewidth = self.var_line_width.get()
 
         for idx in sel:
             col = self.curve_cols[idx]
             y_data = self.df[col]
-            self.ax.plot(x_data, y_data,
-                         label=col,
-                         marker=marker,
-                         markersize=markersize,
-                         linestyle=linestyle,
-                         linewidth=linewidth)
+            color = self.curve_colors.get(col, None)
+            
+            kwargs = {
+                'label': col,
+                'marker': marker,
+                'markersize': markersize,
+                'linestyle': linestyle,
+                'linewidth': linewidth
+            }
+            if color:
+                kwargs['color'] = color
+                
+            self.ax.plot(x_data, y_data, **kwargs)
 
         # --- X axis label logic ---
         x_label_from_col_header = re.sub(r"\s*\(.*?\)", "", self.x_col).strip()
@@ -449,10 +485,11 @@ class PlotGUIModule(Module):
                  final_x_unit_text = selected_x_unit
 
 
+        final_x_label_math = str(final_x_label_text).replace(' ', r'\ ')
         if final_x_unit_text:
-            self.ax.set_xlabel(f"${final_x_label_text}$ $\\mathrm{{({final_x_unit_text})}}$")
+            self.ax.set_xlabel(f"${final_x_label_math}$ $\\mathrm{{({final_x_unit_text})}}$")
         else:
-            self.ax.set_xlabel(f"${final_x_label_text}$")
+            self.ax.set_xlabel(f"${final_x_label_math}$")
 
 
         # --- Y axis label logic ---
@@ -489,17 +526,19 @@ class PlotGUIModule(Module):
                 final_y_unit_text = selected_y_unit
 
 
+        final_y_label_math = str(final_y_label_text).replace(' ', r'\ ')
         if final_y_unit_text:
-            self.ax.set_ylabel(f"${final_y_label_text}$ $\\mathrm{{({final_y_unit_text})}}$")
+            self.ax.set_ylabel(f"${final_y_label_math}$ $\\mathrm{{({final_y_unit_text})}}$")
         else:
-            self.ax.set_ylabel(f"${final_y_label_text}$")
+            self.ax.set_ylabel(f"${final_y_label_math}$")
 
         # --- Title Logic ---
         custom_title = self.var_custom_title.get().strip()
         if custom_title:
-            self.ax.set_title(f"${custom_title}$")
+            custom_title_math = custom_title.replace(' ', r'\ ')
+            self.ax.set_title(f"${custom_title_math}$")
         else:
-            self.ax.set_title(f"${final_y_label_text}$ vs ${final_x_label_text}$")
+            self.ax.set_title(f"${final_y_label_math}$ vs ${final_x_label_math}$")
 
         if self.var_show_legend.get():
             self.ax.legend()
