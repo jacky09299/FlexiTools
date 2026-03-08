@@ -61,6 +61,8 @@ class PlotGUIModule(Module):
 
         # New variables for plot style and saving
         self.var_save_path = tk.StringVar(value="plot_figure.png")
+        self.var_fig_width = tk.DoubleVar(value=6.4)
+        self.var_fig_height = tk.DoubleVar(value=4.8)
         self.var_marker_size = tk.DoubleVar(value=5.0)
         self.var_draw_points = tk.BooleanVar(value=True)
         self.var_draw_lines = tk.BooleanVar(value=False)
@@ -223,24 +225,33 @@ class PlotGUIModule(Module):
         # --- Plot style options ---
         self.frame_style = ttk.LabelFrame(self.frame_left, text="Plot Style")
         self.frame_style.pack(anchor='n', pady=5, fill=tk.X)
+        
+        self.lbl_fig_size = ttk.Label(self.frame_style, text="Fig Size (W,H):")
+        self.lbl_fig_size.grid(row=0, column=0, sticky='w')
+        frame_figsize = ttk.Frame(self.frame_style)
+        frame_figsize.grid(row=0, column=1, sticky='e')
+        ttk.Entry(frame_figsize, textvariable=self.var_fig_width, width=5).pack(side=tk.LEFT)
+        ttk.Label(frame_figsize, text="x").pack(side=tk.LEFT)
+        ttk.Entry(frame_figsize, textvariable=self.var_fig_height, width=5).pack(side=tk.LEFT)
+        
         self.lbl_marker = ttk.Label(self.frame_style, text="Marker Size:")
-        self.lbl_marker.grid(row=0, column=0, sticky='w')
-        ttk.Entry(self.frame_style, textvariable=self.var_marker_size, width=8).grid(row=0, column=1, sticky='e')
+        self.lbl_marker.grid(row=1, column=0, sticky='w')
+        ttk.Entry(self.frame_style, textvariable=self.var_marker_size, width=8).grid(row=1, column=1, sticky='e')
         
         self.lbl_marker_style = ttk.Label(self.frame_style, text="Marker Style:")
-        self.lbl_marker_style.grid(row=1, column=0, sticky='w')
+        self.lbl_marker_style.grid(row=2, column=0, sticky='w')
         self.om_marker = ttk.Combobox(self.frame_style, textvariable=self.var_marker_style, values=['o (Point)', 'x (Cross)', '^ (Triangle)', 's (Square)', '* (Star)'], width=10, state='readonly')
-        self.om_marker.grid(row=1, column=1, sticky='e')
+        self.om_marker.grid(row=2, column=1, sticky='e')
 
         self.chk_points = ttk.Checkbutton(self.frame_style, text="Draw Points", variable=self.var_draw_points)
-        self.chk_points.grid(row=2, column=0, columnspan=2, sticky='w')
+        self.chk_points.grid(row=3, column=0, columnspan=2, sticky='w')
         self.chk_lines = ttk.Checkbutton(self.frame_style, text="Draw Lines", variable=self.var_draw_lines)
-        self.chk_lines.grid(row=3, column=0, columnspan=2, sticky='w')
+        self.chk_lines.grid(row=4, column=0, columnspan=2, sticky='w')
         self.lbl_linewidth = ttk.Label(self.frame_style, text="Line Width:")
-        self.lbl_linewidth.grid(row=4, column=0, sticky='w')
-        ttk.Entry(self.frame_style, textvariable=self.var_line_width, width=8).grid(row=4, column=1, sticky='e')
+        self.lbl_linewidth.grid(row=5, column=0, sticky='w')
+        ttk.Entry(self.frame_style, textvariable=self.var_line_width, width=8).grid(row=5, column=1, sticky='e')
         self.chk_legend = ttk.Checkbutton(self.frame_style, text="Show Legend", variable=self.var_show_legend)
-        self.chk_legend.grid(row=5, column=0, columnspan=2, sticky='w')
+        self.chk_legend.grid(row=6, column=0, columnspan=2, sticky='w')
 
         # --- Grid and Scale options ---
         self.frame_grid = ttk.LabelFrame(self.frame_left, text="Grid & Scale")
@@ -328,6 +339,8 @@ class PlotGUIModule(Module):
         self.btn_browse.config(text=self.tr("module_plotgui_btn_browse", "Browse..."))
 
         self.frame_style.config(text=self.tr("module_plotgui_grp_style", "Plot Style"))
+        if hasattr(self, 'lbl_fig_size'):
+            self.lbl_fig_size.config(text=self.tr("module_plotgui_lbl_figsize", "Fig Size (W,H):"))
         self.lbl_marker.config(text=self.tr("module_plotgui_lbl_marker", "Marker Size:"))
         if hasattr(self, 'lbl_marker_style'):
             self.lbl_marker_style.config(text=self.tr("module_plotgui_lbl_marker_style", "Marker Style:"))
@@ -484,6 +497,13 @@ class PlotGUIModule(Module):
         if not sel:
             messagebox.showwarning("No Selection", self.tr("module_plotgui_msg_no_sel", "Please select at least one curve to plot."))
             return
+
+        try:
+            w = float(self.var_fig_width.get())
+            h = float(self.var_fig_height.get())
+            self.fig.set_size_inches(w, h)
+        except ValueError:
+            pass
 
         self.fig.clear()
         self.ax = self.fig.add_subplot(111)
