@@ -483,7 +483,10 @@ class MP4Processor(Module):
                         self._log_status_safe(f"Fast concat check failed: Could not read {f}. Error: {e}")
                         return False
 
-            self._log_status_safe("Attempting fast ffmpeg concat (stream copy)...")
+            if output_path.lower().endswith('.wav'):
+                self._log_status_safe("Attempting fast ffmpeg concat (re-encoding for WAV to preserve headers)...")
+            else:
+                self._log_status_safe("Attempting fast ffmpeg concat (stream copy)...")
             
             with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
                 list_file_path = f.name
@@ -497,10 +500,13 @@ class MP4Processor(Module):
                 '-y',
                 '-f', 'concat',
                 '-safe', '0',
-                '-i', list_file_path,
-                '-c', 'copy',
-                output_path
+                '-i', list_file_path
             ]
+            
+            if not output_path.lower().endswith('.wav'):
+                cmd.extend(['-c', 'copy'])
+                
+            cmd.append(output_path)
             
             result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             
