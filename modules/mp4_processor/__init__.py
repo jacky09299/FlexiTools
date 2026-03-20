@@ -36,6 +36,7 @@ class MP4Processor(Module):
         # For Merge Media
         self.merge_output_filename_var = tk.StringVar(value="merged_output.mp4")
         self.merge_file_list = []
+        self.force_slow_merge_var = tk.BooleanVar(value=False)
 
         # Mapping for processing modes
         self.processing_options_keys = [
@@ -550,8 +551,9 @@ class MP4Processor(Module):
             output_path += ".mp3"
             self._log_status_safe(f"Output filename adjusted for audio: {output_path}")
 
-        if self._try_fast_concat(file_list, output_path, is_audio_only=True):
-            return True
+        if not self.force_slow_merge_var.get():
+            if self._try_fast_concat(file_list, output_path, is_audio_only=True):
+                return True
 
         self._log_status_safe("Falling back to slow audio merge method...")
         clips = []
@@ -592,8 +594,9 @@ class MP4Processor(Module):
                 except Exception: pass
 
     def _merge_video_files(self, file_list, output_path):
-        if self._try_fast_concat(file_list, output_path, is_audio_only=False):
-            return True
+        if not self.force_slow_merge_var.get():
+            if self._try_fast_concat(file_list, output_path, is_audio_only=False):
+                return True
 
         self._log_status_safe("Falling back to slow video merge method...")
         self._log_status_safe(f"Output video file will be: {output_path}")
@@ -881,6 +884,9 @@ class MP4Processor(Module):
         self.lbl_out_filename.pack(side=tk.LEFT, padx=(0, 5))
         ttk.Entry(output_name_frame, textvariable=self.merge_output_filename_var).pack(fill=tk.X, expand=True)
 
+        self.force_slow_merge_check = ttk.Checkbutton(self.merge_options_frame, text="Force Slow/Stable Merge", variable=self.force_slow_merge_var)
+        self.force_slow_merge_check.pack(anchor=tk.W, pady=(5,0))
+
         self.process_button = ttk.Button(content_frame, text="Start Processing", command=self._start_processing)
         self.process_button.pack(pady=10)
 
@@ -946,6 +952,8 @@ class MP4Processor(Module):
         self.btn_up.config(text=self.tr("module_mp4_btn_up", "Move Up"))
         self.btn_down.config(text=self.tr("module_mp4_btn_down", "Move Down"))
         self.lbl_out_filename.config(text=self.tr("module_mp4_lbl_out_filename", "Output Filename:"))
+        if hasattr(self, 'force_slow_merge_check'):
+            self.force_slow_merge_check.config(text=self.tr("module_mp4_chk_force_slow_merge", "Force Slow/Stable Merge"))
 
         self.process_button.config(text=self.tr("module_mp4_btn_start", "Start Processing"))
         self.lbl_status.config(text=self.tr("module_mp4_lbl_status", "Status:"))
