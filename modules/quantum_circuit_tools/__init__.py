@@ -11,6 +11,7 @@ class QuantumCircuitToolsModule(Module):
         self.header_label = None
         self.lf_ec = None
         self.lf_el = None
+        self.lf_reso = None
         self.lf_tr = None
         self.transmon_tabs = []
         self.transmon_counter = 0
@@ -58,7 +59,27 @@ class QuantumCircuitToolsModule(Module):
         self.el_var = tk.StringVar()
         ttk.Entry(lf_el, textvariable=self.el_var, width=15).grid(row=0, column=5, padx=5, pady=5)
 
-        # --- Section 3: Transmon Solver ---
+        # --- Section 3: LC Resonator Solver ---
+        lf_reso = ttk.LabelFrame(main_frame, text="LC Resonator Solver (L, C, f)", padding=10)
+        lf_reso.pack(fill=tk.X, pady=10)
+        
+        ttk.Label(lf_reso, text="Input any TWO values to solve for the third. C(fF), L(nH), f(GHz)", font=("Helvetica", 9, "italic")).grid(row=0, column=0, columnspan=7, padx=5, pady=(0, 5), sticky=tk.W)
+
+        ttk.Label(lf_reso, text="L (nH):").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        self.reso_l_var = tk.StringVar()
+        ttk.Entry(lf_reso, textvariable=self.reso_l_var, width=12).grid(row=1, column=1, padx=5, pady=5)
+
+        ttk.Label(lf_reso, text="C (fF):").grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
+        self.reso_c_var = tk.StringVar()
+        ttk.Entry(lf_reso, textvariable=self.reso_c_var, width=12).grid(row=1, column=3, padx=5, pady=5)
+
+        ttk.Label(lf_reso, text="f (GHz):").grid(row=1, column=4, padx=5, pady=5, sticky=tk.W)
+        self.reso_f_var = tk.StringVar()
+        ttk.Entry(lf_reso, textvariable=self.reso_f_var, width=12).grid(row=1, column=5, padx=5, pady=5)
+
+        ttk.Button(lf_reso, text="Calculate", command=self.calc_resonator).grid(row=1, column=6, padx=15, pady=5)
+
+        # --- Section 4: Transmon Solvers ---
         lf_tr = ttk.LabelFrame(main_frame, text="Transmon Solvers (E_C, E_J, f_01, f_12)", padding=10)
         lf_tr.pack(fill=tk.BOTH, expand=True, pady=5)
         
@@ -79,6 +100,7 @@ class QuantumCircuitToolsModule(Module):
 
         self.lf_ec = lf_ec
         self.lf_el = lf_el
+        self.lf_reso = lf_reso
         self.lf_tr = lf_tr
 
     def update_language(self):
@@ -89,6 +111,7 @@ class QuantumCircuitToolsModule(Module):
         self.header_label.config(text=self.tr("module_qc_title", "Quantum Circuit Tools"))
         self.lf_ec.config(text=self.tr("module_qc_ec_frame", "Capacitance / Charging Energy (C <-> EC)"))
         self.lf_el.config(text=self.tr("module_qc_el_frame", "Inductance / Inductive Energy (L <-> EL)"))
+        self.lf_reso.config(text=self.tr("module_qc_reso_frame", "LC Resonator Solver (L, C, f)"))
         self.lf_tr.config(text=self.tr("module_qc_tr_frame", "Transmon Solvers (E_C, E_J, f_01, f_12)"))
 
     # --- Math & Logic Functions ---
@@ -137,6 +160,35 @@ class QuantumCircuitToolsModule(Module):
             self.l_var.set(f"{L_H * 1e9:.4f}")
         except Exception:
             self.shared_state.log("QuantumCircuitTools: Invalid EL value.")
+
+    def calc_resonator(self):
+        l_str = self.reso_l_var.get().strip()
+        c_str = self.reso_c_var.get().strip()
+        f_str = self.reso_f_var.get().strip()
+        
+        vals = {}
+        if l_str: vals['L'] = float(l_str)
+        if c_str: vals['C'] = float(c_str)
+        if f_str: vals['f'] = float(f_str)
+        
+        if len(vals) != 2:
+            self.shared_state.log("QuantumCircuitTools: Please input exactly TWO values for resonator.")
+            messagebox.showerror("Error", "Please input exactly TWO values for the resonator.", parent=self.frame)
+            return
+            
+        try:
+            if 'L' in vals and 'C' in vals:
+                ans_f = 1000.0 / (2 * math.pi * math.sqrt(vals['L'] * vals['C']))
+                self.reso_f_var.set(f"{ans_f:.6f}")
+            elif 'L' in vals and 'f' in vals:
+                ans_c = 1e6 / (4 * (math.pi**2) * (vals['f']**2) * vals['L'])
+                self.reso_c_var.set(f"{ans_c:.6f}")
+            elif 'C' in vals and 'f' in vals:
+                ans_l = 1e6 / (4 * (math.pi**2) * (vals['f']**2) * vals['C'])
+                self.reso_l_var.set(f"{ans_l:.6f}")
+        except Exception as ex:
+            self.shared_state.log(f"QuantumCircuitTools: Calculation error: {ex}")
+            messagebox.showerror("Error", f"Calculation error: {ex}", parent=self.frame)
 
     def add_transmon_tab(self):
         self.transmon_counter += 1

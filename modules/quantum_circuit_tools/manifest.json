@@ -1,6 +1,6 @@
 {
   "name": "quantum_circuit_tools",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "Quantum Circuit Tools",
   "description": "Calculate Charging Energy (EC), Inductive Energy (EL), Transmon frequencies, and parameter conversions.",
   "author": "李紘宇"
