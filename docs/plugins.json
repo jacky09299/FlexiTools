@@ -393,6 +393,19 @@
           "url": "https://jacky09299.github.io/FlexiTools/plugins/image_editor/image_editor_1.0.0.zip"
         }
       ]
+    },
+    {
+      "id": "quantum_circuit_tools",
+      "title": "Quantum Circuit Tools",
+      "description": "The quantum_circuit_tools module.",
+      "author": "李紘宇",
+      "latest_version": "1.0.0",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "url": "https://jacky09299.github.io/FlexiTools/plugins/quantum_circuit_tools/quantum_circuit_tools_1.0.0.zip"
+        }
+      ]
     }
   ]
 }
