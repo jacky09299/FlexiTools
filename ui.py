@@ -112,7 +112,8 @@ class Module:
         self.maximize_button.pack(side=tk.RIGHT, padx=(0, 2))
 
         # self.resize_handle = ttk.Sizegrip(self.frame) # Replaced to prevent window resize
-        self.resize_handle = ttk.Label(self.frame, text="◢", cursor="size_nw_se")
+        _resize_cursor = "size_nw_se" if sys.platform == "win32" else "bottom_right_corner"
+        self.resize_handle = ttk.Label(self.frame, text="◢", cursor=_resize_cursor)
         self.resize_handle.pack(side=tk.BOTTOM, anchor=tk.SE)
         self.resize_handle.bind("<ButtonPress-1>", self._on_resize_start)
         self.resize_handle.bind("<B1-Motion>", self._on_resize_motion)

@@ -55,7 +55,11 @@ def setup_custom_window_style(root, log_callback=None):
                 log_callback(f"Failed to setup custom window: {e}", "ERROR")
             root.overrideredirect(True) # Fallback
     else:
-        root.overrideredirect(True) # Fallback for non-Windows
+        # On Linux/macOS, overrideredirect(True) causes button clicks to be unresponsive
+        # because the window manager is bypassed. We skip it here and rely on the
+        # custom title bar drawn in ui.py for the borderless look.
+        # The window will still have a system border, but will remain interactive.
+        pass
 
 
 def start_drag_native(root, event, log_callback=None):
