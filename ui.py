@@ -841,7 +841,9 @@ class ModularGUI:
                 version = update_details["version"]
                 url = update_details["url"]
                 current_version_str = update_manager.get_current_version()
-                msg = self.tr("update_dialog_message", version, update_manager.APP_NAME, current_version_str)
+                # Use .format() on the resolved string because the translation uses {0}, {1}, {2}
+                raw_msg = self.tr("update_dialog_message", "A new version ({0}) of {1} is available!\nYou are currently running version {2}.\n\nWould you like to download and install it now?")
+                msg = raw_msg.format(version, update_manager.APP_NAME, current_version_str)
                 if messagebox.askyesno(self.tr("update_dialog_title"), msg):
                     self._initiate_update_download_and_install(version, url)
                 else:
