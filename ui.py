@@ -597,7 +597,7 @@ class ModularGUI:
                                                 bg=COLOR_MENU_BAR_BG, fg=COLOR_MENU_BUTTON_FG, activebackground=COLOR_MENU_BUTTON_ACTIVE_BG, activeforeground="white",
                                                 relief="flat", padx=10, pady=5)
         self.modules_menubutton.pack(side="left")
-        self.modules_menubutton.bind("<Button-1>", lambda e: self.modules_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
+        self.modules_menubutton.bind("<Button-1>", lambda e: self.modules_menu.tk_popup(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
 
         # Profile Menu
         self.profile_menu = tk.Menu(self.root, tearoff=0)
@@ -605,7 +605,7 @@ class ModularGUI:
                                                  bg=COLOR_MENU_BAR_BG, fg=COLOR_MENU_BUTTON_FG, activebackground=COLOR_MENU_BUTTON_ACTIVE_BG, activeforeground="white",
                                                  relief="flat", padx=10, pady=5)
         self.profile_menubutton.pack(side="left")
-        self.profile_menubutton.bind("<Button-1>", lambda e: self.profile_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
+        self.profile_menubutton.bind("<Button-1>", lambda e: self.profile_menu.tk_popup(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
         self.profile_menu.add_command(label=self.loc_manager.get("menu_save_profile"), command=self.save_profile_dialog)
         self.profile_menu.add_command(label=self.loc_manager.get("menu_load_profile"), command=self.load_profile_dialog)
         self.profile_menu.add_separator()
@@ -617,7 +617,7 @@ class ModularGUI:
                                              bg=COLOR_MENU_BAR_BG, fg=COLOR_MENU_BUTTON_FG, activebackground=COLOR_MENU_BUTTON_ACTIVE_BG, activeforeground="white",
                                              relief="flat", padx=10, pady=5)
         self.help_menubutton.pack(side="left")
-        self.help_menubutton.bind("<Button-1>", lambda e: self.help_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
+        self.help_menubutton.bind("<Button-1>", lambda e: self.help_menu.tk_popup(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
         self.help_menu.add_command(label=self.loc_manager.get("menu_manage_modules"), command=self.manage_modules_dialog)
         self.help_menu.add_command(label=self.loc_manager.get("menu_module_store", "Module Store"), command=self.open_module_store)
         self.help_menu.add_command(label=self.loc_manager.get("menu_check_updates"), command=self.ui_check_for_updates_manual)
@@ -628,7 +628,7 @@ class ModularGUI:
                                              bg=COLOR_MENU_BAR_BG, fg=COLOR_MENU_BUTTON_FG, activebackground=COLOR_MENU_BUTTON_ACTIVE_BG, activeforeground="white",
                                              relief="flat", padx=10, pady=5)
         self.language_menubutton.pack(side="left")
-        self.language_menubutton.bind("<Button-1>", lambda e: self.language_menu.post(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
+        self.language_menubutton.bind("<Button-1>", lambda e: self.language_menu.tk_popup(e.widget.winfo_rootx(), e.widget.winfo_rooty() + e.widget.winfo_height()))
         self.language_menu.add_command(label="English", command=lambda: self.switch_language("en_US"))
         self.language_menu.add_command(label="繁體中文", command=lambda: self.switch_language("zh_TW"))
         self.language_menu.add_command(label="日本語", command=lambda: self.switch_language("ja_JP"))
