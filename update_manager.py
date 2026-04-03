@@ -318,16 +318,28 @@ def compare_versions(version1: str, version2: str) -> int:
     # Attempt to use packaging.version for robust comparison if available
     try:
         from packaging.version import parse as parse_version
-        pv1 = parse_version(v1_str)
-        pv2 = parse_version(v2_str)
-        if pv1 < pv2: return -1
-        if pv1 > pv2: return 1
-        return 0
+        from packaging.version import InvalidVersion
+        try:
+            pv1 = parse_version(v1_str)
+            pv2 = parse_version(v2_str)
+            if pv1 < pv2: return -1
+            if pv1 > pv2: return 1
+            return 0
+        except InvalidVersion as e:
+            logger.warning(f"packaging.version failed to parse version (falling back to simple comparison): {e}")
+            # Flow down to fallback comparison
     except ImportError:
         logger.warning("`packaging` library not found, falling back to simple version comparison. Consider adding `packaging` to dependencies for robust version handling.")
+
+    try:
         # Fallback to simple comparison
-        v1_parts = [int(p) for p in v1_str.split('.')]
-        v2_parts = [int(p) for p in v2_str.split('.')]
+        # Remove any non-numeric suffixes before splitting for the simple fallback
+        import re
+        v1_clean = re.match(r'^[\d\.]+', v1_str).group(0) if re.match(r'^[\d\.]+', v1_str) else "0"
+        v2_clean = re.match(r'^[\d\.]+', v2_str).group(0) if re.match(r'^[\d\.]+', v2_str) else "0"
+
+        v1_parts = [int(p) for p in v1_clean.split('.') if p]
+        v2_parts = [int(p) for p in v2_clean.split('.') if p]
 
         for i in range(max(len(v1_parts), len(v2_parts))):
             p1 = v1_parts[i] if i < len(v1_parts) else 0
@@ -335,6 +347,9 @@ def compare_versions(version1: str, version2: str) -> int:
             if p1 < p2: return -1
             if p1 > p2: return 1
         return 0
+    except Exception as e:
+        logger.warning(f"Fallback version comparison failed for {v1_str} vs {v2_str}: {e}")
+        return 0 # Assume equal if comparison entirely fails to avoid breaking flow
 
 def check_for_updates(force_check: bool = False) -> str:
     """
