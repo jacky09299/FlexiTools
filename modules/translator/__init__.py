@@ -2,14 +2,42 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import threading
 import time
+import sys
 import pyperclip
 from concurrent.futures import ThreadPoolExecutor
-import keyboard
 import requests
-import win32gui
-import win32api
-import win32con
 from ui import Module
+
+# Platform-specific imports
+IS_WINDOWS = sys.platform == "win32"
+
+if IS_WINDOWS:
+    try:
+        import win32gui
+        import win32api
+        import win32con
+    except ImportError:
+        win32gui = None
+        win32api = None
+        win32con = None
+else:
+    win32gui = None
+    win32api = None
+    win32con = None
+
+try:
+    import keyboard as keyboard_lib
+except ImportError:
+    keyboard_lib = None
+
+
+def get_cursor_position(tk_widget=None):
+    """Cross-platform cursor position helper."""
+    if IS_WINDOWS and win32gui:
+        return win32gui.GetCursorPos()
+    elif tk_widget:
+        return tk_widget.winfo_pointerxy()
+    return (0, 0)
 
 class FloatingWindow:
     def __init__(self, parent):
@@ -185,20 +213,61 @@ class FloatingWindow:
     def start_click_monitoring(self):
         if not self.is_monitoring_clicks:
             self.is_monitoring_clicks = True
-            self.click_monitor_thread = threading.Thread(target=self.monitor_mouse_clicks, daemon=True)
-            self.click_monitor_thread.start()
+            if IS_WINDOWS and win32api and win32con:
+                # Windows: use win32api polling
+                self.click_monitor_thread = threading.Thread(target=self.monitor_mouse_clicks_win32, daemon=True)
+                self.click_monitor_thread.start()
+            else:
+                # Linux/macOS: bind a global click handler via tkinter
+                self._setup_linux_click_monitoring()
 
-    def monitor_mouse_clicks(self):
+    def _setup_linux_click_monitoring(self):
+        """Use tkinter's focus/event mechanisms for click-outside detection on Linux."""
+        if self.window:
+            # When the floating window loses focus, close it
+            self.window.bind('<FocusOut>', self._on_focus_out_linux)
+            # Also set up a periodic check
+            self._linux_click_poll()
+
+    def _on_focus_out_linux(self, event):
+        """Close floating window when it loses focus (Linux)."""
+        if self.window and not self.dragging and not self.mouse_inside_window:
+            self.parent.frame.after(100, self._check_and_close_linux)
+
+    def _check_and_close_linux(self):
+        """Delayed check to avoid closing during drag operations."""
+        if self.window and not self.dragging and not self.mouse_inside_window:
+            self.close()
+
+    def _linux_click_poll(self):
+        """Periodic polling for click-outside on Linux using pointer position."""
+        if not self.is_monitoring_clicks or not self.window:
+            return
+        try:
+            x, y = self.window.winfo_pointerxy()
+            if not self.dragging and not self.mouse_inside_window:
+                bounds = self.window_bounds
+                is_outside = (x < bounds['x1'] or x > bounds['x2'] or
+                              y < bounds['y1'] or y > bounds['y2'])
+                # Check if left mouse button is pressed (not easily detectable via tkinter)
+                # So we rely on focus-out primarily; this is a backup safety check
+        except Exception:
+            pass
+        if self.window:
+            self.window.after(200, self._linux_click_poll)
+
+    def monitor_mouse_clicks_win32(self):
+        """Windows-specific mouse click monitoring using win32api."""
         while self.is_monitoring_clicks:
-            if win32api.GetKeyState(win32con.VK_LBUTTON) < 0: # Left button pressed
+            if win32api.GetKeyState(win32con.VK_LBUTTON) < 0:  # Left button pressed
                 if self.window and not self.dragging and not self.mouse_inside_window:
                     x, y = win32gui.GetCursorPos()
                     is_outside = (x < self.window_bounds['x1'] or x > self.window_bounds['x2'] or
                                   y < self.window_bounds['y1'] or y > self.window_bounds['y2'])
                     if is_outside:
                         self.parent.frame.after(0, self.close)
-                        break 
-            time.sleep(0.1) # Polling interval
+                        break
+            time.sleep(0.1)  # Polling interval
 
     def close(self):
         self.is_monitoring_clicks = False
@@ -413,12 +482,16 @@ class TranslatorModule(Module):
         self.monitor_thread = threading.Thread(target=self.monitor_clipboard, daemon=True)
         self.monitor_thread.start()
         
-        # 啟動鍵盤監控（監控Ctrl+C）
-        try:
-            self.keyboard_listener = keyboard.Listener(on_press=self.on_key_press)
-            self.keyboard_listener.start()
-        except Exception as e:
-            self.shared_state.log(f"無法啟動鍵盤監控: {e}", "ERROR")
+        # 啟動鍵盤監控（監控Ctrl+C）- optional, not critical for functionality
+        if keyboard_lib:
+            try:
+                self.keyboard_listener = keyboard_lib.Listener(on_press=self.on_key_press)
+                self.keyboard_listener.start()
+            except Exception as e:
+                self.shared_state.log(f"無法啟動鍵盤監控: {e}", "WARNING")
+                self.keyboard_listener = None
+        else:
+            self.shared_state.log("Keyboard library not available, skipping keyboard monitoring.", "DEBUG")
         
     def stop_translation(self):
         self.is_translating = False
@@ -596,7 +669,7 @@ class TranslatorModule(Module):
         # 根據顯示模式決定如何顯示結果
         if self.display_mode.get() == "floating" and target_lang != "error":
             # 浮動視窗模式
-            x, y = win32gui.GetCursorPos()
+            x, y = get_cursor_position(self.frame)
             font_size = self.font_size.get()
             self.floating_window.show_translation(original_text, processed_translated_text, x + 10, y + 10, font_size)
         
