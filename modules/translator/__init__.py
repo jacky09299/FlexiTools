@@ -153,6 +153,10 @@ class FloatingWindow:
         
         # 延遲啟動點擊監聽（給拖曳操作一些時間）
         self.window.after(100, self.start_click_monitoring)
+        
+        # Linux: 需強制焦點才能收到 FocusOut 事件
+        if not IS_WINDOWS:
+            self.window.focus_force()
     
     def bind_mouse_events(self, widget):
         """為控件綁定滑鼠進入/離開事件"""
@@ -231,7 +235,9 @@ class FloatingWindow:
 
     def _on_focus_out_linux(self, event):
         """Close floating window when it loses focus (Linux)."""
-        if self.window and not self.dragging and not self.mouse_inside_window:
+        # FocusOut could be triggered by children widgets, so check if the focus really left the window
+        # We also delay the check to bridge short focus transitions (e.g. during dragging start)
+        if self.window and not self.dragging:
             self.parent.frame.after(100, self._check_and_close_linux)
 
     def _check_and_close_linux(self):
@@ -240,21 +246,34 @@ class FloatingWindow:
             self.close()
 
     def _linux_click_poll(self):
-        """Periodic polling for click-outside on Linux using pointer position."""
+        """Periodic polling for focus loss on Linux as a backup for FocusOut."""
         if not self.is_monitoring_clicks or not self.window:
             return
+        
         try:
-            x, y = self.window.winfo_pointerxy()
-            if not self.dragging and not self.mouse_inside_window:
-                bounds = self.window_bounds
-                is_outside = (x < bounds['x1'] or x > bounds['x2'] or
-                              y < bounds['y1'] or y > bounds['y2'])
-                # Check if left mouse button is pressed (not easily detectable via tkinter)
-                # So we rely on focus-out primarily; this is a backup safety check
+            # Check if focus is outside our window and its children
+            current_focus = self.window.focus_get()
+            
+            # If current_focus is None, focus is on another application
+            # If current_focus is not None and not a child of self.window, focus moved to main window
+            is_focus_lost = (current_focus is None)
+            
+            if is_focus_lost and not self.dragging and not self.mouse_inside_window:
+                # Add a small counter/delay to ignore transient focus loss
+                if not hasattr(self, '_focus_lost_count'):
+                    self._focus_lost_count = 0
+                self._focus_lost_count += 1
+                if self._focus_lost_count > 2: # ~600ms of focus loss
+                    self.close()
+                    return
+            else:
+                self._focus_lost_count = 0
+                
         except Exception:
             pass
+            
         if self.window:
-            self.window.after(200, self._linux_click_poll)
+            self.window.after(300, self._linux_click_poll)
 
     def monitor_mouse_clicks_win32(self):
         """Windows-specific mouse click monitoring using win32api."""
