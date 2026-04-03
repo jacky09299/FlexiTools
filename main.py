@@ -62,11 +62,12 @@ if __name__ == "__main__":
         sys.modules['main'] = sys.modules['__main__']
     
     # Enable DPI Awareness
-    try:
-        import ctypes
-        ctypes.windll.shcore.SetProcessDpiAwareness(1) # 1 = System DPI Aware
-    except Exception as e:
-        print(f"Failed to set DPI awareness: {e}")
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            ctypes.windll.shcore.SetProcessDpiAwareness(1) # 1 = System DPI Aware
+        except Exception as e:
+            print(f"Failed to set DPI awareness: {e}")
 
     time.sleep(2)
 

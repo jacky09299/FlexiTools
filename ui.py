@@ -63,10 +63,7 @@ from style_manager import (
 # from ctypes import windll # Moved to be platform-specific
 
 # Platform-specific imports
-if sys.platform == "win32":
-    from ctypes import windll
-else:
-    windll = None # Placeholder for non-Windows systems
+from window_utils import setup_custom_window_style, start_drag_native
 
 
 class AnimatedCanvas(tk.Canvas):
@@ -2057,16 +2054,11 @@ class ModularGUI:
 
     def start_move(self, event):
         if self.is_maximized: return
-        if sys.platform == "win32" and windll:
-            try:
-                self.root.update_idletasks() # Ensure window is ready
-                windll.user32.ReleaseCapture()
-                windll.user32.SendMessageW(windll.user32.GetParent(self.root.winfo_id()), 0xA1, 0x2, 0) # WM_NCLBUTTONDOWN, HTCAPTION
-            except Exception as e:
-                self.shared_state.log(f"Native drag failed: {e}", "WARNING")
-                self.drag_start_x = event.x; self.drag_start_y = event.y # Fallback
-        else:
-            self.drag_start_x = event.x; self.drag_start_y = event.y
+        self.root.update_idletasks() # Ensure window is ready
+        if start_drag_native(self.root, event, self.shared_state.log):
+            return
+
+        self.drag_start_x = event.x; self.drag_start_y = event.y
 
     def do_move(self, event):
         # Native drag handles this on Windows. Fallback for others.
@@ -2093,51 +2085,8 @@ class ModularGUI:
 
     def close_window(self): self.on_closing()
 
-    GWL_STYLE = -16
-    GWL_EXSTYLE = -20
-    WS_CAPTION = 0x00C00000
-    WS_THICKFRAME = 0x00040000
-    WS_MINIMIZEBOX = 0x00020000
-    WS_MAXIMIZEBOX = 0x00010000
-    WS_SYSMENU = 0x00080000
-    WS_EX_APPWINDOW = 0x00040000
-    WS_EX_TOOLWINDOW = 0x00000080
-
     def setup_custom_window(self):
-        if sys.platform == "win32" and windll:
-            self.root.overrideredirect(False) # Ensure standard window first
-            self.root.update_idletasks() # Ensure HWND is valid
-            
-            try:
-                hwnd = windll.user32.GetParent(self.root.winfo_id())
-                
-                # Get current style
-                style = windll.user32.GetWindowLongW(hwnd, self.GWL_STYLE)
-                
-                # Remove caption and thick frame (borders)
-                style = style & ~self.WS_CAPTION
-                style = style & ~self.WS_THICKFRAME
-                
-                # Ensure minimize/maximize/sysmenu are present (for taskbar interaction)
-                style = style | self.WS_MINIMIZEBOX | self.WS_MAXIMIZEBOX | self.WS_SYSMENU
-                
-                windll.user32.SetWindowLongW(hwnd, self.GWL_STYLE, style)
-                
-                # Extended style for taskbar icon
-                ex_style = windll.user32.GetWindowLongW(hwnd, self.GWL_EXSTYLE)
-                ex_style = ex_style | self.WS_EX_APPWINDOW
-                ex_style = ex_style & ~self.WS_EX_TOOLWINDOW
-                windll.user32.SetWindowLongW(hwnd, self.GWL_EXSTYLE, ex_style)
-                
-                # Force refresh
-                # self.root.withdraw() # Already withdrawn in main.py
-                # self.root.after(10, self.root.deiconify) # Defer showing to main.py
-                self.shared_state.log("Custom window style applied successfully.", "DEBUG")
-            except Exception as e:
-                self.shared_state.log(f"Failed to setup custom window: {e}", "ERROR")
-                self.root.overrideredirect(True) # Fallback
-        else:
-            self.root.overrideredirect(True) # Fallback for non-Windows
+        setup_custom_window_style(self.root, self.shared_state.log)
 
     def show_on_taskbar(self, root_window):
         # Deprecated/Merged into setup_custom_window, but kept for compatibility if called elsewhere
