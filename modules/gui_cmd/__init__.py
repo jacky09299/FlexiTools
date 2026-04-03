@@ -12,6 +12,8 @@ import psutil # Import psutil
 # Removed filedialog import from here as it's already imported above with messagebox
 from main import Module
 import ctypes
+IS_WINDOWS = sys.platform == "win32"
+
 
 class CMDModule(Module):
     def __init__(self, master, shared_state, module_name="CMD Emulator", gui_manager=None):
@@ -151,52 +153,88 @@ class CMDModule(Module):
 
     def init_cmd_process(self):
         try:
-            # 設定環境變數，確保 conda 可以被找到
-            # 這一步很重要，特別是如果 conda 不在系統預設的 PATH 中
+            # 設定環境變數
             env = os.environ.copy()
-            # 如果你的 conda 不在預設路徑，可能需要手動添加 conda 的 Scripts 路徑
-            # 例如: env['PATH'] = 'C:\path\to\anaconda3\Scripts;' + env['PATH']
             
-            # For Windows, determine the correct encoding for the CMD shell.
-            # Using the OEM codepage is generally the most reliable way.
-            codepage = f"cp{ctypes.cdll.kernel32.GetOEMCP()}"
-            try:
-                # Verify that the codepage is valid.
-                'test'.encode(codepage)
-            except LookupError:
-                # Fallback to the system's preferred encoding if the OEM codepage is not found.
-                codepage = locale.getpreferredencoding(False)
+            if IS_WINDOWS:
+                # Windows specific setup
+                codepage = f"cp{ctypes.cdll.kernel32.GetOEMCP()}"
+                try:
+                    'test'.encode(codepage)
+                except LookupError:
+                    codepage = locale.getpreferredencoding(False)
 
-            # To allow sending Ctrl+Break signals, the subprocess needs a console.
-            # CREATE_NO_WINDOW prevents this. Instead, we create a console but hide it
-            # using startupinfo flags.
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            # wShowWindow defaults to SW_HIDE (0), so the window will be hidden.
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                # wShowWindow defaults to SW_HIDE (0)
+                creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
+                shell_cmd = ['cmd.exe']
+            else:
+                # Linux/Unix setup
+                codepage = 'utf-8'
+                startupinfo = None
+                creationflags = 0
+                # Use bash if available, else sh
+                # Use -i for interactive mode to get prompts
+                shell_path = '/bin/bash' if os.path.exists('/bin/bash') else '/bin/sh'
+                shell_cmd = [shell_path, '-i'] if shell_path == '/bin/bash' else [shell_path]
+
 
             self.process = subprocess.Popen(
-                ['cmd.exe'],
+                shell_cmd,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, # 將 stderr 合併到 stdout
+                stderr=subprocess.STDOUT,
                 text=True,
-                encoding=codepage, # Use the detected system CMD encoding
-                errors='replace', # 處理潛在的編碼錯誤
-                bufsize=1,  # 行緩衝
-                cwd=os.getcwd(), # Consider using a configurable initial directory
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                encoding=codepage,
+                errors='replace',
+                bufsize=1,
+                cwd=os.getcwd(),
+                creationflags=creationflags,
                 startupinfo=startupinfo,
-                env=env
+                env=env,
+                preexec_fn=os.setsid if not IS_WINDOWS else None
             )
             # 啟動時發送一個 enter，讓初始提示符顯示出來
             self.process.stdin.write('\n')
             self.process.stdin.flush()
+
+            if not IS_WINDOWS:
+                # Linux 額外處理: 自動 source conda.sh 讓 conda activate 可用
+                self._init_linux_shell()
 
         except Exception as e:
             # Use append_output for errors if GUI is already partially set up
             self.append_output(f"Error: Could not start CMD process: {str(e)}\n")
             if self.master: # If master exists, it means UI might be there
                 messagebox.showerror("Error", f"Could not start CMD process: {str(e)}")
+
+    def _init_linux_shell(self):
+        """Attempts to source conda.sh for bash sessions on Linux."""
+        try:
+            # Set a default prompt and TERM for interactive mode
+            # This ensures conda can modify the PS1 variable
+            self.process.stdin.write('export TERM=xterm\n')
+            self.process.stdin.write('export PS1="\\u@\\h:\\w\\$ "\n')
+            self.process.stdin.flush()
+
+            # Try to find conda base directory
+
+            # We use a short timeout to avoid hanging if conda is unresponsive
+            result = subprocess.run(['conda', 'info', '--base'], 
+                                   capture_output=True, text=True, timeout=2, check=False)
+            if result.returncode == 0:
+                conda_base = result.stdout.strip()
+                conda_sh = os.path.join(conda_base, 'etc/profile.d/conda.sh')
+                if os.path.exists(conda_sh):
+                    self.process.stdin.write(f'source "{conda_sh}"\n')
+                    # Send a newline to refresh the prompt after sourcing
+                    self.process.stdin.write('\n')
+                    self.process.stdin.flush()
+        except Exception:
+            # Ignore errors here, we just want to try our best to source it
+            pass
+
             # sys.exit(1) # Avoid exiting the whole app
             # self.master.destroy() # Avoid destroying the main window directly
     
@@ -263,12 +301,17 @@ class CMDModule(Module):
     
     # --- [修改 3] 大幅簡化 clean_output ---
     def clean_output(self, output):
-        """只進行最基本的清理，例如統一換行符"""
+        """只進行最基本的清理，例如統一換行符，並移除 ANSI 顏色代碼"""
+        # 移除 ANSI 轉義序列 (如顏色代碼 \x1b[31m)
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        output = ansi_escape.sub('', output)
+        
         # cmd.exe 在互動模式下通常使用 \r\n，但有時也可能混雜其他東西
         # 我們把 \r\n 轉成 \n，並移除單獨的 \r
         output = output.replace('\r\n', '\n')
         output = output.replace('\r', '')
         return output
+
     
     def append_output(self, text):
         # Ensure text_area is available and master is valid
@@ -364,26 +407,32 @@ class CMDModule(Module):
                             except psutil.NoSuchProcess: pass
                         psutil.wait_procs(children, timeout=3)
                 except psutil.NoSuchProcess:
-                    pass # 主進程已消失
+                    pass
                 except Exception as e:
                     self.append_output(f"[警告] 終止子進程時發生錯誤: {e}\n")
 
                 try:
-                    subprocess.run(
-                        ['taskkill', '/F', '/T', '/PID', str(self.process.pid)],
-                        check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                        creationflags=subprocess.CREATE_NO_WINDOW
-                    )
+                    if IS_WINDOWS:
+                        # Use taskkill on Windows to ensure termination
+                        subprocess.run(
+                            ['taskkill', '/F', '/T', '/PID', str(self.process.pid)],
+                            check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            creationflags=subprocess.CREATE_NO_WINDOW
+                        )
+                    else:
+                        # Use process group kill on Linux
+                        os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
                 except Exception as e:
-                    self.append_output(f"[警告] 使用 taskkill 終止主進程時出錯: {e}\n")
+                    self.append_output(f"[警告] 終止主進程時發生錯誤: {e}\n")
                     try: self.process.kill()
-                    except Exception as e2: self.append_output(f"[警告] 使用 process.kill() 終止主進程時出錯: {e2}\n")
+                    except Exception: pass
             
             if self.process:
                 for pipe in [self.process.stdin, self.process.stdout, self.process.stderr]:
                     if pipe: 
                         try: pipe.close()
                         except OSError: pass
+
 
         except Exception as e:
             self.append_output(f"[錯誤] 清理舊 CMD 進程時發生未知錯誤: {e}\n")
@@ -437,8 +486,9 @@ class CMDModule(Module):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW
+                encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW if IS_WINDOWS else 0
             )
+
             envs = []
             for line in result.stdout.splitlines():
                 line = line.strip()
@@ -475,8 +525,10 @@ class CMDModule(Module):
         if folder:
             if self.process and self.process.poll() is None:
                 try:
-                    self.process.stdin.write(f'cd /d "{folder}"\n')
+                    cd_cmd = f'cd /d "{folder}"\n' if IS_WINDOWS else f'cd "{folder}"\n'
+                    self.process.stdin.write(cd_cmd)
                     self.process.stdin.flush()
+
                 except Exception as e:
                     self.append_output(f"\nError changing directory: {str(e)}\n")
                     self.restart_cmd_process()
@@ -534,8 +586,9 @@ class CMDModule(Module):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     text=True,
-                    encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW
+                    encoding='utf-8', creationflags=subprocess.CREATE_NO_WINDOW if IS_WINDOWS else 0
                 )
+
                 for line in proc.stdout:
                     self.append_output(line)
                 proc.wait()
@@ -609,14 +662,19 @@ class CMDModule(Module):
                     self.process.wait(timeout=0.5) # Wait for half a second
                 except subprocess.TimeoutExpired:
                     # If it doesn't exit, then force kill
-                    print("CMD process did not exit gracefully, attempting to kill.")
-                    # Using taskkill for Windows to ensure child processes (like conda) are also handled.
-                    # CREATE_NEW_PROCESS_GROUP was used, so process.kill() might not be enough.
+                    print("Terminal process did not exit gracefully, attempting to kill.")
                     try:
-                        subprocess.run(['taskkill', '/F', '/T', '/PID', str(self.process.pid)],
-                                       check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW)
-                    except FileNotFoundError: # taskkill might not be available on all systems/PATH
-                        self.process.kill() # Fallback to simple kill
+                        if IS_WINDOWS:
+                            subprocess.run(['taskkill', '/F', '/T', '/PID', str(self.process.pid)],
+                                           check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, 
+                                           creationflags=subprocess.CREATE_NO_WINDOW)
+                        else:
+                            os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
+                    except Exception as e:
+                        print(f"Error during force kill: {e}")
+                        try: self.process.kill()
+                        except Exception: pass
+
                 except Exception as e:
                     print(f"Error during process wait/kill: {e}")
 
