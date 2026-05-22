@@ -41,6 +41,7 @@ jobs:
       - name: Package to tar.gz
         run: |
           cd dist
+          echo "${GITHUB_REF#refs/tags/v}" > FlexiTools/version.txt
           tar -czvf FlexiTools-Linux.tar.gz FlexiTools/
 
       - name: Upload build artifact

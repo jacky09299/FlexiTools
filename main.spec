@@ -78,6 +78,7 @@ a = Analysis(
         'tkinter',
         'tkinter.filedialog',
         'tkinter.colorchooser',
+        'PIL._tkinter_finder',
         'tkinter.simpledialog',
         'tkinter.scrolledtext',
 
