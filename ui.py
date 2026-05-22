@@ -814,7 +814,6 @@ class ModularGUI:
         current_pid = os.getpid()
         app_executable_path = sys.executable
 
-        import sys
         temp_dir = tempfile.gettempdir()
         
         if sys.platform == "win32":
