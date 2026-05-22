@@ -31,7 +31,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           # Generate linux requirements from environment.yml
-          grep -E "\- [a-zA-Z0-9_-]+==" environment.yml | grep -v -E "pywin32|vs2015|vc" | sed -e 's/^[ \t]*-[ \t]*//' > reqs.txt
+          grep -E "\- [a-zA-Z0-9_-]+==" environment.yml | grep -v -E "pywin32|vs2015|vc|cefpython3" | sed -e 's/^[ \t]*-[ \t]*//' > reqs.txt
           pip install -r reqs.txt
           pip install cefpython3 pyinstaller
 
