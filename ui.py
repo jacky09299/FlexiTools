@@ -493,12 +493,27 @@ class ModularGUI:
                  self.shared_state.log(f"Dev Mode (Fallback): Using User AppData modules directory: {self.modules_dir}")
 
         if self.modules_dir:
-            if not os.path.exists(self.modules_dir):
-                try:
-                    os.makedirs(self.modules_dir)
-                    self.shared_state.log(f"Created User Mode modules directory: {self.modules_dir}")
-                except OSError as e:
-                    self.shared_state.log(f"Error creating modules directory {self.modules_dir}: {e}", "ERROR")
+             if not os.path.exists(self.modules_dir):
+                 os.makedirs(self.modules_dir)
+             
+             # Extract bundled modules to user directory on first run (especially for Linux portable)
+             if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                 bundled_modules = os.path.join(sys._MEIPASS, "modules")
+                 if os.path.exists(bundled_modules):
+                     import shutil
+                     for item in os.listdir(bundled_modules):
+                         src = os.path.join(bundled_modules, item)
+                         dst = os.path.join(self.modules_dir, item)
+                         if os.path.isdir(src) and not os.path.exists(dst):
+                             try:
+                                 shutil.copytree(src, dst)
+                                 self.shared_state.log(f"Extracted bundled module: {item}")
+                             except Exception as e:
+                                 self.shared_state.log(f"Failed to extract bundled module {item}: {e}", "ERROR")
+             try:
+                self.shared_state.log(f"Created User Mode modules directory: {self.modules_dir}")
+             except OSError as e:
+                self.shared_state.log(f"Error creating modules directory {self.modules_dir}: {e}", "ERROR")
 
         # Initialize Localization Manager with modules_dir
         self.loc_manager = LocalizationManager(self.shared_state, modules_dir=self.modules_dir)
