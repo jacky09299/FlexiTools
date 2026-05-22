@@ -17,7 +17,7 @@ set -e
 BRANCH="release/$VERSION"
 
 # Get script directory and cd to it
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)"
 cd "$SCRIPT_DIR"
 
 echo "開始發布版本 $VERSION"
