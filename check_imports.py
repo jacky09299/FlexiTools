@@ -75,6 +75,24 @@ except ImportError:
     sys.modules['psutil'] = type('psutil', (), {'cpu_percent': lambda *a, **k: 0, 'virtual_memory': lambda: type('vmem', (), {'percent': 0})()})()
 
 try:
+    import pyperclip
+except ImportError:
+    print("pyperclip not found, mocking...")
+    sys.modules['pyperclip'] = type('pyperclip', (), {'paste': lambda: "", 'PyperclipException': Exception})()
+
+try:
+    import pypdfium2
+except ImportError:
+    print("pypdfium2 not found, mocking...")
+    sys.modules['pypdfium2'] = type('pypdfium2', (), {})()
+
+for mock_mod in ['PyPDF2', 'yt_dlp', 'rembg', 'ffpyplayer', 'ffpyplayer.player', 'pytube', 'browser', 'cefpython3', 'reportlab', 'reportlab.pdfgen', 'reportlab.lib', 'reportlab.lib.pagesizes', 'reportlab.lib.units', 'reportlab.pdfbase.ttfonts', 'reportlab.pdfbase']:
+    try:
+        __import__(mock_mod)
+    except ImportError:
+        sys.modules[mock_mod] = type(mock_mod, (), {'PdfReader': type('PdfReader', (), {}), 'PdfWriter': type('PdfWriter', (), {}), 'canvas': type('canvas', (), {'Canvas': type('Canvas', (), {})}), 'A4': (0,0), 'mm': 0, 'TTFont': type('TTFont', (), {}), 'pdfmetrics': type('pdfmetrics', (), {'registerFont': lambda *a: None})})()
+
+try:
     import numpy
 except ImportError:
     sys.modules['numpy'] = type('numpy', (), {})()
@@ -85,21 +103,12 @@ except ImportError:
     sys.modules['scipy'] = type('scipy', (), {})()
     sys.modules['scipy.signal'] = type('signal', (), {})()
 
-# Modules to check
-modules_to_check = [
-    "modules.report",
-    "modules.split_para",
-    "modules.translator",
-    "modules.plot_gui",
-    "modules.py_gui_runner",
-    "modules.recipe_wheel",
-    "modules.sudoku_studio",
-    "modules.system_info",
-    "modules.todo_list",
-    "modules.video",
-    "modules.youtube_downloader",
-    "modules.Fitter"
-]
+# Modules to check dynamically
+modules_to_check = []
+for item in os.listdir("modules"):
+    if os.path.isdir(os.path.join("modules", item)) and item != "saves":
+        if os.path.exists(os.path.join("modules", item, "__init__.py")):
+            modules_to_check.append(f"modules.{item}")
 
 print("Checking imports...")
 for mod in modules_to_check:

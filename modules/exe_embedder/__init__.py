@@ -2,28 +2,33 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import subprocess
-import ctypes
-from ctypes import wintypes
 import time
 import os
 import shutil
 from main import Module
+import sys
+IS_WINDOWS = sys.platform == "win32"
 
-# Ctypes definitions for WinAPI
-user32 = ctypes.windll.user32
-GWL_STYLE = -16
-WS_CAPTION = 0x00C00000
-WS_THICKFRAME = 0x00040000
-WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
-WM_CLOSE = 0x0010
+if IS_WINDOWS:
+    import ctypes
+    from ctypes import wintypes
+    # Ctypes definitions for WinAPI
+    user32 = ctypes.windll.user32
+    GWL_STYLE = -16
+    WS_CAPTION = 0x00C00000
+    WS_THICKFRAME = 0x00040000
+    WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    WM_CLOSE = 0x0010
 
-class RECT(ctypes.Structure):
-    _fields_ = [
-        ("left", wintypes.LONG),
-        ("top", wintypes.LONG),
-        ("right", wintypes.LONG),
-        ("bottom", wintypes.LONG),
-    ]
+    class RECT(ctypes.Structure):
+        _fields_ = [
+            ("left", wintypes.LONG),
+            ("top", wintypes.LONG),
+            ("right", wintypes.LONG),
+            ("bottom", wintypes.LONG),
+        ]
+else:
+    user32 = None
 
 class ExeEmbedderModule(Module):
     """
@@ -182,7 +187,10 @@ class ExeEmbedderModule(Module):
     def populate_scripts_dropdown(self):
         """Scans the scripts directory and populates the dropdown."""
         try:
-            scripts = [f for f in os.listdir(self.scripts_dir) if f.endswith(".exe")]
+            if IS_WINDOWS:
+                scripts = [f for f in os.listdir(self.scripts_dir) if f.endswith(".exe")]
+            else:
+                scripts = [f for f in os.listdir(self.scripts_dir) if os.path.isfile(os.path.join(self.scripts_dir, f))]
             self.script_combo['values'] = sorted(scripts)
             if not scripts:
                 self.script_var.set(self.tr("module_exeembedder_lbl_no_scripts", "No scripts in pool"))
@@ -254,10 +262,11 @@ class ExeEmbedderModule(Module):
 
     def select_external_exe(self):
         """Open a file dialog to select an external .exe file."""
-        title = self.tr("module_exeembedder_dialog_select", "Select an .exe file")
+        title = self.tr("module_exeembedder_dialog_select", "Select an executable file")
+        filetypes = [("Executable files", "*.exe"), ("All files", "*.*")] if IS_WINDOWS else [("All files", "*.*")]
         filepath = filedialog.askopenfilename(
             title=title,
-            filetypes=[("Executable files", "*.exe"), ("All files", "*.* ")],
+            filetypes=filetypes,
             parent=self.frame
         )
         if not filepath:
@@ -289,9 +298,13 @@ class ExeEmbedderModule(Module):
         self.on_destroy(cleanup_resources=False) # Clean up previous instance
 
         try:
-            pre_existing_windows = self._get_all_visible_windows()
-            self.process = subprocess.Popen([filepath])
-            self.master.after(500, self.find_and_embed_window, pre_existing_windows)
+            if IS_WINDOWS:
+                pre_existing_windows = self._get_all_visible_windows()
+                self.process = subprocess.Popen([filepath])
+                self.master.after(500, self.find_and_embed_window, pre_existing_windows)
+            else:
+                self.process = subprocess.Popen([filepath])
+                self.file_label.config(text=f"Running (External): {os.path.basename(filepath)}")
         except Exception as e:
             msg = self.tr("module_exeembedder_msg_run_fail", "Could not run file: {0}", str(e))
             messagebox.showerror(self.tr("module_exeembedder_msg_run_error", "Execution Error"), msg, parent=self.frame)
@@ -356,7 +369,7 @@ class ExeEmbedderModule(Module):
     def on_destroy(self, cleanup_resources=True):
         """Cleanup function to be called when the module is closed."""
         self.shared_state.log(f"ExeEmbedderModule '{self.module_name}' is being destroyed.")
-        if self.embedded_hwnd:
+        if self.embedded_hwnd and IS_WINDOWS:
             # Attempt to gracefully close the embedded window by sending WM_CLOSE
             user32.PostMessageW(self.embedded_hwnd, WM_CLOSE, 0, 0)
             self.embedded_hwnd = None

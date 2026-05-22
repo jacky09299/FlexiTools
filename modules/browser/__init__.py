@@ -27,7 +27,7 @@ class ChromeBrowser(Module):
 
             settings = {
                 "multi_threaded_message_loop": False,
-                "browser_subprocess_path": os.path.join(application_path, "subprocess.exe"),
+                "browser_subprocess_path": os.path.join(application_path, "subprocess.exe" if sys.platform == "win32" else "subprocess"),
                 "resources_dir_path": application_path,
                 "locales_dir_path": os.path.join(application_path, "locales"),
             }
