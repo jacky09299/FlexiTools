@@ -48,6 +48,7 @@ if sys.platform == 'win32':
         ('dependencies/ffmpeg/postproc-55.dll', '.'),
         ('dependencies/ffmpeg/swresample-3.dll', '.'),
         ('dependencies/ffmpeg/swscale-5.dll', '.'),
+        ('dependencies/tk/_tk_data', '_tk_data'),
     ]
 
 a = Analysis(
@@ -65,7 +66,6 @@ a = Analysis(
         # 模組資料與 CEF 資料
         ('modules', 'modules'),
         ('locales', 'locales'),
-        ('dependencies/tk/_tk_data', '_tk_data'),
         ('dependencies/pyroomacoustics', 'pyroomacoustics'),
         # OpenCV 資料
         *cv2_datas,
