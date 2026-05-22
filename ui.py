@@ -764,7 +764,8 @@ class ModularGUI:
             response = requests.get(download_url, stream=True, timeout=60)
             response.raise_for_status()
             temp_dir = tempfile.gettempdir()
-            installer_path = os.path.join(temp_dir, f"FlexiToolsInstaller_{version_to_download}.exe")
+            installer_ext = ".exe" if sys.platform == "win32" else ".tar.gz"
+            installer_path = os.path.join(temp_dir, f"FlexiTools_{version_to_download}{installer_ext}")
             with open(installer_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     if chunk:
@@ -798,38 +799,84 @@ class ModularGUI:
         current_pid = os.getpid()
         app_executable_path = sys.executable
 
-        batch_script_content = f"""@echo off
-        echo Closing FlexiTools (PID: {current_pid})...
-        TASKKILL /F /PID {current_pid}
-        echo Waiting for application to close...
-        timeout /t 3 /nobreak > NUL
-
-        echo Running installer in silent mode...
-        start /wait "" "{installer_path}" /UPDATE
-
-        echo Installer finished.
-        timeout /t 2 /nobreak > NUL
-
-        echo Restarting FlexiTools...
-        start "" "{app_executable_path}"
-
-        echo Cleaning up...
-        del "{installer_path}"
-        (goto) 2>nul & del "%~f0"
-        """
+        import sys
         temp_dir = tempfile.gettempdir()
-        batch_file_path = os.path.join(temp_dir, "flexitools_update_runner.bat")
+        
+        if sys.platform == "win32":
+            batch_script_content = f"""@echo off
+            echo Closing FlexiTools (PID: {current_pid})...
+            TASKKILL /F /PID {current_pid}
+            echo Waiting for application to close...
+            timeout /t 3 /nobreak > NUL
 
-        try:
-            with open(batch_file_path, "w") as bf:
-                bf.write(batch_script_content)
-            self.shared_state.log(f"Update helper script created at: {batch_file_path}", "INFO")
-            subprocess.Popen([batch_file_path], creationflags=subprocess.CREATE_NEW_CONSOLE)
-            self.shared_state.log("Update helper script launched. Closing application.", "INFO")
-            self.root.destroy()
-        except Exception as e:
-            self.shared_state.log(f"Failed to create or launch update helper script: {e}", "ERROR")
-            messagebox.showerror("Update Error", f"Failed to start the update process: {e}", parent=self.root)
+            echo Running installer in silent mode...
+            start /wait "" "{installer_path}" /UPDATE
+
+            echo Installer finished.
+            timeout /t 2 /nobreak > NUL
+
+            echo Restarting FlexiTools...
+            start "" "{app_executable_path}"
+
+            echo Cleaning up...
+            del "{installer_path}"
+            (goto) 2>nul & del "%~f0"
+            """
+            script_file_path = os.path.join(temp_dir, "flexitools_update_runner.bat")
+            
+            try:
+                with open(script_file_path, "w") as bf:
+                    bf.write(batch_script_content)
+                self.shared_state.log(f"Update helper script created at: {script_file_path}", "INFO")
+                subprocess.Popen([script_file_path], creationflags=subprocess.CREATE_NEW_CONSOLE)
+                self.shared_state.log("Update helper script launched. Closing application.", "INFO")
+                self.root.destroy()
+            except Exception as e:
+                self.shared_state.log(f"Failed to create or launch update helper script: {e}", "ERROR")
+                messagebox.showerror("Update Error", f"Failed to start the update process: {e}", parent=self.root)
+        else:
+            app_dir = os.path.dirname(app_executable_path)
+            sh_script_content = f"""#!/bin/bash
+            echo "Closing FlexiTools (PID: {current_pid})..."
+            kill -9 {current_pid}
+            echo "Waiting for application to close..."
+            sleep 3
+
+            echo "Extracting update..."
+            TMP_EXTRACT_DIR=$(mktemp -d)
+            tar -xzf "{installer_path}" -C "$TMP_EXTRACT_DIR"
+
+            echo "Installing update..."
+            # Assuming tar.gz contains a 'FlexiTools' folder from PyInstaller
+            if [ -d "$TMP_EXTRACT_DIR/FlexiTools" ]; then
+                cp -rf "$TMP_EXTRACT_DIR/FlexiTools/"* "{app_dir}/"
+            else
+                cp -rf "$TMP_EXTRACT_DIR/"* "{app_dir}/"
+            fi
+
+            echo "Restarting FlexiTools..."
+            chmod +x "{app_executable_path}"
+            nohup "{app_executable_path}" &
+
+            echo "Cleaning up..."
+            rm -rf "$TMP_EXTRACT_DIR"
+            rm -f "{installer_path}"
+            rm -f "$0"
+            """
+            script_file_path = os.path.join(temp_dir, "flexitools_update_runner.sh")
+            
+            try:
+                with open(script_file_path, "w") as bf:
+                    bf.write(sh_script_content)
+                os.chmod(script_file_path, 0o755)
+                self.shared_state.log(f"Update helper script created at: {script_file_path}", "INFO")
+                # Detach process on linux
+                subprocess.Popen(["/bin/bash", script_file_path], start_new_session=True)
+                self.shared_state.log("Update helper script launched. Closing application.", "INFO")
+                self.root.destroy()
+            except Exception as e:
+                self.shared_state.log(f"Failed to create or launch update helper script: {e}", "ERROR")
+                messagebox.showerror("Update Error", f"Failed to start the update process: {e}", parent=self.root)
 
     def _initiate_update_download_and_install(self, version, url):
         self.shared_state.log(f"User agreed to update to version {version} from {url}. Starting download process...", "INFO")

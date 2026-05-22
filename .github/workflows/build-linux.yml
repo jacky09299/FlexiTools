@@ -1,0 +1,62 @@
+name: Build Linux Executable
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libx11-dev python3-dev build-essential xclip ffmpeg libgtk-3-0 libnss3 libasound2 libgbm1
+
+      - name: Install Python dependencies
+        run: |
+          # Generate linux requirements from environment.yml
+          grep -E "\- [a-zA-Z0-9_-]+==" environment.yml | grep -v -E "pywin32|vs2015|vc" | sed -e 's/^[ \t]*-[ \t]*//' > reqs.txt
+          pip install -r reqs.txt
+          pip install cefpython3 pyinstaller
+
+      - name: Build with PyInstaller
+        run: pyinstaller main.spec
+
+      - name: Package to tar.gz
+        run: |
+          cd dist
+          tar -czvf FlexiTools-Linux.tar.gz FlexiTools/
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FlexiTools-Linux
+          path: dist/FlexiTools-Linux.tar.gz
+
+      - name: Publish release asset
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/FlexiTools-Linux.tar.gz
+          append_body: true
+          body: |
+            ## Linux 版本
+            - [FlexiTools 免安裝版 (FlexiTools-Linux.tar.gz)](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/FlexiTools-Linux.tar.gz)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

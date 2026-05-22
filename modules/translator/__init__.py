@@ -569,6 +569,13 @@ class TranslatorModule(Module):
                     
                 time.sleep(0.3)  # 檢查間隔
                 
+            except pyperclip.PyperclipException as e:
+                self.shared_state.log(f"剪貼簿機制錯誤 (Linux 建議安裝 xclip/xsel): {e}", "ERROR")
+                if not hasattr(self, "_pyperclip_error_shown"):
+                    self._pyperclip_error_shown = True
+                    self.frame.after(0, lambda: messagebox.showerror("剪貼簿錯誤", "無法存取剪貼簿，請確保已安裝 xclip 或 xsel (例如: sudo apt install xclip)", parent=self.frame))
+                self.is_translating = False # 停止監控避免無窮報錯
+                self.frame.after(0, self.stop_translation)
             except Exception as e:
                 self.shared_state.log(f"監控剪貼簿時發生錯誤: {e}", "ERROR")
                 time.sleep(1)

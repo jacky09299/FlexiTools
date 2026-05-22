@@ -3,6 +3,8 @@
 import os
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files, collect_dynamic_libs
 
+import sys
+
 # OpenCV
 cv2_hiddenimports = collect_submodules('cv2')
 cv2_datas = collect_data_files('cv2', include_py_files=True)
@@ -10,10 +12,12 @@ cv2_binaries = collect_dynamic_libs('cv2')
 
 block_cipher = None
 
-a = Analysis(
-    ['main.py'],
-    pathex=[],
-    binaries=[
+# OS specific binaries and datas
+os_binaries = []
+os_datas = []
+
+if sys.platform == 'win32':
+    os_binaries = [
         # CEF 動態函式庫
         ('dependencies/cef_dependencies/subprocess.exe', '.'),
         ('dependencies/cef_dependencies/libcef.dll', '.'),
@@ -21,18 +25,8 @@ a = Analysis(
         ('dependencies/cef_dependencies/libEGL.dll', '.'),
         ('dependencies/cef_dependencies/libGLESv2.dll', '.'),
         ('dependencies/cef_dependencies/chrome_elf.dll', '.'),
-        # OpenCV .pyd/.dll
-        *cv2_binaries,
-    ],
-    datas=[
-        ('LICENSE', '.'),
-        ('LICENSES','LICENSES'),
-        ("tools.ico", "."),
-        ('assets','assets'),
-        # 模組資料與 CEF 資料
-        ('modules', 'modules'),
-        ('locales', 'locales'),
-        ('dependencies/tk/_tk_data', '_tk_data'),
+    ]
+    os_datas = [
         ('dependencies/cef_dependencies/locales', 'locales'),
         ('dependencies/cef_dependencies/cef.pak', '.'),
         ('dependencies/cef_dependencies/cef_100_percent.pak', '.'),
@@ -45,8 +39,7 @@ a = Analysis(
         ('dependencies/cef_dependencies/icudtl.dat', '.'),
         ('dependencies/cef_dependencies/MSVCP90.dll', '.'),
         ('dependencies/cef_dependencies/MSVCP100.dll', '.'),
-        ('dependencies/ffmpeg/ffmpeg.exe', '.'),  # 確保這路徑正確
-        
+        ('dependencies/ffmpeg/ffmpeg.exe', '.'),
         ('dependencies/ffmpeg/avcodec-58.dll', '.'),
         ('dependencies/ffmpeg/avdevice-58.dll', '.'),
         ('dependencies/ffmpeg/avfilter-7.dll', '.'),
@@ -55,7 +48,24 @@ a = Analysis(
         ('dependencies/ffmpeg/postproc-55.dll', '.'),
         ('dependencies/ffmpeg/swresample-3.dll', '.'),
         ('dependencies/ffmpeg/swscale-5.dll', '.'),
-        
+    ]
+
+a = Analysis(
+    ['main.py'],
+    pathex=[],
+    binaries=os_binaries + [
+        # OpenCV .pyd/.dll
+        *cv2_binaries,
+    ],
+    datas=os_datas + [
+        ('LICENSE', '.'),
+        ('LICENSES','LICENSES'),
+        ("tools.ico", "."),
+        ('assets','assets'),
+        # 模組資料與 CEF 資料
+        ('modules', 'modules'),
+        ('locales', 'locales'),
+        ('dependencies/tk/_tk_data', '_tk_data'),
         ('dependencies/pyroomacoustics', 'pyroomacoustics'),
         # OpenCV 資料
         *cv2_datas,

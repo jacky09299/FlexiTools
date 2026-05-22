@@ -238,7 +238,7 @@ def is_time_to_check(hours_interval=24) -> bool:
 
 # --- GitHub API Interaction ---
 GITHUB_API_URL = "https://api.github.com/repos/jacky09299/FlexiTools/releases/latest"
-INSTALLER_ASSET_NAME = "FlexiToolsInstaller.exe"
+INSTALLER_ASSET_NAME = "FlexiToolsInstaller.exe" if sys.platform == "win32" else "FlexiTools-Linux.tar.gz"
 
 def fetch_latest_release_info(api_url: str = GITHUB_API_URL) -> Optional[dict]:
     """
