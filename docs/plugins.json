@@ -422,6 +422,19 @@
           "url": "https://jacky09299.github.io/FlexiTools/plugins/quantum_circuit_tools/quantum_circuit_tools_1.2.0.zip"
         }
       ]
+    },
+    {
+      "id": "desktop_crosshair",
+      "title": "Desktop Crosshair",
+      "description": "A movable desktop crosshair for aligning coordinates and ticks.",
+      "author": "Antigravity",
+      "latest_version": "1.0.0",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "url": "https://jacky09299.github.io/FlexiTools/plugins/desktop_crosshair/desktop_crosshair_1.0.0.zip"
+        }
+      ]
     }
   ]
 }
