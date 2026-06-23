@@ -11,8 +11,10 @@ class DesktopCrosshairModule(Module):
         self.crosshair_thickness = 2
         self.crosshair_mode = tk.StringVar(value="drag")
         
-        self.win_h = None
-        self.win_v = None
+        self.win_top = None
+        self.win_bottom = None
+        self.win_left = None
+        self.win_right = None
         self.win_c = None
         
         self.create_ui()
@@ -81,18 +83,20 @@ class DesktopCrosshairModule(Module):
         if color[1]:
             self.crosshair_color = color[1]
             if self.crosshair_active:
-                self.win_h.configure(bg=self.crosshair_color)
-                self.win_v.configure(bg=self.crosshair_color)
+                for win in (self.win_top, self.win_bottom, self.win_left, self.win_right):
+                    if win: win.configure(bg=self.crosshair_color)
 
     def on_mode_change(self):
         if self.crosshair_active:
             if self.crosshair_mode.get() == "follow":
                 if self.win_c:
                     self.win_c.withdraw()
+                self.update_crosshair_position()
                 self.follow_cursor_loop()
             else:
                 if self.win_c:
                     self.win_c.deiconify()
+                self.update_crosshair_position()
 
     def follow_cursor_loop(self):
         if self.crosshair_active and self.crosshair_mode.get() == "follow":
@@ -120,15 +124,18 @@ class DesktopCrosshairModule(Module):
         self.cx = screen_width // 2
         self.cy = screen_height // 2
         
-        self.win_h = tk.Toplevel(self.frame)
-        self.win_h.overrideredirect(True)
-        self.win_h.attributes('-topmost', True)
-        self.win_h.configure(bg=self.crosshair_color)
+        self.win_top = tk.Toplevel(self.frame)
+        self.win_bottom = tk.Toplevel(self.frame)
+        self.win_left = tk.Toplevel(self.frame)
+        self.win_right = tk.Toplevel(self.frame)
         
-        self.win_v = tk.Toplevel(self.frame)
-        self.win_v.overrideredirect(True)
-        self.win_v.attributes('-topmost', True)
-        self.win_v.configure(bg=self.crosshair_color)
+        for win in (self.win_top, self.win_bottom, self.win_left, self.win_right):
+            win.overrideredirect(True)
+            win.attributes('-topmost', True)
+            win.configure(bg=self.crosshair_color)
+            win.bind("<ButtonPress-1>", self.start_move)
+            win.bind("<B1-Motion>", self.do_move)
+            win.bind("<ButtonPress-3>", lambda e: self.toggle_crosshair())
         
         self.win_c = tk.Toplevel(self.frame)
         self.win_c.overrideredirect(True)
@@ -141,12 +148,6 @@ class DesktopCrosshairModule(Module):
         self.lbl_drag.bind("<ButtonPress-1>", self.start_move)
         self.lbl_drag.bind("<B1-Motion>", self.do_move)
         self.lbl_drag.bind("<ButtonPress-3>", lambda e: self.toggle_crosshair())
-        
-        # Also bind the lines just in case
-        for win in (self.win_h, self.win_v):
-            win.bind("<ButtonPress-1>", self.start_move)
-            win.bind("<B1-Motion>", self.do_move)
-            win.bind("<ButtonPress-3>", lambda e: self.toggle_crosshair())
 
         self.update_crosshair_position()
         
@@ -157,6 +158,7 @@ class DesktopCrosshairModule(Module):
     def update_crosshair_position(self):
         if not self.crosshair_active: return
         t = self.crosshair_thickness
+        gap = 10 if self.crosshair_mode.get() == "follow" else 0
         
         screen_width = self.frame.winfo_screenwidth()
         screen_height = self.frame.winfo_screenheight()
@@ -164,8 +166,28 @@ class DesktopCrosshairModule(Module):
         w = screen_width * 3
         h = screen_height * 3
         
-        self.win_h.geometry(f"{w}x{t}+{-screen_width}+{self.cy - t//2}")
-        self.win_v.geometry(f"{t}x{h}+{self.cx - t//2}+{-screen_height}")
+        # top line
+        top_y = -screen_height
+        top_h = self.cy - gap - top_y
+        if top_h < 1: top_h = 1
+        self.win_top.geometry(f"{t}x{top_h}+{self.cx - t//2}+{top_y}")
+        
+        # bottom line
+        bot_y = self.cy + gap
+        bot_h = h
+        self.win_bottom.geometry(f"{t}x{bot_h}+{self.cx - t//2}+{bot_y}")
+        
+        # left line
+        left_x = -screen_width
+        left_w = self.cx - gap - left_x
+        if left_w < 1: left_w = 1
+        self.win_left.geometry(f"{left_w}x{t}+{left_x}+{self.cy - t//2}")
+        
+        # right line
+        right_x = self.cx + gap
+        right_w = w
+        self.win_right.geometry(f"{right_w}x{t}+{right_x}+{self.cy - t//2}")
+        
         self.win_c.geometry(f"24x24+{self.cx + 5}+{self.cy + 5}")
 
     def start_move(self, event):
@@ -179,10 +201,12 @@ class DesktopCrosshairModule(Module):
 
     def destroy_crosshair(self):
         self.crosshair_active = False
-        if self.win_h: self.win_h.destroy()
-        if self.win_v: self.win_v.destroy()
+        if self.win_top: self.win_top.destroy()
+        if self.win_bottom: self.win_bottom.destroy()
+        if self.win_left: self.win_left.destroy()
+        if self.win_right: self.win_right.destroy()
         if self.win_c: self.win_c.destroy()
-        self.win_h = self.win_v = self.win_c = None
+        self.win_top = self.win_bottom = self.win_left = self.win_right = self.win_c = None
 
     def on_destroy(self):
         self.destroy_crosshair()
