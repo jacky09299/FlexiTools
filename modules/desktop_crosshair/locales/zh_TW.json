@@ -1,0 +1,9 @@
+{
+  "module_crosshair_btn_show": "顯示十字線",
+  "module_crosshair_btn_hide": "隱藏十字線",
+  "module_crosshair_btn_color": "更改顏色",
+  "module_crosshair_lbl_thickness": "粗細: {thickness}",
+  "module_crosshair_mode_drag": "拖曳模式",
+  "module_crosshair_mode_follow": "跟隨游標",
+  "module_crosshair_instructions": "拖曳黃色圖示 (\u2725) 來移動十字線。\n右鍵點擊圖示即可隱藏。"
+}

@@ -1,0 +1,9 @@
+{
+  "module_crosshair_btn_show": "Show Crosshair",
+  "module_crosshair_btn_hide": "Hide Crosshair",
+  "module_crosshair_btn_color": "Change Color",
+  "module_crosshair_lbl_thickness": "Thickness: {thickness}",
+  "module_crosshair_mode_drag": "Drag Mode",
+  "module_crosshair_mode_follow": "Follow Cursor",
+  "module_crosshair_instructions": "Drag the yellow icon (\u2725) to move the crosshair.\nRight-click the icon to hide."
+}
