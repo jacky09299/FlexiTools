@@ -1,5 +1,12 @@
 [ 
   {
+    "version": "v2.3.1",
+    "date": "2026-05-23",
+    "changelog": [
+      "部分功能和模組支援Linux"
+    ]
+  },
+  {
     "version": "v2.2.0",
     "date": "2025-11-30",
     "changelog": [
