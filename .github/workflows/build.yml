@@ -26,8 +26,7 @@ jobs:
         with:
           environment-file: environment.yml
           activate-environment: tools
-          python-version: 3.9
-          auto-activate-base: false
+          python-version: '3.10'
 
       - name: Install NSIS
         run: choco install nsis -y
