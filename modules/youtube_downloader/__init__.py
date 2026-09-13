@@ -449,6 +449,30 @@ class YoutubeDownloaderModule(Module):
                 'logger': YtDlpLogger(self.log_error), # Use custom logger
             }
             
+            # 尋找自帶的 ffmpeg
+            ffmpeg_path = None
+            if hasattr(sys, '_MEIPASS'):
+                bundled_ffmpeg = os.path.join(sys._MEIPASS, 'ffmpeg.exe')
+                if os.path.exists(bundled_ffmpeg):
+                    ffmpeg_path = bundled_ffmpeg
+            else:
+                # 假設 __file__ 在 modules/youtube_downloader/__init__.py
+                # 回退三次來到根目錄
+                root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                dev_ffmpeg = os.path.join(root_dir, 'dependencies', 'ffmpeg', 'ffmpeg.exe')
+                if os.path.exists(dev_ffmpeg):
+                    ffmpeg_path = dev_ffmpeg
+            
+            if ffmpeg_path:
+                ydl_opts['ffmpeg_location'] = ffmpeg_path
+            else:
+                try:
+                    import imageio_ffmpeg
+                    ydl_opts['ffmpeg_location'] = imageio_ffmpeg.get_ffmpeg_exe()
+                except ImportError:
+                    pass
+
+            
             # 根據格式設定
             if format_choice == "mp3":
                 ydl_opts.update({
