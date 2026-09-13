@@ -7,7 +7,7 @@ channels:
 dependencies:
   - pip
   - python=3.10
-  - setuptools
+  - setuptools<81
   - wheel
   - pip:
       - altgraph==0.17.4
