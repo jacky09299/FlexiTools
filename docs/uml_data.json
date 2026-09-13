@@ -1,27 +1,17 @@
 {
   "classes": [
     {
-      "id": "MockSys",
-      "name": "MockSys",
-      "file": "update_manager.py",
-      "type": "class",
-      "description": "No description available.",
-      "attributes": [],
-      "methods": [],
-      "bases": []
-    },
-    {
       "id": "SharedState",
       "name": "SharedState",
       "file": "shared_state.py",
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "splash_log_callback",
+        "variables",
+        "splash_progress_callback",
         "observers",
         "log_callback",
-        "splash_progress_callback",
-        "variables"
+        "splash_log_callback"
       ],
       "methods": [
         "__init__",
@@ -42,77 +32,6 @@
       "bases": []
     },
     {
-      "id": "StoreManager",
-      "name": "StoreManager",
-      "file": "store_manager.py",
-      "type": "class",
-      "description": "No description available.",
-      "attributes": [
-        "shared_state",
-        "modules_dir",
-        "catalog"
-      ],
-      "methods": [
-        "__init__",
-        "fetch_catalog",
-        "get_installed_modules_info",
-        "install_plugin",
-        "uninstall_plugin"
-      ],
-      "bases": []
-    },
-    {
-      "id": "update_manager",
-      "name": "update_manager",
-      "file": "ui.py",
-      "type": "class",
-      "description": "No description available.",
-      "attributes": [],
-      "methods": [
-        "get_current_version",
-        "get_update_info",
-        "check_for_updates"
-      ],
-      "bases": []
-    },
-    {
-      "id": "LocalizationManager",
-      "name": "LocalizationManager",
-      "file": "localization.py",
-      "type": "class",
-      "description": "No description available.",
-      "attributes": [
-        "locale_dir",
-        "modules_dir",
-        "translations",
-        "current_locale",
-        "shared_state"
-      ],
-      "methods": [
-        "__init__",
-        "_on_language_changed",
-        "load_locale",
-        "load_module_locales",
-        "get"
-      ],
-      "bases": []
-    },
-    {
-      "id": "DummyCanvas",
-      "name": "DummyCanvas",
-      "file": "check_imports.py",
-      "type": "class",
-      "description": "No description available.",
-      "attributes": [],
-      "methods": [
-        "__init__",
-        "get_tk_widget",
-        "draw",
-        "mpl_connect"
-      ],
-      "bases": []
-    },
-    {
       "id": "DummyModule",
       "name": "DummyModule",
       "file": "profile_layout.py",
@@ -126,6 +45,30 @@
       "bases": [
         "Module"
       ]
+    },
+    {
+      "id": "MockSys",
+      "name": "MockSys",
+      "file": "update_manager.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [],
+      "methods": [],
+      "bases": []
+    },
+    {
+      "id": "update_manager",
+      "name": "update_manager",
+      "file": "main.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [],
+      "methods": [
+        "get_current_version",
+        "get_update_info",
+        "check_for_updates"
+      ],
+      "bases": []
     },
     {
       "id": "AnimatedCanvas",
@@ -153,21 +96,21 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "master",
-        "module_name",
-        "frame",
-        "gui_manager",
+        "title_label",
+        "shared_state",
         "close_button",
-        "resize_start_height",
+        "drag_handle_label",
+        "is_maximized",
         "resize_handle",
         "resize_start_width",
-        "shared_state",
-        "resize_start_x",
-        "is_maximized",
-        "drag_handle_label",
-        "title_label",
+        "frame",
+        "master",
         "resize_start_y",
+        "module_name",
         "title_bar_frame",
+        "resize_start_height",
+        "gui_manager",
+        "resize_start_x",
         "maximize_button"
       ],
       "methods": [
@@ -194,8 +137,8 @@
       "attributes": [
         "last_calculated_content_height",
         "current_canvas_width",
-        "modules",
         "canvas_parent",
+        "modules",
         "last_calculated_content_width"
       ],
       "methods": [
@@ -222,64 +165,64 @@
       "type": "class",
       "description": "No description available.",
       "attributes": [
-        "is_module_resizing",
-        "module_instance_counters",
-        "ghost_module_frame",
-        "close_btn",
-        "context_menu",
-        "drag_start_x",
-        "drag_start_widget",
-        "shared_state",
-        "help_menu",
-        "min_btn",
-        "window_size_fixed_after_init",
-        "status_label",
-        "normal_geometry",
-        "_pre_maximize_layout",
-        "controls_frame",
-        "profile_menu",
+        "title_label",
         "modules_menubutton",
         "language_menubutton",
-        "original_dragged_module_relief",
-        "main_layout_manager_window_id",
+        "root_maxsize_backup",
         "status_bar",
-        "language_menu",
-        "is_maximized",
-        "maximized_module_name",
-        "settings",
-        "root",
-        "resize_start_y",
+        "loc_manager",
         "resize_mode",
+        "main_layout_manager_window_id",
+        "resize_start_y",
+        "modules_dir",
+        "help_menubutton",
+        "drop_target_module_frame_wrapper",
+        "profile_menubutton",
+        "resize_start_x",
+        "last_preview_target_module_name",
+        "is_module_resizing",
+        "canvas",
+        "dragged_module_name",
+        "normal_geometry",
+        "hidden_modules",
+        "controls_frame",
+        "modules_menu",
+        "maximized_module_name",
+        "window_size_fixed_after_init",
+        "status_label",
+        "v_scrollbar",
+        "is_maximized",
+        "settings",
+        "min_btn",
+        "profile_menu",
+        "map_event_handled",
+        "close_btn",
+        "shared_state",
+        "max_btn",
+        "drag_start_widget",
+        "menu_frame",
+        "original_dragged_module_relief",
         "main_frame",
+        "_pre_maximize_layout",
+        "root",
         "available_module_classes",
+        "module_instance_counters",
+        "drag_start_x",
+        "language_menu",
+        "ghost_canvas_window_id",
+        "window_geometry_before_module_resize",
+        "canvas_container",
+        "resize_debounce_delay",
+        "context_menu",
+        "saves_dir",
+        "loaded_modules",
+        "ghost_module_frame",
+        "resize_debounce_timer",
         "main_layout_manager",
         "title_bar",
-        "loc_manager",
-        "modules_dir",
-        "last_preview_target_module_name",
-        "loaded_modules",
-        "saves_dir",
-        "resize_debounce_delay",
-        "modules_menu",
-        "canvas_container",
-        "title_label",
         "content_frame",
-        "profile_menubutton",
-        "dragged_module_name",
-        "resize_debounce_timer",
-        "help_menubutton",
-        "ghost_canvas_window_id",
-        "resize_start_x",
-        "max_btn",
-        "root_maxsize_backup",
-        "drop_target_module_frame_wrapper",
-        "canvas",
         "drag_start_y",
-        "window_geometry_before_module_resize",
-        "hidden_modules",
-        "v_scrollbar",
-        "menu_frame",
-        "map_event_handled"
+        "help_menu"
       ],
       "methods": [
         "__init__",
@@ -351,17 +294,92 @@
         "restore_window"
       ],
       "bases": []
+    },
+    {
+      "id": "DummyCanvas",
+      "name": "DummyCanvas",
+      "file": "check_imports.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [],
+      "methods": [
+        "__init__",
+        "get_tk_widget",
+        "draw",
+        "mpl_connect"
+      ],
+      "bases": []
+    },
+    {
+      "id": "StoreManager",
+      "name": "StoreManager",
+      "file": "store_manager.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "modules_dir",
+        "shared_state",
+        "catalog"
+      ],
+      "methods": [
+        "__init__",
+        "fetch_catalog",
+        "get_installed_modules_info",
+        "install_plugin",
+        "uninstall_plugin"
+      ],
+      "bases": []
+    },
+    {
+      "id": "LocalizationManager",
+      "name": "LocalizationManager",
+      "file": "localization.py",
+      "type": "class",
+      "description": "No description available.",
+      "attributes": [
+        "locale_dir",
+        "shared_state",
+        "current_locale",
+        "modules_dir",
+        "translations"
+      ],
+      "methods": [
+        "__init__",
+        "_on_language_changed",
+        "load_locale",
+        "load_module_locales",
+        "get"
+      ],
+      "bases": []
     }
   ],
   "relationships": [
     {
-      "source": "ModularGUI",
-      "target": "LocalizationManager",
-      "type": "composition",
-      "label": "composed-of"
+      "source": "LocalizationManager",
+      "target": "SharedState",
+      "type": "aggregation",
+      "label": "has-a (arg)"
     },
     {
-      "source": "LocalizationManager",
+      "source": "CustomLayoutManager",
+      "target": "AnimatedCanvas",
+      "type": "inheritance",
+      "label": "extends"
+    },
+    {
+      "source": "ModularGUI",
+      "target": "StoreManager",
+      "type": "dependency",
+      "label": "uses"
+    },
+    {
+      "source": "ModularGUI",
+      "target": "SharedState",
+      "type": "aggregation",
+      "label": "has-a (param)"
+    },
+    {
+      "source": "Module",
       "target": "SharedState",
       "type": "aggregation",
       "label": "has-a (arg)"
@@ -373,12 +391,6 @@
       "label": "composed-of"
     },
     {
-      "source": "Module",
-      "target": "SharedState",
-      "type": "aggregation",
-      "label": "has-a (arg)"
-    },
-    {
       "source": "StoreManager",
       "target": "SharedState",
       "type": "aggregation",
@@ -386,21 +398,9 @@
     },
     {
       "source": "ModularGUI",
-      "target": "StoreManager",
-      "type": "dependency",
-      "label": "uses"
-    },
-    {
-      "source": "CustomLayoutManager",
-      "target": "AnimatedCanvas",
-      "type": "inheritance",
-      "label": "extends"
-    },
-    {
-      "source": "ModularGUI",
-      "target": "SharedState",
-      "type": "aggregation",
-      "label": "has-a (param)"
+      "target": "LocalizationManager",
+      "type": "composition",
+      "label": "composed-of"
     }
   ]
 }
