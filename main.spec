@@ -48,7 +48,6 @@ if sys.platform == 'win32':
         ('dependencies/ffmpeg/postproc-55.dll', '.'),
         ('dependencies/ffmpeg/swresample-3.dll', '.'),
         ('dependencies/ffmpeg/swscale-5.dll', '.'),
-        ('dependencies/tk/_tk_data', '_tk_data'),
     ]
 
 a = Analysis(
