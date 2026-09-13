@@ -257,7 +257,7 @@
       "title": "Youtube Downloader",
       "description": "The youtube_downloader module.",
       "author": "李紘宇",
-      "latest_version": "1.1.0",
+      "latest_version": "1.1.1",
       "versions": [
         {
           "version": "1.0.0",
@@ -266,6 +266,10 @@
         {
           "version": "1.1.0",
           "url": "https://jacky09299.github.io/FlexiTools/plugins/youtube_downloader/youtube_downloader_1.1.0.zip"
+        },
+        {
+          "version": "1.1.1",
+          "url": "https://jacky09299.github.io/FlexiTools/plugins/youtube_downloader/youtube_downloader_1.1.1.zip"
         }
       ]
     },
