@@ -3,7 +3,7 @@
     "module_ytdl_lbl_folder": "Carpeta de descarga:",
     "module_ytdl_btn_select": "Seleccionar...",
     "module_ytdl_lbl_urls": "URLs de YouTube (una por línea):",
-    "module_ytdl_lbl_help": "Ejemplos de formato:\n• Video único: https://www.youtube.com/watch?v=ID\n• Lista completa: https://www.youtube.com/playlist?list=ID\n• Subconjunto lista: https://www.youtube.com/playlist?list=ID [2-5,7]",
+    "module_ytdl_lbl_help": "Format examples:\n• Single video: https://www.youtube.com/watch?v=VIDEO_ID\n• Specific time segments: https://www.youtube.com/watch?v=VIDEO_ID {time:00:00-01:30, 02:15-03:00}\n• Specific chapters: https://www.youtube.com/watch?v=VIDEO_ID {chapter:1,3-5} or {chapter:all}\n• Playlist with specific items: https://www.youtube.com/playlist?list=PLAYLIST_ID [2-5,7,10-12]",
     "module_ytdl_btn_load": "Cargar .txt",
     "module_ytdl_lbl_format": "Formato:",
     "module_ytdl_lbl_quality": "Calidad:",

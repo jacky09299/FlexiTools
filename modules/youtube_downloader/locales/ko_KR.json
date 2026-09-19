@@ -3,7 +3,7 @@
     "module_ytdl_lbl_folder": "다운로드 폴더:",
     "module_ytdl_btn_select": "선택...",
     "module_ytdl_lbl_urls": "YouTube URL (한 줄에 하나):",
-    "module_ytdl_lbl_help": "형식 예:\n• 단일 비디오: https://www.youtube.com/watch?v=ID\n• 전체 재생 목록: https://www.youtube.com/playlist?list=ID\n• 재생 목록 하위 집합: https://www.youtube.com/playlist?list=ID [2-5,7]",
+    "module_ytdl_lbl_help": "Format examples:\n• Single video: https://www.youtube.com/watch?v=VIDEO_ID\n• Specific time segments: https://www.youtube.com/watch?v=VIDEO_ID {time:00:00-01:30, 02:15-03:00}\n• Specific chapters: https://www.youtube.com/watch?v=VIDEO_ID {chapter:1,3-5} or {chapter:all}\n• Playlist with specific items: https://www.youtube.com/playlist?list=PLAYLIST_ID [2-5,7,10-12]",
     "module_ytdl_btn_load": ".txt 불러오기",
     "module_ytdl_lbl_format": "형식:",
     "module_ytdl_lbl_quality": "품질:",

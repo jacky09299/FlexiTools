@@ -124,9 +124,10 @@ class YoutubeDownloaderModule(Module):
         # 使用說明
         self.help_text = ttk.Label(url_frame, text="Format examples:\n" +
                              "• Single video: https://www.youtube.com/watch?v=VIDEO_ID\n" +
-                             "• Full playlist: https://www.youtube.com/playlist?list=PLAYLIST_ID\n" +
+                             "• Specific time segments: https://www.youtube.com/watch?v=VIDEO_ID {time:00:00-01:30, 02:15-03:00}\n" +
+                             "• Specific chapters: https://www.youtube.com/watch?v=VIDEO_ID {chapter:1,3-5} or {chapter:all}\n" +
                              "• Playlist with specific items: https://www.youtube.com/playlist?list=PLAYLIST_ID [2-5,7,10-12]",
-                             font=("TkDefaultFont", 8), foreground="gray")
+                             font=("TkDefaultFont", 8), foreground="gray", justify=tk.LEFT)
         self.help_text.pack(anchor=tk.W, pady=(0, 5))
         
         url_text_frame = ttk.Frame(url_frame)
@@ -286,19 +287,37 @@ class YoutubeDownloaderModule(Module):
             self.update_status(self.tr("module_ytdl_err_ytdl", "yt-dlp not available. Please install yt-dlp."))
 
     def parse_url_line(self, line):
-        """解析URL行，提取URL和播放清單項目範圍"""
+        """解析URL行，提取URL和各種範圍參數"""
         line = line.strip()
         if not line:
-            return None, None
+            return None, {}
         
-        # 檢查是否有播放清單項目指定 [項目範圍]
-        playlist_range_match = re.search(r'\[([^\]]+)\]', line)
-        if playlist_range_match:
-            url = line[:playlist_range_match.start()].strip()
-            playlist_range = playlist_range_match.group(1).strip()
-            return url, playlist_range
-        else:
-            return line, None
+        result = {'original_line': line}
+        
+        # 尋找 [1-5] 作為播放清單範圍
+        playlist_match = re.search(r'\[([^\]]+)\]', line)
+        
+        # 尋找 {time:00:00-01:00,02:00-03:00} 
+        time_match = re.search(r'\{times?:([^}]+)\}', line, re.IGNORECASE)
+        # 尋找 {chapter:1,3-5} 或是 {chapter:all}
+        chapter_match = re.search(r'\{chapters?:([^}]+)\}', line, re.IGNORECASE)
+        
+        # 取得最前面的 URL 部分 (在 [, { 之前)
+        url_end_idx = len(line)
+        if playlist_match: url_end_idx = min(url_end_idx, playlist_match.start())
+        if time_match: url_end_idx = min(url_end_idx, time_match.start())
+        if chapter_match: url_end_idx = min(url_end_idx, chapter_match.start())
+        
+        url = line[:url_end_idx].strip()
+        if not url:
+            return None, {}
+            
+        result['url'] = url
+        if playlist_match: result['playlist_range'] = playlist_match.group(1).strip()
+        if time_match: result['time_range'] = time_match.group(1).strip()
+        if chapter_match: result['chapter_range'] = chapter_match.group(1).strip()
+        
+        return url, result
 
     def start_download_thread(self):
         """開始下載線程"""
@@ -378,7 +397,7 @@ class YoutubeDownloaderModule(Module):
                 # 更新當前 URL 索引
                 self.current_url_index = idx
                 
-                url, playlist_range = self.parse_url_line(line)
+                url, parsed = self.parse_url_line(line)
                 if not url:
                     continue
                     
@@ -389,7 +408,7 @@ class YoutubeDownloaderModule(Module):
                 self.skip_current = False
                 
                 try:
-                    success = self.download_with_ytdlp(url, playlist_range)
+                    success = self.download_with_ytdlp(url, parsed)
                     
                     # 如果這個 URL 被跳過，繼續下一個
                     if self.skip_current:
@@ -424,10 +443,15 @@ class YoutubeDownloaderModule(Module):
             self.master.after(0, lambda: self.stop_button.config(state="disabled"))
             self.current_ydl = None
 
-    def download_with_ytdlp(self, url, playlist_range=None):
-        """使用yt-dlp下載（支援單一影片和播放清單）"""
+    def download_with_ytdlp(self, url, parsed=None):
+        """使用yt-dlp下載（支援單一影片、播放清單和片段）"""
         try:
             import yt_dlp
+            
+            if parsed is None: parsed = {}
+            playlist_range = parsed.get('playlist_range')
+            time_range = parsed.get('time_range')
+            chapter_range = parsed.get('chapter_range')
             
             # 檢查是否需要停止或跳過
             if self.stop_download or self.skip_current:
@@ -436,9 +460,13 @@ class YoutubeDownloaderModule(Module):
             format_choice = self.format_var.get()
             quality = self.quality_var.get()
             
+            outtmpl = os.path.join(self.download_dir, '%(title)s.%(ext)s')
+            if time_range or chapter_range:
+                outtmpl = os.path.join(self.download_dir, '%(title)s_%(section_title)s.%(ext)s')
+            
             # 設定yt-dlp選項
             ydl_opts = {
-                'outtmpl': os.path.join(self.download_dir, '%(title)s.%(ext)s'),
+                'outtmpl': outtmpl,
                 'progress_hooks': [self.on_progress_ytdlp],
                 # Add options to fix 403 Forbidden errors and improve stability
                 'force_ipv4': True,
@@ -497,6 +525,63 @@ class YoutubeDownloaderModule(Module):
                     format_selector = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
                 
                 ydl_opts['format'] = format_selector
+            
+            if time_range or chapter_range:
+                ydl_opts['force_keyframes_at_cuts'] = True 
+                
+                def time_to_sec(t_str):
+                    parts = t_str.strip().split(':')
+                    parts.reverse()
+                    return sum(float(p) * (60 ** i) for i, p in enumerate(parts))
+
+                custom_sections = []
+                if time_range:
+                    for part in time_range.split(','):
+                        if '-' in part:
+                            try:
+                                start_str, end_str = part.split('-', 1)
+                                start_sec = time_to_sec(start_str)
+                                end_sec = time_to_sec(end_str)
+                                custom_sections.append({'start_time': start_sec, 'end_time': end_sec})
+                            except:
+                                pass
+
+                def custom_download_ranges(info_dict, ydl):
+                    sections = []
+                    # Process time ranges
+                    for i, sec in enumerate(custom_sections, 1):
+                        sec_copy = sec.copy()
+                        sec_copy['title'] = f"time_section_{i}"
+                        sections.append(sec_copy)
+                        
+                    # Process chapters "1,3-5" or "all"
+                    if chapter_range:
+                        all_chapters = info_dict.get('chapters')
+                        if all_chapters:
+                            if chapter_range.lower() == 'all':
+                                sections.extend(all_chapters)
+                            else:
+                                target_indices = set()
+                                for r in chapter_range.split(','):
+                                    r = r.strip()
+                                    if '-' in r:
+                                        try:
+                                            s, e = map(int, r.split('-', 1))
+                                            target_indices.update(range(s, e + 1))
+                                        except:
+                                            pass
+                                    elif r.isdigit():
+                                        target_indices.add(int(r))
+                                        
+                                for i, chap in enumerate(all_chapters, 1):
+                                    if i in target_indices:
+                                        sections.append(chap)
+                        else:
+                            self.log_error(f"No chapters found in video {info_dict.get('title', 'Unknown')}")
+                            
+                    return sections
+                    
+                ydl_opts['download_ranges'] = custom_download_ranges
             
             # 檢查是否為播放清單URL
             is_playlist_url = self.is_playlist_url(url)

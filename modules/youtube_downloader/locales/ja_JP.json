@@ -3,7 +3,7 @@
     "module_ytdl_lbl_folder": "ダウンロードフォルダ:",
     "module_ytdl_btn_select": "選択...",
     "module_ytdl_lbl_urls": "YouTube URL (1行に1つ):",
-    "module_ytdl_lbl_help": "形式例:\n• 単一動画: https://www.youtube.com/watch?v=ID\n• 完全なプレイリスト: https://www.youtube.com/playlist?list=ID\n• プレイリストのサブセット: https://www.youtube.com/playlist?list=ID [2-5,7]",
+    "module_ytdl_lbl_help": "Format examples:\n• Single video: https://www.youtube.com/watch?v=VIDEO_ID\n• Specific time segments: https://www.youtube.com/watch?v=VIDEO_ID {time:00:00-01:30, 02:15-03:00}\n• Specific chapters: https://www.youtube.com/watch?v=VIDEO_ID {chapter:1,3-5} or {chapter:all}\n• Playlist with specific items: https://www.youtube.com/playlist?list=PLAYLIST_ID [2-5,7,10-12]",
     "module_ytdl_btn_load": ".txt を読み込む",
     "module_ytdl_lbl_format": "形式:",
     "module_ytdl_lbl_quality": "品質:",
