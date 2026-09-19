@@ -306,6 +306,14 @@ class TranslatorModule(Module):
         self.last_text = ""
         self.executor = ThreadPoolExecutor(max_workers=2)
         self.keyboard_listener = None
+        self.last_ctrl_c_time = 0
+        
+        # 註冊全域快捷鍵：連按兩次 Ctrl+C 切換翻譯開關
+        if keyboard_lib:
+            try:
+                keyboard_lib.add_hotkey('ctrl+c', self.on_double_ctrl_c, suppress=False)
+            except Exception as e:
+                self.shared_state.log(f"無法註冊快捷鍵: {e}", "WARNING")
         
         # Initialize widget references
         self.controls_frame = None
@@ -501,36 +509,23 @@ class TranslatorModule(Module):
         self.monitor_thread = threading.Thread(target=self.monitor_clipboard, daemon=True)
         self.monitor_thread.start()
         
-        # 啟動鍵盤監控（監控Ctrl+C）- optional, not critical for functionality
-        if keyboard_lib:
-            try:
-                self.keyboard_listener = keyboard_lib.Listener(on_press=self.on_key_press)
-                self.keyboard_listener.start()
-            except Exception as e:
-                self.shared_state.log(f"無法啟動鍵盤監控: {e}", "WARNING")
-                self.keyboard_listener = None
-        else:
-            self.shared_state.log("Keyboard library not available, skipping keyboard monitoring.", "DEBUG")
-        
     def stop_translation(self):
         self.is_translating = False
         self.toggle_btn.config(text=self.tr("module_translator_btn_toggle_on", "Enable Translate"))
         self.status_label.config(text=self.tr("module_translator_status_off", "Disabled"), foreground="red")
-        
-        # 停止監聽器
-        if self.keyboard_listener:
-            self.keyboard_listener.stop()
             
         # 關閉浮動視窗
         self.floating_window.close()
     
-    def on_key_press(self, key):
-        try:
-            # 檢測 Ctrl+C
-            if hasattr(key, 'char') and key.char == 'c':
-                pass
-        except AttributeError:
-            pass
+    def on_double_ctrl_c(self):
+        current_time = time.time()
+        # 檢查兩次按下 Ctrl+C 的間隔是否小於 0.5 秒
+        if current_time - self.last_ctrl_c_time < 0.5:
+            # 在主執行緒更新 UI 與切換狀態
+            self.frame.after(0, self.toggle_translation)
+            self.last_ctrl_c_time = 0  # 重置，避免連續三次按鍵變成切換兩次
+        else:
+            self.last_ctrl_c_time = current_time
     
     def monitor_clipboard(self):
         while self.is_translating:
@@ -746,8 +741,11 @@ class TranslatorModule(Module):
         self.is_translating = False
         if hasattr(self, 'monitor_thread') and self.monitor_thread and self.monitor_thread.is_alive():
             self.monitor_thread.join(timeout=1)
-        if self.keyboard_listener:
-            self.keyboard_listener.stop()
+        if keyboard_lib:
+            try:
+                keyboard_lib.unhook_all()
+            except Exception:
+                pass
         self.floating_window.close()
         self.executor.shutdown(wait=False)
         super().on_destroy()
