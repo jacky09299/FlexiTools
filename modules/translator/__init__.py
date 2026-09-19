@@ -613,7 +613,7 @@ class TranslatorModule(Module):
                         self.frame.after(0, self.update_result, text, translated_segment, "error")
                         return
                     translated_segments.append(translated_segment)
-                    time.sleep(0.5)  # 避免API請求過於頻繁
+                    time.sleep(1.0)  # 增加間隔，避免長文分段翻譯時被 API 阻擋 (429)
                 
                 translated_text = ' '.join(translated_segments)
             else:
@@ -649,41 +649,61 @@ class TranslatorModule(Module):
         
         return segments if segments else [text]
     
-    def translate_segment(self, text, target_lang):
-        """翻譯單一文字段落"""
-        try:
-            # 建構翻譯請求
-            base_url = "https://translate.googleapis.com/translate_a/single"
-            params = {
-                'client': 'gtx',
-                'sl': 'auto',
-                'tl': target_lang,
-                'dt': 't',
-                'q': text
-            }
+    def translate_segment(self, text, target_lang, max_retries=2):
+        """翻譯單一文字段落（支援自動重試與 API 輪替以防 429）"""
+        # 可以使用的客戶端與網域輪替，減少 429 發生機率
+        endpoints = [
+            ("https://translate.googleapis.com/translate_a/single", "gtx"),
+            ("https://translate.google.com/translate_a/single", "dict-chrome-ex"),
+            ("https://translate.google.com/translate_a/single", "t"),
+        ]
+        
+        last_error = ""
+        for attempt in range(max_retries):
+            for base_url, client in endpoints:
+                try:
+                    params = {
+                        'client': client,
+                        'sl': 'auto',
+                        'tl': target_lang,
+                        'dt': 't',
+                        'q': text
+                    }
+                    
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    }
+                    
+                    response = requests.get(base_url, params=params, headers=headers, timeout=15)
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        if result and len(result) > 0 and len(result[0]) > 0:
+                            translated_text = ''.join([item[0] for item in result[0] if item[0]])
+                            return translated_text
+                        else:
+                            last_error = "翻譯失敗：無法解析回應"
+                            continue  # 嘗試下一個 endpoint
+                    elif response.status_code == 429:
+                        last_error = f"翻譯失敗：HTTP {response.status_code} (請求過於頻繁)"
+                        time.sleep(1.5 * (attempt + 1))  # 429 時稍等一下再嘗試
+                        continue
+                    else:
+                        last_error = f"翻譯失敗：HTTP {response.status_code}"
+                        continue
+                        
+                except requests.exceptions.Timeout:
+                    last_error = "翻譯失敗：請求超時"
+                except requests.exceptions.RequestException as e:
+                    last_error = f"翻譯失敗：網路錯誤 {str(e)}"
+                except Exception as e:
+                    last_error = f"翻譯失敗：{str(e)}"
             
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-            
-            response = requests.get(base_url, params=params, headers=headers, timeout=15)
-            
-            if response.status_code == 200:
-                result = response.json()
-                if result and len(result) > 0 and len(result[0]) > 0:
-                    translated_text = ''.join([item[0] for item in result[0] if item[0]])
-                    return translated_text
-                else:
-                    return "翻譯失敗：無法解析回應"
-            else:
-                return f"翻譯失敗：HTTP {response.status_code}"
+            # 如果跑完一輪endpoints都失敗，稍微休息一下再進行下一個 retry attempt
+            if attempt < max_retries - 1:
+                time.sleep(2)
                 
-        except requests.exceptions.Timeout:
-            return "翻譯失敗：請求超時"
-        except requests.exceptions.RequestException as e:
-            return f"翻譯失敗：網路錯誤 {str(e)}"
-        except Exception as e:
-            return f"翻譯失敗：{str(e)}"
+        return last_error
     
     def update_result(self, original_text, translated_text, target_lang):
         # 如果勾選了移除換行，則先處理最終結果
