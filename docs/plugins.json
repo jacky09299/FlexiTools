@@ -213,9 +213,9 @@
     {
       "id": "template_module",
       "title": "Template Module",
-      "description": "The template_module module. (v1.4.0 Demo)",
+      "description": "The template_module module. (v1.2.0 Demo)",
       "author": "李紘宇",
-      "latest_version": "1.5.0",
+      "latest_version": "1.2.0",
       "versions": [
         {
           "version": "1.0.0",
@@ -342,7 +342,7 @@
       "title": "Translator",
       "description": "The translator module.",
       "author": "李紘宇",
-      "latest_version": "1.2.0",
+      "latest_version": "1.2.1",
       "versions": [
         {
           "version": "1.1.0",
@@ -351,6 +351,10 @@
         {
           "version": "1.2.0",
           "url": "https://jacky09299.github.io/FlexiTools/plugins/translator/translator_1.2.0.zip"
+        },
+        {
+          "version": "1.2.1",
+          "url": "https://jacky09299.github.io/FlexiTools/plugins/translator/translator_1.2.1.zip"
         }
       ]
     },
@@ -409,7 +413,7 @@
     {
       "id": "quantum_circuit_tools",
       "title": "Quantum Circuit Tools",
-      "description": "The quantum_circuit_tools module.",
+      "description": "Calculate Charging Energy (EC), Inductive Energy (EL), Transmon frequencies, and parameter conversions.",
       "author": "李紘宇",
       "latest_version": "1.2.0",
       "versions": [
