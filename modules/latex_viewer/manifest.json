@@ -1,0 +1,7 @@
+{
+  "name": "latex_viewer",
+  "version": "1.0.0",
+  "title": "LaTeX 即時預覽",
+  "description": "即時渲染並預覽 LaTeX 數學公式與中文，支援字體縮放與多行對齊。",
+  "author": "Antigravity"
+}
