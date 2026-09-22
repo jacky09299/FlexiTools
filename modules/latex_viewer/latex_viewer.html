@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web 版 LaTeX 即時預覽器 (完美支援中文)</title>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            chtml: {
+                displayAlign: 'left',
+                displayIndent: '0'
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans CJK TC', 'Microsoft JhengHei', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .pane {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .output-pane {
+            background-color: #ffffff;
+            border-bottom: 2px solid #ccc;
+        }
+        .input-pane {
+            background-color: #f9f9f9;
+        }
+        textarea {
+            flex: 1;
+            font-family: Consolas, monospace;
+            font-size: 16px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none; 
+        }
+        h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #output {
+            font-size: 24px;
+            white-space: pre-wrap; /* 確保換行符號能正確顯示，不會黏成一行 */
+            line-height: 1.5; /* 增加行距，提升中文與公式混排的易讀性 */
+        }
+        .btn {
+            padding: 5px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #aaa;
+            background: #fff;
+            border-radius: 4px;
+        }
+        .btn:hover { background: #eee; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 上方：預覽區塊 -->
+    <div class="pane output-pane">
+        <h3>
+            <span>輸出預覽</span>
+            <div>
+                <button class="btn" onclick="changeFontSize(2, 'output')">A+</button>
+                <button class="btn" onclick="changeFontSize(-2, 'output')">A-</button>
+            </div>
+        </h3>
+        <div id="output"></div>
+    </div>
+
+    <!-- 下方：輸入區塊 -->
+    <div class="pane input-pane">
+        <h3>
+            <span>請輸入 LaTeX (支援中文混排):</span>
+            <div>
+                <button class="btn" onclick="autoFix()" style="background: #e6e6ff;" title="將普通的 [ ] 自動轉換為 \[ \]">修復 ChatGPT 公式</button>
+                <button class="btn" onclick="document.getElementById('latex-input').value=''; renderMath();">清除</button>
+                <button class="btn" onclick="changeFontSize(2, 'latex-input')">A+</button>
+                <button class="btn" onclick="changeFontSize(-2, 'latex-input')">A-</button>
+            </div>
+        </h3>
+        <textarea id="latex-input" placeholder="在這裡輸入 LaTeX..."></textarea>
+    </div>
+</div>
+
+<script>
+    const inputArea = document.getElementById('latex-input');
+    const outputArea = document.getElementById('output');
+
+    let renderTimeout = null;
+
+    function autoFix() {
+        let text = inputArea.value;
+        // 將包含 \ 或 ^ 或 _ 或 = 的 [ ... ] 替換為 \[ ... \]
+        text = text.replace(/\[([^\]]*(\\|_|\^|=)[^\]]*)\]/g, '\\[$1\\]');
+        // 將包含 \ 的 ( ... ) 替換為 \( ... \) (因為 ChatGPT 行內公式常漏掉斜線)
+        text = text.replace(/\(([^)]*\\[^)]*)\)/g, '\\($1\\)');
+        
+        inputArea.value = text;
+        renderMath();
+    }
+
+    function renderMath() {
+        const text = inputArea.value;
+        let processedText = text;
+        const hasChinese = /[\u4e00-\u9fa5]/.test(text);
+        if (!hasChinese && !text.includes('$') && !text.includes('\\begin') && !text.includes('\\[') && text.trim() !== '') {
+            processedText = `\\[${text}\\]`;
+        }
+
+        // 使用 textContent 而非 innerHTML，避免公式中的 < 或 > 被瀏覽器誤認為 HTML 標籤而吃掉內容
+        outputArea.textContent = processedText;
+        
+        if (window.MathJax) {
+            MathJax.typesetPromise([outputArea]).catch((err) => console.log(err.message));
+        }
+    }
+
+    inputArea.addEventListener('input', () => {
+        if (renderTimeout) clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(renderMath, 300);
+    });
+
+    function changeFontSize(delta, elementId) {
+        const el = document.getElementById(elementId);
+        const currentSize = window.getComputedStyle(el).fontSize;
+        const newSize = parseFloat(currentSize) + delta;
+        el.style.fontSize = newSize + 'px';
+    }
+
+    // 啟動時讀取 URL hash 傳過來的內容
+    window.onload = () => {
+        let initialText = "這是一個帶有中文的公式範例：$E = mc^2$"; // 預設值
+        
+        if (window.location.hash) {
+            const hashContent = window.location.hash.substring(1);
+            if (hashContent) {
+                try {
+                    initialText = decodeURIComponent(hashContent);
+                } catch (e) {
+                    console.error("無法解碼 URL Hash");
+                }
+            }
+        }
+        
+        inputArea.value = initialText;
+        setTimeout(renderMath, 500); 
+    };
+</script>
+
+</body>
+</html>

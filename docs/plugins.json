@@ -456,12 +456,16 @@
       "id": "latex_viewer",
       "title": "LaTeX Viewer",
       "description": "即時渲染並預覽 LaTeX 數學公式與中文，支援字體縮放與多行對齊。",
-      "author": "Antigravity",
-      "latest_version": "1.0.0",
+      "author": "李紘宇",
+      "latest_version": "1.1.0",
       "versions": [
         {
           "version": "1.0.0",
           "url": "https://jacky09299.github.io/FlexiTools/plugins/latex_viewer/latex_viewer_1.0.0.zip"
+        },
+        {
+          "version": "1.1.0",
+          "url": "https://jacky09299.github.io/FlexiTools/plugins/latex_viewer/latex_viewer_1.1.0.zip"
         }
       ]
     }

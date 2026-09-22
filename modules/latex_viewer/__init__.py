@@ -4,7 +4,7 @@ from main import Module
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 # --- 支援中文設定 ---
 plt.rcParams['font.sans-serif'] = ['Noto Sans CJK TC', 'Droid Sans Fallback', 'AR PL UMing TW', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Microsoft JhengHei', 'SimHei', 'PingFang HK', 'sans-serif']
@@ -65,6 +65,29 @@ class LatexViewerModule(Module):
     def clear_text(self):
         self.text_input.delete("1.0", tk.END)
         self.render_latex()
+
+    def auto_fix(self):
+        import re
+        text = self.text_input.get("1.0", "end-1c")
+        # 尋找包含 \ 或 ^ 或 _ 或 = 的 [ ... ] 並替換為 \[ ... \]
+        text = re.sub(r'\[([^\]]*(\\|_|\^|=)[^\]]*)\]', r'\\[\1\\]', text)
+        # 尋找包含 \ 的 ( ... ) 並替換為 \( ... \)
+        text = re.sub(r'\(([^)]*\\[^)]*)\)', r'\\(\1\\)', text)
+        
+        self.text_input.delete("1.0", tk.END)
+        self.text_input.insert("1.0", text)
+        self.render_latex()
+
+    def open_web_version(self):
+        import webbrowser
+        import urllib.parse
+        import os
+        
+        current_text = self.text_input.get("1.0", "end-1c")
+        encoded_text = urllib.parse.quote(current_text)
+        html_path = os.path.join(os.path.dirname(__file__), "latex_viewer.html")
+        url = f"file://{html_path}#{encoded_text}"
+        webbrowser.open(url)
 
     def change_in_font(self, delta):
         self.input_font_size = max(8, self.input_font_size + delta)
@@ -131,6 +154,12 @@ class LatexViewerModule(Module):
         self.btn_clear = tk.Button(toolbar_frame, command=self.clear_text, bg="#ffcccc", width=10)
         self.btn_clear.pack(side=tk.RIGHT, padx=2)
         
+        self.btn_autofix = tk.Button(toolbar_frame, command=self.auto_fix, bg="#e6e6ff")
+        self.btn_autofix.pack(side=tk.RIGHT, padx=5)
+        
+        self.btn_web = tk.Button(toolbar_frame, command=self.open_web_version, bg="#cceeff")
+        self.btn_web.pack(side=tk.RIGHT, padx=5)
+        
         self.btn_in_plus = tk.Button(toolbar_frame, text="+", command=lambda: self.change_in_font(2), width=3, bg="#e6ffe6")
         self.btn_in_plus.pack(side=tk.RIGHT, padx=2)
         self.btn_in_minus = tk.Button(toolbar_frame, text="-", command=lambda: self.change_in_font(-2), width=3, bg="#e6ffe6")
@@ -184,6 +213,8 @@ class LatexViewerModule(Module):
         self.lbl_input.config(text=self.tr("latex_viewer_in_title", "請輸入 LaTeX:"))
         self.lbl_in_font.config(text=self.tr("latex_viewer_in_font", "輸入字體"))
         self.btn_clear.config(text=self.tr("latex_viewer_clear", "清除 (Clear)"))
+        self.btn_autofix.config(text=self.tr("latex_viewer_autofix", "修復 ChatGPT 公式 🔧"))
+        self.btn_web.config(text=self.tr("latex_viewer_web", "在網頁版開啟 🌐"))
 
     def on_destroy(self):
         self.shared_state.log(f"LatexViewerModule '{self.module_name}' is being destroyed.")

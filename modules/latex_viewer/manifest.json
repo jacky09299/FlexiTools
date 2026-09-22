@@ -1,7 +1,7 @@
 {
   "name": "latex_viewer",
-  "version": "1.0.0",
-  "title": "LaTeX 即時預覽",
+  "version": "1.1.0",
+  "title": "LaTeX Viewer",
   "description": "即時渲染並預覽 LaTeX 數學公式與中文，支援字體縮放與多行對齊。",
-  "author": "Antigravity"
+  "author": "李紘宇"
 }
